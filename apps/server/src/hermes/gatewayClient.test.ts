@@ -148,6 +148,32 @@ describe('GatewayClient HTTP methods', () => {
     })
   })
 
+  it('startRun forwards conversation_history when prior turns are present', async () => {
+    gateway = await startMockGateway({ runId: 'run_hist' })
+    const client = new GatewayClient({ hermesGatewayUrl: gateway.url, hermesApiKey: 'unit-key' })
+    const history = [
+      { role: 'user' as const, content: 'Reply with exactly: BLUE.' },
+      { role: 'assistant' as const, content: 'BLUE' },
+    ]
+    await client.startRun({
+      input: 'What word did I ask you to reply with?',
+      sessionId: 's1',
+      conversationHistory: history,
+    })
+    expect(gateway.calls.runs[0]!.body).toEqual({
+      input: 'What word did I ask you to reply with?',
+      session_id: 's1',
+      conversation_history: history,
+    })
+  })
+
+  it('startRun omits conversation_history when empty', async () => {
+    gateway = await startMockGateway({ runId: 'run_nohist' })
+    const client = new GatewayClient({ hermesGatewayUrl: gateway.url, hermesApiKey: 'unit-key' })
+    await client.startRun({ input: 'hi', conversationHistory: [] })
+    expect(gateway.calls.runs[0]!.body).toEqual({ input: 'hi' })
+  })
+
   it('startRun keeps input a plain string when attachments is empty', async () => {
     gateway = await startMockGateway({ runId: 'run_plain' })
     const client = new GatewayClient({ hermesGatewayUrl: gateway.url, hermesApiKey: 'unit-key' })

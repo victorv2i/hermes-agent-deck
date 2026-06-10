@@ -5,7 +5,11 @@
  * Every call carries `Authorization: Bearer <API_SERVER_KEY>`. The key is read
  * server-side from config and is NEVER logged, printed, or surfaced to the client.
  */
-import type { ApprovalChoice, RunAttachment } from '@agent-deck/protocol'
+import type {
+  ApprovalChoice,
+  ConversationHistoryMessage,
+  RunAttachment,
+} from '@agent-deck/protocol'
 
 export interface GatewayClientConfig {
   /** Base URL of the gateway, e.g. http://127.0.0.1:8643 */
@@ -32,6 +36,11 @@ export interface StartRunArgs {
    * sent as the gateway's native multimodal array (text + image_url parts);
    * otherwise it stays the plain string. See {@link RunAttachment}. */
   attachments?: RunAttachment[]
+  /** Prior conversation turns (oldest first, excluding the current `input`).
+   * Sent as the gateway's `conversation_history` because `/v1/runs` does NOT
+   * load history for a bare `session_id` — without it every follow-up turn
+   * reaches the model with zero context. */
+  conversationHistory?: ConversationHistoryMessage[]
 }
 
 /** One OpenAI-style content part the gateway's `_normalize_multimodal_content`
@@ -248,6 +257,9 @@ export class GatewayClient {
     const body: Record<string, unknown> = { input: buildRunInput(args.input, args.attachments) }
     if (args.model) body.model = args.model
     if (args.sessionId) body.session_id = args.sessionId
+    if (args.conversationHistory && args.conversationHistory.length > 0) {
+      body.conversation_history = args.conversationHistory
+    }
 
     const res = await this.timedFetch(
       this.url('/v1/runs'),

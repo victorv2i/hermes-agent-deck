@@ -20,7 +20,12 @@ import {
 } from '@/lib/chatSocket'
 import { toast } from '@/lib/toast'
 import { useChatStore } from './useChatStore'
-import { branchSendPolicy, type PendingApproval, type Turn } from './chatStore'
+import {
+  branchSendPolicy,
+  conversationHistoryForRun,
+  type PendingApproval,
+  type Turn,
+} from './chatStore'
 
 export interface UseChatRun {
   connection: ConnectionStatus
@@ -187,6 +192,10 @@ export function useChatRun(socket?: SocketLike, storage?: StorageLike | null): U
     // when present. Shared by send / retry / editTurn so re-runs behave exactly
     // like a fresh send.
     const issueRun = (input: string, model?: string, attachments?: RunAttachment[]) => {
+      // Snapshot the prior transcript BEFORE the optimistic assistant turn opens.
+      // The gateway does not load history for a bare session_id, so each run must
+      // carry the conversation itself (capped; see conversationHistoryForRun).
+      const history = conversationHistoryForRun(useChatStore.getState().turns, input)
       beginAssistantTurn()
       // Branch send policy (Lane D) gates whether the existing Hermes session_id
       // may ride this run. A fork from a HISTORICAL message (unsupported-context)
@@ -197,6 +206,7 @@ export function useChatRun(socket?: SocketLike, storage?: StorageLike | null): U
       const sessionId = policy.kind === 'same-session' ? activeSessionIdRef.current : null
       clientRef.current?.run({
         input,
+        ...(history.length > 0 ? { conversation_history: history } : {}),
         ...(sessionId ? { session_id: sessionId } : {}),
         ...(model ? { model } : {}),
         ...(attachments && attachments.length > 0 ? { attachments } : {}),

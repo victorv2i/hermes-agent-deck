@@ -193,11 +193,40 @@ export const RunAttachment = z.object({
 })
 export type RunAttachment = z.infer<typeof RunAttachment>
 
+/**
+ * One PRIOR transcript turn carried on a run as gateway `conversation_history`.
+ * The gateway's `/v1/runs` does NOT load prior messages for a bare `session_id`
+ * — without this array every follow-up turn reaches the model with zero history
+ * (`history=0`). Text only by design: tool calls/results are re-derived gateway
+ * side, so the payload stays a plain {role, content} transcript.
+ */
+export const ConversationHistoryMessage = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+})
+export type ConversationHistoryMessage = z.infer<typeof ConversationHistoryMessage>
+
+/**
+ * Caps for the history payload, applied oldest-dropped-first by the sender.
+ * HONEST limitation: a conversation longer than this reaches the model with
+ * only its most recent window — chosen over an unbounded per-message payload.
+ */
+export const CONVERSATION_HISTORY_MAX_MESSAGES = 40
+export const CONVERSATION_HISTORY_MAX_CHARS = 60_000
+
 /** Start a new run. Maps to POST /v1/runs. */
 export const RunCommand = z.object({
   input: z.string(),
   model: z.string().optional(),
   session_id: z.string().optional(),
+  /**
+   * The prior turns of this conversation (oldest first, NOT including the
+   * current `input`). Forwarded as the gateway's `conversation_history` so the
+   * model actually sees the thread. Omitted/empty on the first turn. The web
+   * client caps it (last {@link CONVERSATION_HISTORY_MAX_MESSAGES} messages /
+   * ~{@link CONVERSATION_HISTORY_MAX_CHARS} chars, oldest dropped first).
+   */
+  conversation_history: z.array(ConversationHistoryMessage).optional(),
   /**
    * Image attachments to carry on this turn (paste / attach / drag-drop). When
    * present, the BFF builds the gateway's multimodal `input` array — text part

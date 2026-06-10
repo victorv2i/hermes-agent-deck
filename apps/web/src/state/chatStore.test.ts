@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { ChatServerEvent } from '@agent-deck/protocol'
+import {
+  ChatServerEvent,
+  CONVERSATION_HISTORY_MAX_MESSAGES,
+  CONVERSATION_HISTORY_MAX_CHARS,
+} from '@agent-deck/protocol'
 import {
   applyEvent,
   applyEvents,
@@ -7,6 +11,7 @@ import {
   beginAssistantTurn,
   prepareRetry,
   prepareEdit,
+  conversationHistoryForRun,
   initialChatState,
   type AssistantTurn,
   type ChatState,
@@ -691,5 +696,67 @@ describe('chatStore reducer', () => {
     expect(lastAssistant(s).reasoning).toEqual(['plan'])
     expect(s.runStatus).toBe('idle')
     expect(s.lastCursor).toBe(4)
+  })
+})
+
+describe('conversationHistoryForRun', () => {
+  const user = (id: string, content: string): Turn => ({ id, role: 'user', content })
+  const assistant = (id: string, content: string, streaming = false): Turn => ({
+    id,
+    role: 'assistant',
+    content,
+    toolCalls: [],
+    reasoning: [],
+    streaming,
+  })
+
+  it('excludes the trailing current-input user turn and maps prior turns to {role, content}', () => {
+    const turns: Turn[] = [
+      user('u1', 'Reply with exactly: BLUE.'),
+      assistant('a1', 'BLUE'),
+      user('u2', 'What word did I ask you to reply with?'),
+    ]
+    expect(conversationHistoryForRun(turns, 'What word did I ask you to reply with?')).toEqual([
+      { role: 'user', content: 'Reply with exactly: BLUE.' },
+      { role: 'assistant', content: 'BLUE' },
+    ])
+  })
+
+  it('returns empty for a first send (only the current input in the store)', () => {
+    expect(conversationHistoryForRun([user('u1', 'hi')], 'hi')).toEqual([])
+  })
+
+  it('skips streaming and empty assistant turns (text-only payload)', () => {
+    const turns: Turn[] = [
+      user('u1', 'first'),
+      assistant('a1', '', true), // optimistic placeholder
+      assistant('a2', '   '), // settled but empty
+      user('u2', 'second'),
+    ]
+    expect(conversationHistoryForRun(turns, 'second')).toEqual([{ role: 'user', content: 'first' }])
+  })
+
+  it('caps to the most recent CONVERSATION_HISTORY_MAX_MESSAGES messages, oldest dropped first', () => {
+    const turns: Turn[] = []
+    for (let i = 0; i < 60; i++) turns.push(user(`u${i}`, `msg-${i}`))
+    turns.push(user('cur', 'current'))
+    const history = conversationHistoryForRun(turns, 'current')
+    expect(history).toHaveLength(CONVERSATION_HISTORY_MAX_MESSAGES)
+    expect(history[0]).toEqual({ role: 'user', content: 'msg-20' })
+    expect(history.at(-1)).toEqual({ role: 'user', content: 'msg-59' })
+  })
+
+  it('caps by total chars, keeping the newest messages and always at least one', () => {
+    const big = 'x'.repeat(CONVERSATION_HISTORY_MAX_CHARS)
+    const turns: Turn[] = [user('u1', big), assistant('a1', 'recent answer'), user('u2', 'current')]
+    // The giant old turn falls out of the window; the recent one stays.
+    expect(conversationHistoryForRun(turns, 'current')).toEqual([
+      { role: 'assistant', content: 'recent answer' },
+    ])
+    // A single oversized prior turn is still sent (never an empty history when
+    // prior context exists).
+    expect(conversationHistoryForRun([user('u1', big), user('u2', 'current')], 'current')).toEqual([
+      { role: 'user', content: big },
+    ])
   })
 })

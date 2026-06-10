@@ -245,6 +245,29 @@ describe('/chat-run socket namespace', () => {
     })
   })
 
+  it('(b3) forwards conversation_history to the gateway run body', async () => {
+    const { client: c, gateway: g } = await boot({ runId: 'run_hist' })
+    const done = collectUntilCompleted(c, EVENT_NAMES)
+    const history = [
+      { role: 'user', content: 'Reply with exactly: BLUE.' },
+      { role: 'assistant', content: 'BLUE' },
+    ]
+    c.emit('run', {
+      input: 'What word did I ask you to reply with?',
+      session_id: 's1',
+      conversation_history: history,
+    })
+    await done
+    // The gateway does NOT load history for a bare session_id; the BFF must
+    // carry the transcript on every run so the model sees the thread.
+    expect(g.calls.runs).toHaveLength(1)
+    expect(g.calls.runs[0]!.body).toEqual({
+      input: 'What word did I ask you to reply with?',
+      session_id: 's1',
+      conversation_history: history,
+    })
+  })
+
   it('(c) resume with after_cursor replays only newer events, then tails', async () => {
     const runId = 'run_resume'
     const { client: c, baseUrl } = await boot({ runId, sse: cannedSse(runId) })

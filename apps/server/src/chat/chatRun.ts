@@ -141,6 +141,11 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
           model: cmd.data.model,
           sessionId: cmd.data.session_id,
           ...(cmd.data.attachments ? { attachments: cmd.data.attachments } : {}),
+          // Prior turns ride every run: the gateway does NOT load history for a
+          // bare session_id, so without this the agent is amnesiac per-turn.
+          ...(cmd.data.conversation_history
+            ? { conversationHistory: cmd.data.conversation_history }
+            : {}),
         })
         runId = started.runId
       } catch (err) {

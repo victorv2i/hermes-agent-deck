@@ -21,6 +21,11 @@ import type {
   ApprovalChoice,
   TokenUsage,
   RunAttachment,
+  ConversationHistoryMessage,
+} from '@agent-deck/protocol'
+import {
+  CONVERSATION_HISTORY_MAX_MESSAGES,
+  CONVERSATION_HISTORY_MAX_CHARS,
 } from '@agent-deck/protocol'
 import { sanitizeSessionPreview } from '../features/sessions/sessionPreview'
 
@@ -654,6 +659,53 @@ function newBranchId(): string {
 /** The turns the UI renders for the active branch — always `state.turns`. */
 export function activeTurns(state: ChatState): Turn[] {
   return state.turns
+}
+
+/**
+ * Build the gateway `conversation_history` payload for a run: the PRIOR turns of
+ * the active branch as plain {role, content} text, oldest first.
+ *
+ * Why this exists: the gateway's `/v1/runs` does NOT load prior messages for a
+ * bare `session_id` — without an explicit `conversation_history` array every
+ * follow-up turn reaches the model with zero context (history=0). The rendered
+ * transcript already lives in this store, so it is the source of truth.
+ *
+ * Rules:
+ *  - The trailing user turn is the CURRENT `input` (send/retry/edit all leave it
+ *    at the head before issuing the run) and is excluded — it rides as `input`.
+ *  - Text only: tool calls/results/reasoning are omitted (the gateway agent
+ *    re-derives tool state); empty and still-streaming assistant turns are
+ *    skipped.
+ *  - Capped oldest-dropped-first at {@link CONVERSATION_HISTORY_MAX_MESSAGES}
+ *    messages / {@link CONVERSATION_HISTORY_MAX_CHARS} chars. HONEST limitation:
+ *    a longer conversation reaches the model with only its most recent window.
+ */
+export function conversationHistoryForRun(
+  turns: Turn[],
+  currentInput: string,
+): ConversationHistoryMessage[] {
+  const prior = turns.slice()
+  const last = prior[prior.length - 1]
+  if (last && last.role === 'user' && last.content === currentInput) prior.pop()
+
+  const textual: ConversationHistoryMessage[] = []
+  for (const t of prior) {
+    if (t.role === 'assistant' && t.streaming) continue
+    if (t.content.trim() === '') continue
+    textual.push({ role: t.role, content: t.content })
+  }
+
+  // Cap from the NEWEST end: keep the most recent messages within both limits.
+  const capped: ConversationHistoryMessage[] = []
+  let chars = 0
+  for (let i = textual.length - 1; i >= 0; i--) {
+    const msg = textual[i]!
+    if (capped.length >= CONVERSATION_HISTORY_MAX_MESSAGES) break
+    if (capped.length > 0 && chars + msg.content.length > CONVERSATION_HISTORY_MAX_CHARS) break
+    chars += msg.content.length
+    capped.push(msg)
+  }
+  return capped.reverse()
 }
 
 /** Whether a turn is SETTLED (forkable): an assistant turn that finished
