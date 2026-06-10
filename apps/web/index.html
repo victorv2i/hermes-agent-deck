@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Agent Deck" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="theme-color" content="#16181c" />
+    <title>Agent Deck</title>
+    <meta
+      name="description"
+      content="A web UI for your hermes agent: chat, files, terminal, and a live cockpit for what your agent is doing. No command line required."
+    />
+    <!-- Social / link previews (Open Graph + Twitter) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Agent Deck" />
+    <meta
+      property="og:description"
+      content="A web UI for your hermes agent. No command line required."
+    />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Agent Deck" />
+    <meta
+      name="twitter:description"
+      content="A web UI for your hermes agent. No command line required."
+    />
+    <meta name="twitter:image" content="/og-image.png" />
+    <script>
+      // Apply the saved theme (or dark default) before paint to avoid a flash.
+      ;(function () {
+        try {
+          var saved = localStorage.getItem('agent-deck-theme')
+          var prefersDark =
+            !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches
+          var resolved =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : saved === 'system'
+                ? prefersDark
+                  ? 'dark'
+                  : 'light'
+                : 'dark'
+          var root = document.documentElement
+          root.classList.toggle('dark', resolved === 'dark')
+          root.setAttribute('data-theme', resolved)
+          root.style.colorScheme = resolved
+        } catch (e) {
+          document.documentElement.classList.add('dark')
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+        // Apply the saved density before paint (compact only; comfortable is the
+        // attribute-less default) so there's no comfortable→compact flash.
+        try {
+          if (localStorage.getItem('agent-deck-density') === 'compact') {
+            document.documentElement.setAttribute('data-density', 'compact')
+          }
+        } catch (e) {}
+        // Apply the saved palette before paint. 'clay-sky' is the default and
+        // lives at the bare :root, so it carries NO attribute (clean DOM, no
+        // default→saved flash). Only a valid NON-default palette stamps
+        // data-palette; anything unknown falls back to the default.
+        try {
+          var palette = localStorage.getItem('agent-deck-palette')
+          var palettes = ['warm-void', 'indigo-atelier']
+          if (palette && palettes.indexOf(palette) !== -1) {
+            document.documentElement.setAttribute('data-palette', palette)
+          }
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

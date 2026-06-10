@@ -1,0 +1,270 @@
+/*
+  Theme FAMILIES (the non-default color schemes). Imported by index.css.
+
+  Agent Deck ships THREE families. The DEFAULT "Clay & Sky" lives at the bare :root
+  in index.css; this sheet holds the other two selectable families (Warm Void · Nous,
+  Indigo Atelier). Each family defines its tokens for BOTH a real
+  DARK variant ([data-palette='<id>'], also matched by
+  [data-palette='<id>'][data-theme='dark']) and a real LIGHT variant
+  ([data-palette='<id>'][data-theme='light']) — so a family composes orthogonally
+  with the dark/light TOGGLE (the app mode) and with density.
+
+  (5→4 fold: the former standalone "Warm Parchment" palette is gone — its airy
+  parchment light face folded in as the LIGHT mode of the Warm Void family.)
+
+  Governance is identical across every family (design-language §2/§10): a SINGLE
+  `--primary` action/active accent (amber for Warm Void, indigo-violet for
+  Indigo; the default Clay & Sky is dusty-blue),
+  `--success/--warning/--destructive/--info` for STATUS only, lifted hairline
+  borders + a 1px `--card-highlight` top inset, `--chart-*` for data-viz only. No
+  component reads palette names — they read these CSS variables. Contrast: every
+  body/UI-text-on-surface pair ≥4.5:1; accents/large markers ≥3:1 (matching the
+  shipped Warm Void precedent). All values are the verbatim token spec.
+*/
+
+/* ============================================================================
+   2. WARM VOID · NOUS — the signature Nous warm-void family. The DARK face is the
+   original teal-black + amber, preserved byte-for-byte. The LIGHT face is the airy
+   cream "parchment" daylight, folded in from the former standalone Warm Parchment
+   palette (the 5→4 fold) — so this one family now spans both looks.
+   ========================================================================= */
+[data-palette='warm-void'],
+[data-palette='warm-void'][data-theme='dark'] {
+  --radius: 0.75rem;
+
+  /* Faint aged-paper grain on <body> only (off cards, dark face only). ~4%. */
+  --bg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+
+  --background: #041c1c;
+  --foreground: #f2ebdd;
+
+  --surface-1: #07211f;
+  --surface-2: #0c2a28;
+  --surface-elevated: #11322f;
+
+  --card: #11322f;
+  --card-foreground: #f2ebdd;
+  --popover: #11322f;
+  --popover-foreground: #f2ebdd;
+
+  --primary: #dd8e35;
+  --primary-foreground: #06100f;
+  --primary-hover: #e9a24d;
+
+  --secondary: #0c2a28;
+  --secondary-foreground: #f2ebdd;
+
+  --muted: #0c2a28;
+  --muted-foreground: #a9b4ac;
+
+  --accent: #0c2a28;
+  --accent-foreground: #f2ebdd;
+
+  --destructive: #ff806d;
+  --success: #3fb7a0;
+  --warning: #e0a23a;
+  --info: #5e9ca8;
+
+  --foreground-tertiary: #8d9f97;
+
+  --border: rgba(242, 235, 221, 0.1);
+  --border-strong: rgba(242, 235, 221, 0.16);
+  --card-highlight: rgba(255, 255, 255, 0.04);
+  --input: rgba(242, 235, 221, 0.16);
+  --ring: #dd8e35;
+
+  --chart-1: #dd8e35;
+  --chart-2: #3fb7a0;
+  --chart-3: #e9a24d;
+  --chart-4: #a9b4ac;
+  --chart-5: #e5604d;
+
+  --sidebar: #07211f;
+  --sidebar-foreground: #f2ebdd;
+  --sidebar-primary: #dd8e35;
+  --sidebar-primary-foreground: #06100f;
+  --sidebar-accent: #0c2a28;
+  --sidebar-accent-foreground: #f2ebdd;
+  --sidebar-border: rgba(242, 235, 221, 0.1);
+  --sidebar-ring: #dd8e35;
+}
+
+/*
+  Warm Void LIGHT = the airy "parchment" daylight face — folded in from the former
+  standalone Warm Parchment palette (5→4 families). Clean cream surfaces, deepened
+  amber action accent; AA on every surface. Pairs the signature Nous teal-black
+  dark above with a premium light companion.
+*/
+[data-palette='warm-void'][data-theme='light'] {
+  /* Grain is a dark-void affordance only — light parchment stays clean. */
+  --bg-texture: none;
+
+  --background: #fbf7ef;
+  --foreground: #211c15;
+
+  --surface-1: #ffffff;
+  --surface-2: #f1eada;
+  --surface-elevated: #ffffff;
+
+  --card: #ffffff;
+  --card-foreground: #211c15;
+  --popover: #ffffff;
+  --popover-foreground: #211c15;
+
+  --primary: #9c520d;
+  --primary-foreground: #fff8ee;
+  --primary-hover: #8b4a0c;
+
+  --secondary: #f1eada;
+  --secondary-foreground: #211c15;
+
+  --muted: #f1eada;
+  --muted-foreground: #5a5346;
+
+  --accent: #f1eada;
+  --accent-foreground: #211c15;
+
+  --destructive: #b8402c;
+  --success: #166f5f;
+  --warning: #8b5a0c;
+  --info: #2c6675;
+
+  --foreground-tertiary: #6e6556;
+
+  --border: rgba(33, 28, 21, 0.13);
+  --border-strong: rgba(33, 28, 21, 0.19);
+  --card-highlight: rgba(255, 255, 255, 0.7);
+  --input: rgba(33, 28, 21, 0.19);
+  --ring: #9c520d;
+
+  --chart-1: #c9781f;
+  --chart-2: #166f5f;
+  --chart-3: #b86a16;
+  --chart-4: #6e6556;
+  --chart-5: #b8402c;
+
+  --sidebar: #f1eada;
+  --sidebar-foreground: #211c15;
+  --sidebar-primary: #9c520d;
+  --sidebar-primary-foreground: #fff8ee;
+  --sidebar-accent: #e8dfcb;
+  --sidebar-accent-foreground: #211c15;
+  --sidebar-border: rgba(33, 28, 21, 0.13);
+  --sidebar-ring: #9c520d;
+}
+
+/* ============================================================================
+   3. INDIGO ATELIER — bold/vibrant. Warm aubergine near-black, indigo-violet.
+   ========================================================================= */
+[data-palette='indigo-atelier'],
+[data-palette='indigo-atelier'][data-theme='dark'] {
+  --radius: 0.75rem;
+
+  --background: #171320;
+  --foreground: #ece7f2;
+
+  --surface-1: #211b30;
+  --surface-2: #2b2440;
+  --surface-elevated: #352c4e;
+
+  --card: #352c4e;
+  --card-foreground: #ece7f2;
+  --popover: #352c4e;
+  --popover-foreground: #ece7f2;
+
+  --primary: #9b8cff;
+  --primary-foreground: #100a24;
+  --primary-hover: #b0a4ff;
+
+  --secondary: #2b2440;
+  --secondary-foreground: #ece7f2;
+
+  --muted: #2b2440;
+  --muted-foreground: #b6aeca;
+
+  --accent: #2b2440;
+  --accent-foreground: #ece7f2;
+
+  --destructive: #f47a7a;
+  --success: #4fbfa0;
+  --warning: #e0a23a;
+  --info: #6faedd;
+
+  --foreground-tertiary: #9f97b8;
+
+  --border: rgba(236, 231, 242, 0.1);
+  --border-strong: rgba(236, 231, 242, 0.16);
+  --card-highlight: rgba(255, 255, 255, 0.05);
+  --input: rgba(236, 231, 242, 0.16);
+  --ring: #9b8cff;
+
+  --chart-1: #9b8cff;
+  --chart-2: #4fbfa0;
+  --chart-3: #e9a24d;
+  --chart-4: #b6aeca;
+  --chart-5: #f47a7a;
+
+  --sidebar: #211b30;
+  --sidebar-foreground: #ece7f2;
+  --sidebar-primary: #9b8cff;
+  --sidebar-primary-foreground: #100a24;
+  --sidebar-accent: #2b2440;
+  --sidebar-accent-foreground: #ece7f2;
+  --sidebar-border: rgba(236, 231, 242, 0.1);
+  --sidebar-ring: #9b8cff;
+}
+
+[data-palette='indigo-atelier'][data-theme='light'] {
+  --background: #f6f4fb;
+  --foreground: #221c30;
+
+  --surface-1: #fbfafe;
+  --surface-2: #ece8f6;
+  --surface-elevated: #ffffff;
+
+  --card: #ffffff;
+  --card-foreground: #221c30;
+  --popover: #ffffff;
+  --popover-foreground: #221c30;
+
+  --primary: #5b45c9;
+  --primary-foreground: #f6f3ff;
+  --primary-hover: #4d39ae;
+
+  --secondary: #ece8f6;
+  --secondary-foreground: #221c30;
+
+  --muted: #ece8f6;
+  --muted-foreground: #574f6a;
+
+  --accent: #ece8f6;
+  --accent-foreground: #221c30;
+
+  --destructive: #be3b3b;
+  --success: #15705e;
+  --warning: #8b5a0c;
+  --info: #2c5c82;
+
+  --foreground-tertiary: #6b6383;
+
+  --border: rgba(34, 28, 48, 0.14);
+  --border-strong: rgba(34, 28, 48, 0.2);
+  --card-highlight: rgba(255, 255, 255, 0.6);
+  --input: rgba(34, 28, 48, 0.2);
+  --ring: #5b45c9;
+
+  --chart-1: #5b45c9;
+  --chart-2: #15705e;
+  --chart-3: #9c520d;
+  --chart-4: #6b6383;
+  --chart-5: #be3b3b;
+
+  --sidebar: #ece8f6;
+  --sidebar-foreground: #221c30;
+  --sidebar-primary: #5b45c9;
+  --sidebar-primary-foreground: #f6f3ff;
+  --sidebar-accent: #e2dcf0;
+  --sidebar-accent-foreground: #221c30;
+  --sidebar-border: rgba(34, 28, 48, 0.14);
+  --sidebar-ring: #5b45c9;
+}

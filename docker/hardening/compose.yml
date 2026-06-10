@@ -1,0 +1,71 @@
+# Fresh-install hardening harness — a "newcomer machine" from zero.
+#
+# A clean bridge network with a FRESH (empty) Hermes home volume — NONE of the developer's
+# ~/.hermes, no host paths, no override.conf. ONE Hermes container runs the stock
+# supervised stack: the gateway + the in-stack dashboard (HERMES_DASHBOARD=1) + the
+# /v1 API server the deck's chat rides (API_SERVER_*). Agent Deck is built from the
+# working tree via its real local install path and wired to this Hermes purely
+# through documented env — surfacing every default that ASSUMES the developer's machine.
+#
+# Running gateway + dashboard as ONE container (not two) avoids the s6
+# /opt/data/logs lock contention two containers sharing the volume hit.
+#
+# Usage (see run-newcomer.sh):
+#   HARDENING_API_KEY=<token> HARDENING_MODEL_KEY=<disposable model key> \
+#     docker compose -f docker/hardening/compose.yml up --build -d
+
+name: agent-deck-hardening
+
+networks:
+  hardening:
+    driver: bridge
+
+volumes:
+  hermes-home: # fresh + empty — the newcomer's brand-new Hermes home
+
+services:
+  hermes:
+    image: hermes-agent # built from ~/hermes-agent (docker build -t hermes-agent .)
+    container_name: hardening-hermes
+    networks: [hardening]
+    volumes:
+      - hermes-home:/opt/data
+    environment:
+      - HERMES_UID=10000
+      - HERMES_GID=10000
+      # In-stack dashboard (stock port 9119 — NOT the deck's 9123 default; finding F1).
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - HERMES_DASHBOARD_PORT=9119
+      - HERMES_DASHBOARD_INSECURE=1
+      # Enable the /v1 API server (the deck's chat transport; finding F2 — off by
+      # default, a newcomer must do this). Both flags set for robustness.
+      - API_SERVER_ENABLED=true
+      - API_SERVER_KEY=${HARDENING_API_KEY:-hardening-test-key}
+      - API_SERVER_HOST=0.0.0.0
+      - GATEWAY_ALLOW_ALL_USERS=true
+    command: ['gateway', 'run']
+
+  agent-deck:
+    build:
+      context: ../..
+      dockerfile: docker/hardening/agent-deck.Dockerfile
+    container_name: hardening-agent-deck
+    networks: [hardening]
+    depends_on: [hermes]
+    ports:
+      - '127.0.0.1:7901:7878' # reach the deck from the host (test driver) on 7900
+    volumes:
+      - hermes-home:/opt/data:ro # the deck reads profiles/config off the Hermes home
+    environment:
+      - AGENT_DECK_PORT=7878
+      - AGENT_DECK_HOST=0.0.0.0
+      - AGENT_DECK_TOKEN=hardening-deck-token
+      - AGENT_DECK_UNSAFE_BIND=1
+      - HERMES_HOME=/opt/data
+      # Wire the deck to this stock Hermes by service name. Every override here that a
+      # newcomer SHOULDN'T need to set is a finding (F1 dashboard port, F2 api key).
+      - HERMES_GATEWAY_URL=http://hermes:8643
+      - HERMES_DASHBOARD_URL=http://hermes:9119
+      - HERMES_DASHBOARD_HOST=hermes:9119
+      - API_SERVER_KEY=${HARDENING_API_KEY:-hardening-test-key}

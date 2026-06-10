@@ -1,0 +1,54 @@
+/*
+  Density — Compact mode (P6 / T-E1).
+
+  Spacious is the brand default and carries NO attribute, so this sheet only ever
+  *tightens* under [data-density='compact']. It is intentionally narrow and
+  additive: it never touches the colour/elevation tokens and never broadly
+  rewrites index.css. It keys ONLY off stable design-system contracts that exist
+  app-wide regardless of which surface owns the markup:
+
+    - the session rail (`[aria-label='Sessions']` + the semantic `role='listitem'`
+      rows) — the #1 density payoff for a driver with 50+ sessions,
+    - the assistant transcript prose (`.ad-prose`, the design-system measure),
+    - the conversation log container (`role='log'`, the §4 hero column).
+
+  Everything is a modest, AA-safe reduction (touch targets stay ≥ the spec floor
+  on the rail rows: 2px → ~30px is below 40px, so we keep them readable but the
+  rail is a dense list, not a primary action grid). Motion-reduction and the
+  token palette are untouched.
+*/
+
+/* --- Session rail: tighten the row rhythm so more sessions fit per screen. --- */
+[data-density='compact'] [aria-label='Sessions'] [role='listitem'] > button {
+  padding-top: 0.3125rem; /* 5px (was 8px) */
+  padding-bottom: 0.3125rem;
+}
+
+/* The rail's group section labels and inter-group gaps breathe less. */
+[data-density='compact'] [aria-label='Sessions'] [role='listitem'] {
+  margin-block: -0.5px;
+}
+
+/* --- Assistant transcript: a tighter measure packs more prose per screen
+   without crossing into cramped (1.7 → 1.58 line-height, paragraph gap 0.85 →
+   0.6em). The 68ch measure and type sizes are unchanged so legibility holds. --- */
+[data-density='compact'] .ad-prose {
+  line-height: 1.58;
+}
+[data-density='compact'] .ad-prose p {
+  margin: 0.6em 0;
+}
+[data-density='compact'] .ad-prose ul,
+[data-density='compact'] .ad-prose ol {
+  margin: 0.6em 0;
+}
+[data-density='compact'] .ad-prose li {
+  margin: 0.2em 0;
+}
+
+/* --- Conversation column: trim the top/bottom breathing room of the hero log so
+   the first turn sits higher and the composer gap is tighter. Scoped to the
+   labelled §4 log region. --- */
+[data-density='compact'] [role='log'][aria-label='Conversation'] > div {
+  padding-top: 0.75rem; /* was pt-5 (1.25rem) */
+}

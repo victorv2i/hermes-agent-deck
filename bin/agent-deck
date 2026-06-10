@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Agent Deck single-process launcher.
+#
+# Builds the workspace (web client + server) then starts ONE Node process that
+# serves the built SPA, the /api/agent-deck/* surface, and the Socket.IO
+# namespaces together.
+#
+# Default bind: 127.0.0.1:7878 (loopback only). For private remote access over
+# Tailscale, bind to the Tailscale host/IP via env, e.g.:
+#   AGENT_DECK_HOST=nyx.ts.net bin/agent-deck
+#   AGENT_DECK_HOST=100.x.y.z   bin/agent-deck
+# Other env: AGENT_DECK_PORT, HERMES_GATEWAY_URL, HERMES_DASHBOARD_URL,
+# HERMES_DASHBOARD_HOST (see README).
+set -euo pipefail
+
+# Repo root = parent of this script's dir, regardless of cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
+
+HOST="${AGENT_DECK_HOST:-127.0.0.1}"
+PORT="${AGENT_DECK_PORT:-7878}"
+
+echo "agent-deck: building web client + server..."
+pnpm build
+
+# Single process: the server serves the built apps/web/dist SPA + /api + sockets.
+# Run from source via tsx (the same path the e2e suite uses); `pnpm build` above
+# produces the web client that gets served and typechecks the server.
+echo "agent-deck: starting single-process server on http://${HOST}:${PORT}"
+exec pnpm --filter @agent-deck/server exec tsx src/index.ts

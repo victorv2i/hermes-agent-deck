@@ -1,0 +1,56 @@
+{
+  "name": "agent-deck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local-first web UI for the NousResearch Hermes agent.",
+  "keywords": [
+    "hermes",
+    "agent",
+    "ui",
+    "react",
+    "fastify",
+    "nousresearch"
+  ],
+  "author": "victorv2i",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/victorv2i/hermes-agent-deck.git"
+  },
+  "homepage": "https://github.com/victorv2i/hermes-agent-deck#readme",
+  "bugs": {
+    "url": "https://github.com/victorv2i/hermes-agent-deck/issues"
+  },
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0",
+    "pnpm": ">=10"
+  },
+  "bin": {
+    "agent-deck": "bin/agent-deck"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "build": "pnpm -r build",
+    "start": "pnpm build && pnpm start:server",
+    "start:server": "pnpm --filter @agent-deck/server exec tsx src/index.ts",
+    "demo": "pnpm --filter @agent-deck/web build && AGENT_DECK_PORT=7880 AGENT_DECK_WEB_CLIENT_ROOT=\"$PWD/apps/web/dist\" pnpm --filter @agent-deck/server exec tsx scripts/serve-demo-gateway.mjs",
+    "test": "pnpm -r test",
+    "lint": "eslint . && pnpm --filter @agent-deck/web lint",
+    "check:public-readiness": "node scripts/check-public-readiness.mjs",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r typecheck",
+    "e2e": "playwright test",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
+    "eslint": "^10.4.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0"
+  },
+  "packageManager": "pnpm@10.33.3"
+}

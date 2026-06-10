@@ -1,0 +1,8 @@
+# Test fixture only — NOT the real ~/.hermes/config.yaml. Fake key.
+# Mirrors the REAL Hermes config shape: top-level API_SERVER_KEY + API_SERVER_PORT
+# (Hermes reads the gateway port from os.getenv("API_SERVER_PORT"), populated from
+# this top-level key — a relocated 8643, as a real user might pin).
+API_SERVER_KEY: fixture-secret-key
+API_SERVER_PORT: 8643
+models:
+  default: test-model

@@ -1,0 +1,13 @@
+# Keep the deck image build context lean + force a genuinely fresh install (no
+# host-built node_modules / dist, no git history, no harness output).
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.turbo
+**/.turbo
+docker/hardening/out
+playwright-report
+test-results
+**/*.log

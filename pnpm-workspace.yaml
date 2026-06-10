@@ -1,0 +1,10 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# node-pty ships a native addon; pnpm 10 blocks install build scripts by default.
+# Allowlist it so `pnpm install` compiles the binding (the terminal surface needs
+# it). If the native build fails on a host, node-pty fails to load and the
+# terminal surface degrades gracefully — chat/files/etc. are unaffected.
+onlyBuiltDependencies:
+  - node-pty

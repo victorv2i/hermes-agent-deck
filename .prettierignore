@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.design-gen/
+pnpm-lock.yaml
+docs/
+**/components/ui/
+# Transient, untracked UX-probe scratch scripts (ad-hoc Playwright drivers).
+.ux-*.mjs

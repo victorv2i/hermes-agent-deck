@@ -1,0 +1,684 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource-variable/space-grotesk';
+@import './features/themes/palettes.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Agent Deck design language — a THEME-SWITCHED palette system. The action accent
+  and every surface/semantic color are TOKENIZED; a user-selected palette swaps the
+  token VALUES under [data-palette='<id>'] (dark) + [data-palette='<id>'][data-theme='light']
+  (light). Governance is identical across palettes (design-language §2/§10): one
+  `--primary` action accent, semantic tokens for status only, lifted hairline borders
+  + a 1px top highlight, radius 10–14px. Dark/light (`.dark` + `data-theme`) and
+  density (`data-density`) stay fully orthogonal — a palette only changes token values.
+
+  The DEFAULT palette — "Clay & Sky" (calm-cool: neutral slate + dusty trust-blue)
+  — lives here at the bare :root so it loads with NO attribute, even before JS
+  hydrates. The classic teal "Warm Void" and the other palettes live in
+  ./features/themes/palettes.css.
+*/
+@theme inline {
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-sans);
+  /* Wordmark + display headings — Space Grotesk (geometric display), Inter fallback. */
+  --font-wordmark: 'Space Grotesk Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+/*
+  P0.1 — the ONE tokenized type scale. The design language's scale is
+  11 · 12 · 13 · 14(body) · 16 · 20 · 24 · 30 (design-language §3). Today the
+  small steps are hand-picked px literals (87× text-[13px], 55× text-[12px],
+  74× text-[11px]); naming them here makes the scale the single source of truth
+  so a future literal→named migration is a no-op rename. This pass only
+  ESTABLISHES the tokens — it does NOT migrate consumers.
+
+  IMPORTANT — no live shift: Tailwind's stock `text-xs`(12px) / `text-sm`(14px,
+  the body) / `text-base`(16px)+ are ALREADY in heavy use at their default
+  sizes; redefining them would silently resize feature surfaces. So those stock
+  names keep their stock values (restated below to document the full scale in
+  one place). The two steps the app is *missing* a name for get NEW,
+  non-colliding tokens:
+    --text-2xs : 11px  — the section-label / legibility FLOOR (nothing smaller).
+    --text-13  : 13px  — the 13px step the UI hits via text-[13px] literals.
+  Each small step carries a paired line-height so vertical rhythm is owned by
+  the token, not the call site.
+*/
+@theme {
+  --text-2xs: 11px;
+  --text-2xs--line-height: 1.45;
+  --text-13: 13px;
+  --text-13--line-height: 1.5;
+  --text-xs: 0.75rem; /* 12px — Tailwind default, restated */
+  --text-xs--line-height: calc(1 / 0.75);
+  --text-sm: 0.875rem; /* 14px body — Tailwind default, restated */
+  --text-sm--line-height: calc(1.25 / 0.875);
+  --text-base: 1rem; /* 16px — Tailwind default, restated */
+  --text-base--line-height: calc(1.5 / 1);
+  --text-lg: 1.125rem; /* 18px */
+  --text-lg--line-height: calc(1.75 / 1.125);
+  --text-xl: 1.25rem; /* 20px */
+  --text-xl--line-height: calc(1.75 / 1.25);
+  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl--line-height: calc(2 / 1.5);
+  --text-3xl: 1.875rem; /* 30px */
+  --text-3xl--line-height: calc(2.25 / 1.875);
+}
+
+/*
+  DEFAULT = Clay & Sky (dark). :root carries the dark palette so the app is dark
+  even before JS hydrates / sets data-theme, and it loads with NO data-palette
+  attribute (the default rests clean). The light variant overrides under
+  :root[data-theme='light']. The ThemeProvider also toggles the `.dark` class.
+
+  Vibe: calm-cool — a neutral slate base with a dusty trust-blue action accent.
+  The single governed `--primary` action color reads on every surface. The other
+  palettes live in ./features/themes/palettes.css and are selected via data-palette.
+*/
+:root,
+[data-theme='dark'] {
+  --radius: 0.75rem;
+
+  /*
+    Optional page-grain backdrop. `none` everywhere by default; only the
+    "void"-toned dark palette (warm-void) opts into a faint ~4%-opacity
+    aged-paper noise (see palettes.css). Painted on <body> only, so it never
+    touches cards or text-bearing surfaces, and never in light mode.
+  */
+  --bg-texture: none;
+
+  --background: #16181c;
+  --foreground: #e6e8ec;
+
+  --surface-1: #1f2228;
+  --surface-2: #282c33;
+  --surface-elevated: #31363f;
+
+  --card: #31363f;
+  --card-foreground: #e6e8ec;
+  --popover: #31363f;
+  --popover-foreground: #e6e8ec;
+
+  --primary: #7ba7d9;
+  --primary-foreground: #0b1420;
+  --primary-hover: #93b8e4;
+
+  --secondary: #282c33;
+  --secondary-foreground: #e6e8ec;
+
+  --muted: #282c33;
+  --muted-foreground: #afb5bf;
+
+  --accent: #282c33;
+  --accent-foreground: #e6e8ec;
+
+  /* Semantic palette — color carries MEANING (status dots/badges only). */
+  --destructive: #ff806d;
+  --success: #4fb58e;
+  --warning: #d9a03a;
+  --info: #6ba8d9;
+
+  --foreground-tertiary: #9ca3b0;
+
+  /* Hairlines — LIFTED so borders are visible. Default 0.10, elevated/hover
+     0.16. Cards also get a 1px inset top highlight (--card-highlight). */
+  --border: rgba(230, 232, 236, 0.1);
+  --border-strong: rgba(230, 232, 236, 0.16);
+  --card-highlight: rgba(255, 255, 255, 0.04);
+  --input: rgba(230, 232, 236, 0.16);
+  --ring: #7ba7d9;
+
+  /*
+    P0.3 — shared elevation tokens for FLOATING surfaces (popovers, menus,
+    pickers, command palette, composer). The `0 12px 32px -12px rgba(0,0,0,.6)`
+    drop was duplicated ~10× as a literal; named once here it can be tuned in one
+    place AND made theme-aware (see the light override below). Dark surfaces sit
+    on a dark base, so the deep black drop reads as real elevation.
+  */
+  --shadow-popover: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --shadow-composer: 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+
+  --chart-1: #7ba7d9;
+  --chart-2: #4fb58e;
+  --chart-3: #93b8e4;
+  --chart-4: #afb5bf;
+  --chart-5: #ec6e5b;
+
+  --sidebar: #1f2228;
+  --sidebar-foreground: #e6e8ec;
+  --sidebar-primary: #7ba7d9;
+  --sidebar-primary-foreground: #0b1420;
+  --sidebar-accent: #282c33;
+  --sidebar-accent-foreground: #e6e8ec;
+  --sidebar-border: rgba(230, 232, 236, 0.1);
+  --sidebar-ring: #7ba7d9;
+
+  /* Curated CATEGORICAL palette (project colors) — the allowed data-grouping
+     exception, NOT the primary action accent. Eight calm, distinct hues for small
+     dots + faint row tints; the first deliberately skips the accent so a project
+     dot never reads as the active/primary marker. Shared across themes (a single
+     calm set reads on every surface); tuned for legibility on dark bases here. */
+  --cat-slate: #8a97a8;
+  --cat-violet: #a99be6;
+  --cat-teal: #5bb8a6;
+  --cat-rose: #e0879a;
+  --cat-sky: #6fb0d8;
+  --cat-moss: #93b873;
+  --cat-plum: #c690cd;
+  --cat-sand: #cdab7e;
+}
+
+/*
+  DEFAULT light = Clay & Sky (light): a calm COOL-neutral daylight that echoes the
+  dark face's blue-grey slate (not a warm-beige afterthought), so the family reads
+  cohesive light↔dark. The surfaces carry a faint cool cast; the dusty blue is
+  deepened to #2F5C8C so it clears AA on every light surface; pure-white cards lift
+  cleanly.
+*/
+:root:not([data-palette])[data-theme='light'] {
+  --background: #eef1f5;
+  --foreground: #1e2228;
+
+  --surface-1: #f6f8fb;
+  --surface-2: #e2e6ec;
+  --surface-elevated: #ffffff;
+
+  --card: #ffffff;
+  --card-foreground: #1e2228;
+  --popover: #ffffff;
+  --popover-foreground: #1e2228;
+
+  --primary: #2f5c8c;
+  --primary-foreground: #f4f8fd;
+  --primary-hover: #274e78;
+
+  --secondary: #e2e6ec;
+  --secondary-foreground: #1e2228;
+
+  --muted: #e2e6ec;
+  --muted-foreground: #545963;
+
+  --accent: #e2e6ec;
+  --accent-foreground: #1e2228;
+
+  --destructive: #b8402c;
+  --success: #166f5f;
+  --warning: #8b5a0c;
+  --info: #2c5c82;
+
+  --foreground-tertiary: #5a6070;
+
+  --border: rgba(30, 34, 40, 0.14);
+  --border-strong: rgba(30, 34, 40, 0.2);
+  --card-highlight: rgba(255, 255, 255, 0.6);
+  --input: rgba(30, 34, 40, 0.2);
+  --ring: #2f5c8c;
+
+  --chart-1: #2f5c8c;
+  --chart-2: #166f5f;
+  --chart-3: #4a7bb0;
+  --chart-4: #646a78;
+  --chart-5: #b8402c;
+
+  --sidebar: #e2e6ec;
+  --sidebar-foreground: #1e2228;
+  --sidebar-primary: #2f5c8c;
+  --sidebar-primary-foreground: #f4f8fd;
+  --sidebar-accent: #d6dbe3;
+  --sidebar-accent-foreground: #1e2228;
+  --sidebar-border: rgba(30, 34, 40, 0.14);
+  --sidebar-ring: #2f5c8c;
+}
+
+/*
+  P0.4 — THEME-AWARE elevation. On the light Clay&Sky / Warm-Parchment surfaces a
+  deep `rgba(0,0,0,.6)` drop reads as a muddy black smear, not lift. A single bare
+  `[data-theme='light']` rule (matches EVERY light palette, all of which set
+  data-theme='light') lightens both floating-surface tokens: lower alpha + a
+  shorter, tighter spread so light surfaces get a soft, believable shadow. Placed
+  after the default-light block so it composes with any palette's light face.
+*/
+[data-theme='light'] {
+  --shadow-popover: 0 10px 28px -14px rgba(15, 23, 42, 0.22);
+  --shadow-composer: 0 6px 22px -14px rgba(15, 23, 42, 0.18);
+
+  /* Categorical palette, DEEPENED for light surfaces so a small dot stays
+     legible on cream/parchment (the dark values would wash out). A bare
+     `[data-theme='light']` rule so EVERY light palette (Clay & Sky, Warm Void,
+     Indigo) gets the deepening, not just the default face. Same eight token
+     ids; never the action accent. */
+  --cat-slate: #5e6b7c;
+  --cat-violet: #6d5cc0;
+  --cat-teal: #1f8676;
+  --cat-rose: #b94a64;
+  --cat-sky: #2f7aa8;
+  --cat-moss: #5b8338;
+  --cat-plum: #9a4fa4;
+  --cat-sand: #9a7330;
+}
+
+@theme inline {
+  --color-foreground-tertiary: var(--foreground-tertiary);
+  --color-primary-hover: var(--primary-hover);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-strong: var(--border-strong);
+  /*
+    P0.3 — expose the elevation tokens as `shadow-popover` / `shadow-composer`
+    utilities. `@theme inline` makes the generated utility resolve the runtime
+    var at the use site (not bake a static value), so the theme-aware light
+    override above flows through automatically.
+  */
+  --shadow-popover: var(--shadow-popover);
+  --shadow-composer: var(--shadow-composer);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+    /* Honor the dark default before JS runs (ThemeProvider refines this). */
+    color-scheme: dark light;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Optional page grain (off by default; opted into by warm-void only). */
+    background-image: var(--bg-texture);
+    background-repeat: repeat;
+    font-feature-settings:
+      'cv11' on,
+      'ss01' on;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Amber selection tint */
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 28%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Polished, quiet scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 14%, transparent) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklch, var(--foreground) 14%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--foreground) 24%, transparent);
+    background-clip: padding-box;
+  }
+
+  /*
+    Honor prefers-reduced-motion everywhere. Framer Motion components already
+    branch on useReducedMotion(); this catches purely CSS-driven motion too —
+    notably the tw-animate-css enter/exit classes (animate-in / zoom-in /
+    fade-in) used by the Dialog + command palette, which ship no reduced-motion
+    guard of their own. We neutralize animations/transitions rather than removing
+    them so state still settles instantly (no half-applied transforms).
+  */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/*
+  P1.9 — the ONE canonical focus ring. Rings varied 2/3px + 40/50/60 alpha across
+  primitives; this is the single source of truth so focus looks identical
+  everywhere. `ring-2` + `ring-ring/50` + a 2px offset on the background so the
+  ring is legible on any surface (incl. cards/popovers). Defined with `@utility`
+  (NOT `@layer utilities`) so it composes with variants — primitives apply it as
+  `focus-visible:ad-focus`. Amber focus rings are the ONE sanctioned amber use on
+  inputs/buttons (the spine reserves `--ring`/`--primary` for focus + action/live).
+*/
+@utility ad-focus {
+  @apply ring-2 ring-ring/50 ring-offset-2 ring-offset-background outline-none;
+}
+
+@layer utilities {
+  .font-wordmark {
+    font-family: var(--font-wordmark);
+  }
+
+  /*
+    Card elevation — the canonical surface look. A lifted hairline border PLUS a
+    1px inset top highlight so cards read as raised, not flat cut-outs. Used by
+    the Card primitive and any ad-hoc surface that wants the same treatment.
+  */
+  .ad-surface {
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 0 var(--card-highlight);
+  }
+  .ad-surface-hover {
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  .ad-surface-hover:hover {
+    border-color: var(--border-strong);
+  }
+  /*
+    P0.5 — a real hover LIFT (not just a border tint). Every card that opts into
+    `.ad-surface-hover` rises 1px with a soft elevation step on hover, so Home /
+    Models / Starter cards feel alive. Motion-safe ONLY: under
+    prefers-reduced-motion neither the transform nor the shadow applies, so the
+    card never shifts (the border tint still reads). The light override keeps the
+    drop a soft slate tint, not muddy black. Kept ≤150ms (existing window).
+  */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .ad-surface-hover:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 0 var(--card-highlight),
+        0 6px 16px -10px rgba(0, 0, 0, 0.45);
+    }
+    [data-theme='light'] .ad-surface-hover:hover {
+      box-shadow:
+        inset 0 1px 0 0 var(--card-highlight),
+        0 6px 16px -12px rgba(15, 23, 42, 0.18);
+    }
+  }
+
+  /*
+    Section label — 11px uppercase, letter-spaced, muted-but-legible. The single
+    source of truth for the small all-caps headings used across surfaces.
+  */
+  .ad-section-label {
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--foreground-tertiary);
+  }
+
+  /* Streaming caret — a soft amber bar that pulses while tokens stream in.
+     Refined: a touch narrower + taller with a gentle glow so it reads as a live
+     cursor, not a block. */
+  .ad-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    box-shadow: 0 0 6px -1px color-mix(in oklch, var(--primary) 60%, transparent);
+    animation: ad-caret-pulse 1.05s ease-in-out infinite;
+  }
+  @keyframes ad-caret-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.2;
+    }
+  }
+
+  /* Attention pulse — a calm, themeable ring that breathes outward to draw the
+     eye without a red strobe. Token-driven (color-mix off --primary) so it
+     reads correctly in every theme; covered by the blanket reduced-motion guard
+     above (animations are neutralized to settle instantly). */
+  @keyframes ad-attention-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 38%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 8px color-mix(in oklch, var(--primary) 0%, transparent);
+    }
+  }
+  .ad-attention-pulse {
+    animation: ad-attention-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Pre-token "thinking" indicator — three amber dots that pulse in sequence.
+     Shown while an assistant turn is streaming but no text has arrived yet. */
+  .ad-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 1.1em;
+    vertical-align: text-bottom;
+  }
+  .ad-dots > span {
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    animation: ad-dots-pulse 1.2s ease-in-out infinite;
+  }
+  .ad-dots > span:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+  .ad-dots > span:nth-child(3) {
+    animation-delay: 0.36s;
+  }
+  @keyframes ad-dots-pulse {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ad-caret,
+    .ad-dots > span {
+      animation: none;
+    }
+    .ad-dots > span {
+      opacity: 0.7;
+    }
+  }
+}
+
+/*
+  Assistant prose. Hand-tuned to the warm-void palette (not Tailwind Typography)
+  so every token is on-brand: 1.7 line-height, ~68ch measure, styled tables,
+  lists, blockquotes, links, headings. Code blocks opt out via `.not-prose`.
+*/
+@layer components {
+  .ad-prose {
+    max-width: 68ch;
+    line-height: 1.7;
+    font-size: 0.9375rem; /* 15px body */
+    color: var(--foreground);
+    word-break: break-word;
+  }
+  .ad-prose > :first-child {
+    margin-top: 0;
+  }
+  .ad-prose > :last-child {
+    margin-bottom: 0;
+  }
+  .ad-prose p {
+    margin: 0.85em 0;
+  }
+  .ad-prose h1,
+  .ad-prose h2,
+  .ad-prose h3,
+  .ad-prose h4 {
+    margin: 1.6em 0 0.6em;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--foreground);
+  }
+  .ad-prose h1 {
+    font-size: 1.5rem;
+  }
+  .ad-prose h2 {
+    font-size: 1.25rem;
+  }
+  .ad-prose h3 {
+    font-size: 1.0625rem;
+  }
+  .ad-prose h4 {
+    font-size: 1rem;
+  }
+  .ad-prose a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in oklch, var(--primary) 45%, transparent);
+    transition: text-decoration-color 120ms ease;
+  }
+  .ad-prose a:hover {
+    text-decoration-color: var(--primary);
+  }
+  .ad-prose strong {
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .ad-prose ul,
+  .ad-prose ol {
+    margin: 0.85em 0;
+    padding-left: 1.5em;
+  }
+  .ad-prose ul {
+    list-style: disc;
+  }
+  .ad-prose ol {
+    list-style: decimal;
+  }
+  .ad-prose li {
+    margin: 0.3em 0;
+  }
+  .ad-prose li::marker {
+    color: var(--foreground-tertiary);
+  }
+  .ad-prose li > ul,
+  .ad-prose li > ol {
+    margin: 0.3em 0;
+  }
+  /* GFM task lists */
+  .ad-prose li:has(> input[type='checkbox']) {
+    list-style: none;
+    margin-left: -1.25em;
+  }
+  .ad-prose input[type='checkbox'] {
+    margin-right: 0.5em;
+    accent-color: var(--primary);
+  }
+  .ad-prose blockquote {
+    margin: 1em 0;
+    padding: 0.1em 1em;
+    border-left: 3px solid color-mix(in oklch, var(--primary) 55%, transparent);
+    color: var(--muted-foreground);
+  }
+  .ad-prose hr {
+    margin: 1.6em 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+  }
+  .ad-prose table {
+    width: 100%;
+    margin: 1em 0;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    display: block;
+    overflow-x: auto;
+  }
+  .ad-prose thead {
+    border-bottom: 1px solid var(--input);
+  }
+  .ad-prose th {
+    padding: 0.5em 0.75em;
+    text-align: left;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .ad-prose td {
+    padding: 0.5em 0.75em;
+    border-top: 1px solid var(--border);
+    color: var(--foreground);
+  }
+  .ad-prose tbody tr:hover {
+    background-color: color-mix(in oklch, var(--foreground) 4%, transparent);
+  }
+  .ad-prose img {
+    max-width: 100%;
+    border-radius: 8px;
+  }
+  /* KaTeX should inherit the warm off-white, not KaTeX's default black. */
+  .ad-prose .katex {
+    color: var(--foreground);
+  }
+  .ad-prose .katex-display {
+    margin: 1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
