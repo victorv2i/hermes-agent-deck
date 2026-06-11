@@ -669,6 +669,49 @@ describe('chatStore reducer', () => {
       expect(s.lastHeartbeatAt).toBe(T + 10)
     })
 
+    it('drops stream frames from a DIFFERENT run (no scrambled bubble)', () => {
+      // A stray second run that never announced itself via run.started must not
+      // merge its deltas/terminal frames into the active turn.
+      let s = applyEvent(initialChatState, ev({ event: 'run.started', run_id: RUN, cursor: 1 }), T)
+      s = applyEvent(s, ev({ event: 'message.delta', run_id: RUN, delta: 'mine ', cursor: 2 }), T)
+      const afterStray = applyEvent(
+        s,
+        ev({ event: 'message.delta', run_id: 'stray-run', delta: 'INTRUDER', cursor: 3 }),
+        T + 1,
+      )
+      expect(afterStray).toBe(s)
+      expect(lastAssistant(afterStray).content).toBe('mine ')
+      // A stray terminal frame can't finalize the live turn or flip the status.
+      const afterStrayDone = applyEvent(
+        s,
+        ev({ event: 'run.completed', run_id: 'stray-run', output: 'nope', cursor: 4 }),
+        T + 2,
+      )
+      expect(afterStrayDone).toBe(s)
+      expect(afterStrayDone.runStatus).toBe('running')
+      expect(lastAssistant(afterStrayDone).streaming).toBe(true)
+    })
+
+    it('a NEW run announced via run.started still adopts (the legitimate switch path)', () => {
+      let s = applyEvent(initialChatState, ev({ event: 'run.started', run_id: RUN, cursor: 1 }), T)
+      s = applyEvent(s, ev({ event: 'run.completed', run_id: RUN, output: 'one', cursor: 2 }), T)
+      s = applyEvent(s, ev({ event: 'run.started', run_id: 'run-2', cursor: 1 }), T + 10)
+      expect(s.runId).toBe('run-2')
+      s = applyEvent(s, ev({ event: 'message.delta', run_id: 'run-2', delta: 'two', cursor: 2 }), T + 11)
+      expect(lastAssistant(s).content).toBe('two')
+    })
+
+    it('stream frames still apply when no run id is known (reload-resume adoption)', () => {
+      // A resume with after_cursor>1 never replays run.started; content frames
+      // must still land while the run id is unknown.
+      const s = applyEvent(
+        initialChatState,
+        ev({ event: 'message.delta', run_id: RUN, delta: 'resumed', cursor: 7 }),
+        T,
+      )
+      expect(lastAssistant(s).content).toBe('resumed')
+    })
+
     it('a dropped duplicate (resume replay) does NOT refresh lastEventAt', () => {
       let s = applyEvent(initialChatState, ev({ event: 'run.started', run_id: RUN, cursor: 1 }), T)
       s = applyEvent(s, ev({ event: 'message.delta', run_id: RUN, delta: 'a', cursor: 2 }), T + 1)

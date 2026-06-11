@@ -47,6 +47,16 @@ const MAX_TEXTAREA_PX = 200
 const NO_VISION_MESSAGE = 'This model can’t see images. Switch to a vision-capable model to attach.'
 
 /**
+ * The single, honest message for "a run is in flight" image handling. Text typed
+ * mid-run queues (C2), but image turns are deliberately NOT queued — so instead
+ * of silently firing an overlapping run (the old behavior) or silently dropping
+ * the image, attach/paste/drop are disabled mid-run with this one message on
+ * the tooltip AND the paste/drop toast.
+ */
+const RUNNING_ATTACH_MESSAGE =
+  'A reply is still streaming. Image messages can’t be queued; send the image when it finishes.'
+
+/**
  * Detect an in-progress `@`-mention at the caret. Returns the token's start
  * index and the query text (after the `@`), or null when the caret is not inside
  * a mention token. A mention starts at `@` that is either at the very start of
@@ -239,28 +249,33 @@ export function Composer({
     setAttachments((prev) => prev.filter((a) => a.id !== id))
   }
 
+  // Whether attaching is possible RIGHT NOW. Mid-run attaching is disabled
+  // (image turns can't queue — sending one would overlap the in-flight run), with
+  // {@link RUNNING_ATTACH_MESSAGE} explaining why.
+  const canAttachNow = canAttachImages && !running
+
   const openFilePicker = () => {
-    if (disabled || !canAttachImages) return
+    if (disabled || !canAttachNow) return
     fileInputRef.current?.click()
   }
 
-  // Honest feedback when an image was paste/dropped onto a NON-vision model: we
-  // keep the early-return (the agent can't see it) but never silently swallow it.
-  // Uses the SAME message as the disabled attach button so the situation reads
-  // consistently however the user hit it.
+  // Honest feedback when an image was paste/dropped but can't be attached right
+  // now: we keep the early-return but never silently swallow it. Uses the SAME
+  // message as the disabled attach button (no-vision, or run-in-flight) so the
+  // situation reads consistently however the user hit it.
   const notifyImageIgnored = () => {
-    toast.info(NO_VISION_MESSAGE)
+    toast.info(!canAttachImages ? NO_VISION_MESSAGE : RUNNING_ATTACH_MESSAGE)
   }
 
   // ⌘V of a screenshot → attachment (the highest-frequency attach path). Only
-  // intercept when an image is actually on the clipboard AND the model has vision;
-  // otherwise let the paste fall through to the textarea (normal text paste). When
-  // the model lacks vision but an image WAS pasted, surface an honest toast.
+  // intercept when an image is actually on the clipboard AND attaching is possible
+  // right now; otherwise let the paste fall through to the textarea (normal text
+  // paste). When an image WAS pasted but can't attach, surface an honest toast.
   const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     if (disabled) return
     const images = imageFilesFromClipboard(e.clipboardData)
     if (images.length === 0) return
-    if (!canAttachImages) {
+    if (!canAttachNow) {
       notifyImageIgnored()
       return
     }
@@ -270,28 +285,28 @@ export function Composer({
 
   // Drag-and-drop image files onto the composer surface.
   const onDragEnter = (e: DragEvent<HTMLDivElement>) => {
-    if (disabled || !canAttachImages) return
+    if (disabled || !canAttachNow) return
     if (!Array.from(e.dataTransfer.types).includes('Files')) return
     e.preventDefault()
     dragDepth.current += 1
     setDragActive(true)
   }
   const onDragOver = (e: DragEvent<HTMLDivElement>) => {
-    if (disabled || !canAttachImages) return
+    if (disabled || !canAttachNow) return
     if (!Array.from(e.dataTransfer.types).includes('Files')) return
     e.preventDefault()
   }
   const onDragLeave = () => {
-    if (disabled || !canAttachImages) return
+    if (disabled || !canAttachNow) return
     dragDepth.current = Math.max(0, dragDepth.current - 1)
     if (dragDepth.current === 0) setDragActive(false)
   }
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     if (disabled) return
     const images = imageFilesFromDrop(e.dataTransfer)
-    if (!canAttachImages) {
-      // The drag affordances never lit up (vision off), but a drop can still land
-      // here — give honest feedback rather than silently swallowing the image.
+    if (!canAttachNow) {
+      // The drag affordances never lit up, but a drop can still land here — give
+      // honest feedback rather than silently swallowing the image.
       if (images.length > 0) notifyImageIgnored()
       return
     }
@@ -399,9 +414,14 @@ export function Composer({
     if ((!text && !hasImages) || disabled) return
     // Send-while-busy (C2): while a run is in flight, a text submit is QUEUED (FIFO)
     // rather than blocked — it flushes when the run completes. Image turns are NOT
-    // queued (out of scope); when images are attached we keep the current behavior
-    // and leave the attachments in place so the user can send them after Stop.
-    if (running && !hasImages) {
+    // queued: submitting one mid-run would start an OVERLAPPING run, so we hold the
+    // composer as-is (text + pills intact) and say so honestly. The user sends it
+    // once the reply finishes (or after Stop).
+    if (running) {
+      if (hasImages) {
+        toast.info(RUNNING_ATTACH_MESSAGE)
+        return
+      }
       queue.enqueue(text)
       resetInput()
       return
@@ -704,12 +724,14 @@ export function Composer({
           <div className="flex-1" />
 
           {/* Attach image: a small footer icon button. Shown DISABLED with an
-              honest tooltip when the active model can't see images (vision), so
-              the user understands why rather than silently losing a paste/drop. */}
+              honest tooltip when the active model can't see images (vision) OR a
+              run is in flight (image turns can't queue), so the user understands
+              why rather than silently losing a paste/drop. */}
           <AttachButton
             onClick={openFilePicker}
-            disabled={disabled || !canAttachImages}
+            disabled={disabled || !canAttachNow}
             canAttachImages={canAttachImages}
+            running={running}
           />
 
           {/* Voice dictation: a small footer icon button next to the model chip.
@@ -832,20 +854,26 @@ function MicButton({
 
 /**
  * The composer's attach-image button. A quiet tertiary glyph (a paperclip) that
- * opens the file picker. When the active model can't see images it renders
- * DISABLED with an honest tooltip + an `aria-label` that says why — we never let
- * a user attach an image the agent can't read (HONEST UI). Sits beside the mic.
+ * opens the file picker. When the active model can't see images — or a run is in
+ * flight (image turns can't queue) — it renders DISABLED with an honest tooltip +
+ * an `aria-label` that says why (HONEST UI). Sits beside the mic.
  */
 function AttachButton({
   onClick,
   disabled,
   canAttachImages,
+  running,
 }: {
   onClick: () => void
   disabled: boolean
   canAttachImages: boolean
+  running: boolean
 }) {
-  const label = canAttachImages ? 'Attach image' : NO_VISION_MESSAGE
+  const label = !canAttachImages
+    ? NO_VISION_MESSAGE
+    : running
+      ? RUNNING_ATTACH_MESSAGE
+      : 'Attach image'
   return (
     <button
       type="button"

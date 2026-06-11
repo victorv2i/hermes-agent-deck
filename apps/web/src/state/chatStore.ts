@@ -388,6 +388,20 @@ export function applyEvent(
     if (state.runId !== null && state.runId !== event.run_id) return state
     return { ...state, lastHeartbeatAt: now }
   }
+  // RUN-ID GATE for everything else (same rule as the heartbeat above): once the
+  // store knows its run, frames from ANOTHER run are dropped instead of merged —
+  // a stray/overlapping second run's deltas, tool cards, or terminal frames must
+  // never scramble the active bubble or flip the run status. A legitimate second
+  // run announces itself with `run.started` (handled inside the reducer, which
+  // adopts the new run id and rebases the cursor); only that path switches runs.
+  // The runId===null adoption case still accepts, exactly like the heartbeat.
+  if (
+    event.event !== 'run.started' &&
+    state.runId !== null &&
+    state.runId !== event.run_id
+  ) {
+    return state
+  }
   const next = reduceEvent(state, event)
   // Unchanged state means the event was dropped (already seen) — no fresh signal.
   if (next === state) return state

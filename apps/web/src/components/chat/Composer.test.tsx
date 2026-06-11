@@ -629,6 +629,51 @@ describe('Composer', () => {
       expect(attach).toHaveAccessibleName(/can’t see images/i)
     })
 
+    it('disables attach with an honest tooltip while a run is in flight (no queue for images)', () => {
+      render(<Composer onSend={() => {}} onStop={() => {}} canAttachImages running />)
+      const attach = screen.getByTestId('composer-attach')
+      expect(attach).toBeDisabled()
+      expect(attach).toHaveAccessibleName(/can’t be queued/i)
+    })
+
+    it('does NOT fire an overlapping run for a mid-run image submit; holds the message honestly', async () => {
+      const user = userEvent.setup()
+      const onSend = vi.fn()
+      // Attach while idle, then a run starts (e.g. a flushed queued message).
+      const { rerender } = render(<Composer onSend={onSend} onStop={() => {}} canAttachImages />)
+      const fileInput = screen.getByTestId('composer-file-input') as HTMLInputElement
+      await user.upload(fileInput, pngFile('mid-run.png'))
+      await screen.findByTestId('composer-attachment-pill')
+      rerender(<Composer onSend={onSend} onStop={() => {}} canAttachImages running />)
+
+      const input = screen.getByLabelText('Message your agent')
+      await user.type(input, 'with image')
+      await user.keyboard('{Enter}')
+
+      // Not sent (no overlapping run), not queued (images can't queue) — the
+      // text + attachment stay put, and an honest toast says why.
+      expect(onSend).not.toHaveBeenCalled()
+      expect(screen.queryByTestId('composer-queued-pill')).not.toBeInTheDocument()
+      expect(input).toHaveValue('with image')
+      expect(screen.getByTestId('composer-attachment-pill')).toBeInTheDocument()
+      expect(toast.info).toHaveBeenCalledWith(expect.stringMatching(/can’t be queued/i))
+    })
+
+    it('ignores a pasted image while running (honest toast, not a silent attach)', async () => {
+      render(<Composer onSend={() => {}} onStop={() => {}} canAttachImages running />)
+      const input = screen.getByLabelText('Message your agent')
+      const file = pngFile('pasted.png')
+      await act(async () => {
+        const event = new Event('paste', { bubbles: true, cancelable: true })
+        Object.defineProperty(event, 'clipboardData', {
+          value: { items: [{ kind: 'file', type: file.type, getAsFile: () => file }], files: [] },
+        })
+        input.dispatchEvent(event)
+      })
+      expect(screen.queryByTestId('composer-attachment-pill')).not.toBeInTheDocument()
+      expect(toast.info).toHaveBeenCalledWith(expect.stringMatching(/can’t be queued/i))
+    })
+
     it('adds a removable preview pill when an image is picked', async () => {
       const user = userEvent.setup()
       render(<Composer onSend={() => {}} onStop={() => {}} canAttachImages />)
