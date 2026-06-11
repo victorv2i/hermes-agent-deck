@@ -708,6 +708,40 @@ export function conversationHistoryForRun(
   return capped.reverse()
 }
 
+/**
+ * Where the NEXT run's history payload would start in `turns`, or null when the
+ * whole transcript fits under the caps (the common case). Mirrors the capping in
+ * {@link conversationHistoryForRun} over the full transcript (at rest, the next
+ * send's NEW user turn rides as `input`, so every current turn is candidate
+ * history). Returns the index of the OLDEST turn that still rides along — the UI
+ * renders an honest truncation notice above it ("older messages aren't sent").
+ * Pure; O(n) over the turns.
+ */
+export function historyTruncationStartIndex(turns: Turn[]): number | null {
+  // The turn indices that would enter the payload (same skip rules as the
+  // builder: streaming/empty turns contribute nothing).
+  const candidateIdx: number[] = []
+  for (let i = 0; i < turns.length; i++) {
+    const t = turns[i]!
+    if (t.role === 'assistant' && t.streaming) continue
+    if (t.content.trim() === '') continue
+    candidateIdx.push(i)
+  }
+  // Cap from the NEWEST end, exactly like conversationHistoryForRun.
+  let kept = 0
+  let chars = 0
+  for (let j = candidateIdx.length - 1; j >= 0; j--) {
+    const msg = turns[candidateIdx[j]!]!
+    if (kept >= CONVERSATION_HISTORY_MAX_MESSAGES) return candidateIdx[j + 1] ?? null
+    if (kept > 0 && chars + msg.content.length > CONVERSATION_HISTORY_MAX_CHARS) {
+      return candidateIdx[j + 1] ?? null
+    }
+    chars += msg.content.length
+    kept++
+  }
+  return null
+}
+
 /** Whether a turn is SETTLED (forkable): an assistant turn that finished
  * streaming, or any user turn. A streaming assistant head is never forkable. */
 function isSettledTurn(turn: Turn): boolean {

@@ -210,9 +210,14 @@ export type ConversationHistoryMessage = z.infer<typeof ConversationHistoryMessa
  * Caps for the history payload, applied oldest-dropped-first by the sender.
  * HONEST limitation: a conversation longer than this reaches the model with
  * only its most recent window — chosen over an unbounded per-message payload.
+ * Sized generously (200 msgs / 300k chars ≈ 75k tokens): current model context
+ * windows comfortably hold this, and the gateway's own compression handles any
+ * overflow gracefully, so the cap is a payload sanity bound, not a context
+ * optimizer. When it DOES bite, the web client surfaces a truncation notice in
+ * the transcript at the boundary rather than dropping turns silently.
  */
-export const CONVERSATION_HISTORY_MAX_MESSAGES = 40
-export const CONVERSATION_HISTORY_MAX_CHARS = 60_000
+export const CONVERSATION_HISTORY_MAX_MESSAGES = 200
+export const CONVERSATION_HISTORY_MAX_CHARS = 300_000
 
 /** Start a new run. Maps to POST /v1/runs. */
 export const RunCommand = z.object({

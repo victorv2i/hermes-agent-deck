@@ -12,6 +12,7 @@ import {
   prepareRetry,
   prepareEdit,
   conversationHistoryForRun,
+  historyTruncationStartIndex,
   initialChatState,
   type AssistantTurn,
   type ChatState,
@@ -737,13 +738,14 @@ describe('conversationHistoryForRun', () => {
   })
 
   it('caps to the most recent CONVERSATION_HISTORY_MAX_MESSAGES messages, oldest dropped first', () => {
+    const total = CONVERSATION_HISTORY_MAX_MESSAGES + 20
     const turns: Turn[] = []
-    for (let i = 0; i < 60; i++) turns.push(user(`u${i}`, `msg-${i}`))
+    for (let i = 0; i < total; i++) turns.push(user(`u${i}`, `msg-${i}`))
     turns.push(user('cur', 'current'))
     const history = conversationHistoryForRun(turns, 'current')
     expect(history).toHaveLength(CONVERSATION_HISTORY_MAX_MESSAGES)
     expect(history[0]).toEqual({ role: 'user', content: 'msg-20' })
-    expect(history.at(-1)).toEqual({ role: 'user', content: 'msg-59' })
+    expect(history.at(-1)).toEqual({ role: 'user', content: `msg-${total - 1}` })
   })
 
   it('caps by total chars, keeping the newest messages and always at least one', () => {
@@ -758,5 +760,48 @@ describe('conversationHistoryForRun', () => {
     expect(conversationHistoryForRun([user('u1', big), user('u2', 'current')], 'current')).toEqual([
       { role: 'user', content: big },
     ])
+  })
+})
+
+describe('historyTruncationStartIndex', () => {
+  const user = (id: string, content: string): Turn => ({ id, role: 'user', content })
+  const assistant = (id: string, content: string, streaming = false): Turn => ({
+    id,
+    role: 'assistant',
+    content,
+    toolCalls: [],
+    reasoning: [],
+    streaming,
+  })
+
+  it('returns null when the whole transcript fits under the caps (the common case)', () => {
+    const turns: Turn[] = [user('u1', 'hi'), assistant('a1', 'hello'), user('u2', 'more')]
+    expect(historyTruncationStartIndex(turns)).toBeNull()
+    expect(historyTruncationStartIndex([])).toBeNull()
+  })
+
+  it('returns the index of the OLDEST turn still sent when the message cap bites', () => {
+    const total = CONVERSATION_HISTORY_MAX_MESSAGES + 5
+    const turns: Turn[] = []
+    for (let i = 0; i < total; i++) turns.push(user(`u${i}`, `msg-${i}`))
+    // The newest CONVERSATION_HISTORY_MAX_MESSAGES turns ride; the boundary is
+    // the first of them (index 5).
+    expect(historyTruncationStartIndex(turns)).toBe(5)
+  })
+
+  it('returns the boundary when the char cap bites, matching the payload capping', () => {
+    const half = 'x'.repeat(Math.ceil(CONVERSATION_HISTORY_MAX_CHARS / 2))
+    const turns: Turn[] = [user('u1', half), assistant('a1', half), user('u2', half)]
+    // Newest two fit exactly at/under the cap; the oldest falls out.
+    expect(historyTruncationStartIndex(turns)).toBe(1)
+  })
+
+  it('skips streaming and empty turns exactly like the payload builder', () => {
+    const total = CONVERSATION_HISTORY_MAX_MESSAGES + 1
+    const turns: Turn[] = [assistant('a0', '', true), assistant('a00', '   ')]
+    for (let i = 0; i < total; i++) turns.push(user(`u${i}`, `msg-${i}`))
+    // One real turn over the cap: the oldest REAL turn (index 2 + 1) is dropped,
+    // so the boundary is the next candidate (index 3).
+    expect(historyTruncationStartIndex(turns)).toBe(3)
   })
 })

@@ -328,6 +328,38 @@ describe('ChatView', () => {
   })
 })
 
+// --- Honest history-cap truncation notice -------------------------------------
+// When the conversation outgrows the conversation_history payload caps, the
+// transcript shows a quiet divider above the OLDEST turn still sent, so older
+// messages never silently stop reaching the agent.
+describe('ChatView — history truncation notice', () => {
+  const bigUser = (id: string, content: string): Turn => ({ id, role: 'user', content })
+
+  it('renders no notice while the whole transcript fits under the caps', () => {
+    renderView({
+      turns: [
+        { id: 'u1', role: 'user', content: 'hi' },
+        assistantTurn,
+        { id: 'u2', role: 'user', content: 'more' },
+      ],
+    })
+    expect(screen.queryByTestId('history-truncation-notice')).not.toBeInTheDocument()
+  })
+
+  it('renders the honest divider at the cap boundary when truncation occurs', () => {
+    // Three turns of ~half the char cap each: the newest two ride, the oldest
+    // falls out → the divider renders above the middle turn (the boundary).
+    const half = 'y'.repeat(150_000)
+    renderView({
+      turns: [bigUser('u1', half), bigUser('u2', half), bigUser('u3', half)],
+    })
+    const notice = screen.getByTestId('history-truncation-notice')
+    expect(notice).toHaveTextContent(/older messages above aren’t sent to the agent/i)
+    // It sits inside the BOUNDARY turn's row (u2), not the dropped turn's.
+    expect(notice.closest('[data-find-turn]')).toHaveAttribute('data-find-turn', 'u2')
+  })
+})
+
 // --- Fork from here (Lane D) -------------------------------------------------
 // ChatView is presentational: it renders the turns it's handed (the ancestor path
 // after a fork), shows the honest local-fork banner, focuses the composer, and

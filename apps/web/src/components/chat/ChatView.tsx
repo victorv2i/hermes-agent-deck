@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ApprovalChoice, RunAttachment } from '@agent-deck/protocol'
+import { historyTruncationStartIndex } from '@/state/chatStore'
 import type { PendingApproval, RunStatus, Turn } from '@/state/chatStore'
 import type { ModelEntry } from '@/features/models/types'
 import { usePrefersReducedMotion } from '@/lib/useMediaQuery'
@@ -186,6 +187,13 @@ export function ChatView({
     }
     return -1
   })()
+
+  // HONEST history-cap boundary: the index of the OLDEST turn the next run's
+  // conversation_history payload still carries, or null when everything fits
+  // (the common case — the caps are generous). When the cap bites, a quiet
+  // divider renders above that turn so the user knows the older messages are
+  // no longer sent to the agent, instead of them dropping silently.
+  const truncationStartIndex = useMemo(() => historyTruncationStartIndex(turns), [turns])
 
   // --- Find in conversation (⌘F) --------------------------------------------
   // Search the OPEN session's rendered turns, highlight the turn carrying the
@@ -372,6 +380,23 @@ export function ChatView({
                 'rounded-xl ring-2 ring-[var(--border-strong)] ring-offset-2 ring-offset-background motion-reduce:transition-none',
             )}
           >
+            {/* The honest history-cap divider: rendered above the OLDEST turn the
+                next run still sends, so the older messages above it are clearly
+                marked as not reaching the agent. Rides inside the boundary turn's
+                row so it composes with the windowed (virtualized) list. */}
+            {index === truncationStartIndex && (
+              <div
+                data-testid="history-truncation-notice"
+                role="status"
+                className="my-3 flex items-center gap-3 text-[11px] text-foreground-tertiary"
+              >
+                <span aria-hidden className="h-px flex-1 bg-border" />
+                <span className="shrink-0">
+                  Older messages above aren&rsquo;t sent to the agent
+                </span>
+                <span aria-hidden className="h-px flex-1 bg-border" />
+              </div>
+            )}
             <Message
               turn={turn}
               agent={agent}
