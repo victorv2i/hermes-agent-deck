@@ -157,9 +157,12 @@ describe('Message — fork honesty copy', () => {
     expect(all).not.toMatch(/persisted|\bdag\b|saved to hermes|hermes session is saved/)
     // It DOES affirm the original is still saved (true — local copy, never deleted).
     expect(FORK_COPY.localBanner.toLowerCase()).toMatch(/original chat is still saved/)
-    // The historical-fork copy is honest that the next message starts a new chat.
+    // The historical-fork copy is honest that the next message starts a new chat
+    // AND that the earlier messages still ride along as context (they are sent
+    // as conversation_history on every run — never claim "reference only").
     expect(FORK_COPY.newChatContext.toLowerCase()).toMatch(/new chat/)
-    expect(FORK_COPY.newChatContext.toLowerCase()).toMatch(/reference only/)
+    expect(FORK_COPY.newChatContext.toLowerCase()).toMatch(/sent along as context/)
+    expect(FORK_COPY.newChatContext.toLowerCase()).not.toMatch(/reference only/)
     // The pre-send copy is honest that the fork is local.
     expect(FORK_COPY.beforeSend.toLowerCase()).toMatch(/local until you send/)
   })

@@ -36,13 +36,17 @@ export interface ChatStore extends ChatState {
    * so the card can't be submitted twice while the gateway round-trips. */
   clearPendingApproval: () => void
   /** Retry/Regenerate an assistant turn: drop it (and any later turns) and
-   * return the prompting user turn's text so the caller can re-issue the run.
-   * Returns null when the turn can't be retried (no preceding user turn). */
-  retry: (assistantTurnId: string) => string | null
+   * return the prompting user turn's text + image attachments so the caller can
+   * re-issue the run faithfully (images included). Returns null when the turn
+   * can't be retried (no preceding user turn). */
+  retry: (assistantTurnId: string) => { input: string; attachments?: RunAttachment[] } | null
   /** Edit-and-resend a user turn: replace its text, drop everything after it,
-   * and return the edited text to re-run. Returns null for an empty edit or an
-   * unknown turn. */
-  editAndResend: (userTurnId: string, newText: string) => string | null
+   * and return the edited input (plus the turn's original image attachments) to
+   * re-run. Returns null for an empty edit or an unknown turn. */
+  editAndResend: (
+    userTurnId: string,
+    newText: string,
+  ) => { input: string; attachments?: RunAttachment[] } | null
   /** Seed the conversation with a prior session's transcript (the "Continue this
    * session" resume path). Replaces the turns with the read-only history and
    * resets run/approval/cursor state so the next send starts a fresh run inside
@@ -81,13 +85,13 @@ export const useChatStore = create<ChatStore>((set) => ({
     const plan = prepareRetry(useChatStore.getState(), assistantTurnId)
     if (!plan) return null
     set(() => plan.state)
-    return plan.input
+    return { input: plan.input, ...(plan.attachments ? { attachments: plan.attachments } : {}) }
   },
   editAndResend: (userTurnId, newText) => {
     const plan = prepareEdit(useChatStore.getState(), userTurnId, newText)
     if (!plan) return null
     set(() => plan.state)
-    return plan.input
+    return { input: plan.input, ...(plan.attachments ? { attachments: plan.attachments } : {}) }
   },
   seedTurns: (turns, identity) => set(() => seedTurnsPure(turns, identity)),
   setError: (message) =>

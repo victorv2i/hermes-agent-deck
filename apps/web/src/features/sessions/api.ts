@@ -27,6 +27,11 @@ export interface ListSessionsParams {
   limit?: number
   offset?: number
   source?: string
+  /** Dashboard pagination order: 'created' (default, by original start time) or
+   * 'recent' (by latest activity across the compression chain). The rail asks
+   * for 'recent' so its Recent grouping can never miss the most-recently-active
+   * conversation on a later page. */
+  order?: 'created' | 'recent'
 }
 
 export function fetchSessions(
@@ -37,6 +42,7 @@ export function fetchSessions(
   if (params.limit !== undefined) sp.set('limit', String(params.limit))
   if (params.offset !== undefined) sp.set('offset', String(params.offset))
   if (params.source) sp.set('source', params.source)
+  if (params.order) sp.set('order', params.order)
   const qs = sp.toString()
   return getJson<SessionListResponse>(`/sessions${qs ? `?${qs}` : ''}`, signal)
 }

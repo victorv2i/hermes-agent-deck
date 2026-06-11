@@ -166,6 +166,59 @@ describe('useChatRun — per-run model + message actions', () => {
     expect(useChatStore.getState().turns).toEqual(CONVO)
   })
 
+  it('retry RESENDS the prompting user turn’s image attachments (no silent text-only re-ask)', () => {
+    const { socket, result } = setup()
+    const att = {
+      kind: 'image' as const,
+      name: 'graph.png',
+      mime: 'image/png',
+      data_url: 'data:image/png;base64,aGk=',
+    }
+    act(() =>
+      useChatStore.setState({
+        turns: [
+          { id: 'u1', role: 'user', content: 'what is in this image?', attachments: [att] },
+          {
+            id: 'a1',
+            role: 'assistant',
+            content: 'a graph',
+            toolCalls: [],
+            reasoning: [],
+            streaming: false,
+          },
+        ],
+      }),
+    )
+    act(() => result.current.retry('a1'))
+    const arg = runArg(socket) as { input: string; attachments?: unknown[] }
+    expect(arg.input).toBe('what is in this image?')
+    expect(arg.attachments).toEqual([att])
+  })
+
+  it('editTurn keeps the turn’s image attachments on the re-run', () => {
+    const { socket, result } = setup()
+    const att = {
+      kind: 'image' as const,
+      name: 'graph.png',
+      mime: 'image/png',
+      data_url: 'data:image/png;base64,aGk=',
+    }
+    act(() =>
+      useChatStore.setState({
+        turns: [{ id: 'u1', role: 'user', content: 'describe this', attachments: [att] }],
+      }),
+    )
+    act(() => result.current.editTurn('u1', 'describe this in detail'))
+    const arg = runArg(socket) as { input: string; attachments?: unknown[] }
+    expect(arg.input).toBe('describe this in detail')
+    expect(arg.attachments).toEqual([att])
+    // The transcript turn keeps its image too.
+    expect(useChatStore.getState().turns[0]).toMatchObject({
+      content: 'describe this in detail',
+      attachments: [att],
+    })
+  })
+
   it('retry within a resumed session keeps forwarding session_id', () => {
     const { socket, result } = setup()
     act(() => result.current.continueSession('sess-9', CONVO))

@@ -26,6 +26,9 @@ import { randomUUID } from 'node:crypto'
 export interface MockDashboardCall {
   method: string
   path: string
+  /** The raw query string (e.g. `?limit=5&order=recent`), '' when none — lets a
+   * test assert forwarded query params without parsing the path. */
+  search: string
   host: string | undefined
   origin: string | undefined
   referer: string | undefined
@@ -140,7 +143,15 @@ export async function startMockDashboard(
     const authorization =
       typeof req.headers['authorization'] === 'string' ? req.headers['authorization'] : undefined
 
-    calls.push({ method: req.method ?? 'GET', path, host, origin, referer, authorization })
+    calls.push({
+      method: req.method ?? 'GET',
+      path,
+      search: url.search,
+      host,
+      origin,
+      referer,
+      authorization,
+    })
 
     const json = (status: number, body: unknown) => {
       res.writeHead(status, { 'Content-Type': 'application/json' })

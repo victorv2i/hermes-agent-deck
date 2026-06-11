@@ -101,8 +101,12 @@ export interface PaginatedSessions {
 export function useSessionsPaginated(pageSize: number = RAIL_PAGE_SIZE): PaginatedSessions {
   const query: UseInfiniteQueryResult<InfiniteData<SessionListResponse>> = useInfiniteQuery({
     queryKey: sessionKeys.paginated(pageSize),
+    // order=recent (by latest activity) so the FIRST page always holds the
+    // most-recently-active sessions — the rail's Recent grouping sorts what is
+    // LOADED, so created-order pagination could leave a recently-active old
+    // session stranded on an unfetched page.
     queryFn: ({ pageParam, signal }) =>
-      fetchSessions({ limit: pageSize, offset: pageParam }, signal),
+      fetchSessions({ limit: pageSize, offset: pageParam, order: 'recent' }, signal),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       // Tolerate a page that omits sessions/total (a degraded/empty BFF response):

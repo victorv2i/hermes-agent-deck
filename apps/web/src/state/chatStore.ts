@@ -228,13 +228,17 @@ export function beginAssistantTurn(state: ChatState): ChatState {
 
 /**
  * Result of preparing a message-action re-run: the trimmed state to commit and
- * the input text the caller should re-issue as a fresh run. `null` when the
+ * the input the caller should re-issue as a fresh run. `null` when the
  * action can't apply (e.g. retrying an assistant turn with no preceding user
  * turn, or an unknown turn id).
  */
 export interface RerunPlan {
   state: ChatState
   input: string
+  /** The re-run user turn's image attachments, when it had any — threaded back
+   * through the run so a Retry/Edit resends the images instead of silently
+   * re-asking with text only. */
+  attachments?: RunAttachment[]
 }
 
 /**
@@ -277,7 +281,13 @@ export function prepareRetry(state: ChatState, assistantTurnId: string): RerunPl
   // Keep up to and including the user turn; drop the assistant reply (and any
   // later turns) so the re-run streams in fresh.
   const turns = state.turns.slice(0, userIdx + 1)
-  return { state: resetRunLifecycle(turns, state), input: userTurn.content }
+  return {
+    state: resetRunLifecycle(turns, state),
+    input: userTurn.content,
+    ...(userTurn.attachments && userTurn.attachments.length > 0
+      ? { attachments: userTurn.attachments }
+      : {}),
+  }
 }
 
 /**
@@ -294,10 +304,20 @@ export function prepareEdit(
   if (!trimmed) return null
   const idx = state.turns.findIndex((t) => t.id === userTurnId && t.role === 'user')
   if (idx === -1) return null
-  const edited: UserTurn = { id: userTurnId, role: 'user', content: trimmed }
+  const original = state.turns[idx]
+  if (!original || original.role !== 'user') return null
+  // Keep the turn's identity (createdAt, attachments) — only the text changes,
+  // so an edited image turn re-runs WITH its images.
+  const edited: UserTurn = { ...original, content: trimmed }
   // Replace the edited user turn and drop everything after it.
   const turns = [...state.turns.slice(0, idx), edited]
-  return { state: resetRunLifecycle(turns, state), input: trimmed }
+  return {
+    state: resetRunLifecycle(turns, state),
+    input: trimmed,
+    ...(original.attachments && original.attachments.length > 0
+      ? { attachments: original.attachments }
+      : {}),
+  }
 }
 
 /** Find the index of the active (streaming) assistant turn, or -1. */
@@ -656,9 +676,10 @@ export const FORK_COPY = {
   /** Before the first send on a local fork. */
   beforeSend: 'This fork is local until you send it.',
   /** When Hermes cannot clone/import the ancestor path (a historical fork): the
-   * next send is a brand-new chat; the prior messages are reference-only. */
+   * next send starts a brand-new Hermes session, but the earlier messages still
+   * ride along as conversation_history context (the run carries the transcript). */
   newChatContext:
-    'Hermes will receive your next message as a new chat. The earlier messages are shown here for reference only.',
+    'Your next message starts a new chat in Hermes. The earlier messages are sent along as context.',
   /** While a run is in flight — fork after the reply finishes. */
   disabledRunning: 'Fork after the reply finishes.',
 } as const
@@ -951,8 +972,9 @@ export function seedTurns(
  *  - `new-session`: a local fork that has no Hermes session to continue (a fresh
  *    local chat / a fork at the head of a session-less chat) → a normal new run.
  *  - `unsupported-context`: a fork from a HISTORICAL message of a Hermes session →
- *    stock Hermes can't clone the ancestor path, so the next send is a new chat and
- *    the earlier turns are reference-only (we never inject them into the prompt).
+ *    stock Hermes can't clone the ancestor path, so the next send starts a new
+ *    Hermes session; the earlier turns still reach the model as the run's
+ *    conversation_history context (only the persisted session is new).
  */
 export interface BranchSendPolicy {
   kind: 'same-session' | 'new-session' | 'unsupported-context'

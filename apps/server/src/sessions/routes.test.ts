@@ -89,11 +89,23 @@ describe('session BFF routes', () => {
       method: 'GET',
       url: '/api/agent-deck/sessions?limit=5&offset=10&source=cli',
     })
-    const call = dashboard!.calls.find((c) => c.path === '/api/sessions')
-    expect(call).toBeDefined()
     // The dashboard call carries the forwarded query string.
     const listCall = dashboard!.calls.find((c) => c.path === '/api/sessions')!
     expect(listCall).toBeDefined()
+    expect(listCall.search).toContain('limit=5')
+    expect(listCall.search).toContain('offset=10')
+    expect(listCall.search).toContain('source=cli')
+  })
+
+  it('forwards order=recent so the rail can paginate by latest activity (web_server.py:1769)', async () => {
+    const a = await boot({ '/api/sessions': { sessions: [], total: 0 } })
+    await a.inject({
+      method: 'GET',
+      url: '/api/agent-deck/sessions?limit=50&order=recent',
+    })
+    const listCall = dashboard!.calls.find((c) => c.path === '/api/sessions')!
+    expect(listCall).toBeDefined()
+    expect(listCall.search).toContain('order=recent')
   })
 
   it('GET /api/agent-deck/sessions/:id maps the detail', async () => {

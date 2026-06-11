@@ -89,12 +89,16 @@ export async function registerSessionRoutes(
   const { dashboard } = deps
 
   app.get<{
-    Querystring: { limit?: string; offset?: string; source?: string }
+    Querystring: { limit?: string; offset?: string; source?: string; order?: string }
   }>('/api/agent-deck/sessions', async (req, reply): Promise<SessionListResponse | void> => {
+    // `order` is forwarded as-is ('created' | 'recent', web_server.py:1769) —
+    // 'recent' paginates by latest activity so the rail's first page can never
+    // miss the most-recently-active conversation.
     const qs = buildQuery({
       limit: req.query.limit,
       offset: req.query.offset,
       source: req.query.source,
+      order: req.query.order,
     })
     try {
       const raw = await dashboard.getJson<RawListPayload>(`/api/sessions${qs}`)

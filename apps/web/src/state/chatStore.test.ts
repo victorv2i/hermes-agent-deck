@@ -611,6 +611,43 @@ describe('chatStore reducer', () => {
     expect(prepareEdit(convo(), 'a1', 'x')).toBeNull()
   })
 
+  it('prepareRetry/prepareEdit carry the user turn’s image attachments into the plan', () => {
+    const att = {
+      kind: 'image' as const,
+      name: 'shot.png',
+      mime: 'image/png',
+      data_url: 'data:image/png;base64,aGk=',
+    }
+    const withImage: ChatState = {
+      ...initialChatState,
+      turns: [
+        { id: 'u1', role: 'user', content: 'what is this?', createdAt: 1234, attachments: [att] },
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: 'a screenshot',
+          toolCalls: [],
+          reasoning: [],
+          streaming: false,
+        },
+      ],
+    }
+    // Retry: the prompting turn's attachments ride the plan for the re-run.
+    expect(prepareRetry(withImage, 'a1')?.attachments).toEqual([att])
+    // Edit: only the TEXT changes — attachments and createdAt stay on the turn
+    // and the attachments ride the plan.
+    const editPlan = prepareEdit(withImage, 'u1', 'what is this exactly?')
+    expect(editPlan?.attachments).toEqual([att])
+    expect(editPlan?.state.turns[0]).toMatchObject({
+      id: 'u1',
+      content: 'what is this exactly?',
+      createdAt: 1234,
+      attachments: [att],
+    })
+    // A text-only turn yields a plan with NO attachments key (byte-identical run).
+    expect(prepareRetry(convo(), 'a1')?.attachments).toBeUndefined()
+  })
+
   it('retry/edit preserve the resumed session identity', () => {
     const base = convo()
     const resumed: ChatState = { ...base, sessionTitle: 'My Session', sessionModel: 'hermes-4' }

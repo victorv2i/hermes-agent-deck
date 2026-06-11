@@ -250,15 +250,16 @@ export function useChatRun(socket?: SocketLike, storage?: StorageLike | null): U
       },
       retry: (assistantTurnId: string, model?: string) => {
         // The store trims back to (and keeps) the prompting user turn and hands
-        // back its text; we then re-issue the run just like a fresh send.
-        const input = retryTurn(assistantTurnId)
-        if (input === null) return
-        issueRun(input, model)
+        // back its text + image attachments; we then re-issue the run just like
+        // a fresh send — images included, never a silently text-only re-ask.
+        const plan = retryTurn(assistantTurnId)
+        if (plan === null) return
+        issueRun(plan.input, model, plan.attachments)
       },
       editTurn: (userTurnId: string, newText: string, model?: string) => {
-        const input = editAndResend(userTurnId, newText)
-        if (input === null) return
-        issueRun(input, model)
+        const plan = editAndResend(userTurnId, newText)
+        if (plan === null) return
+        issueRun(plan.input, model, plan.attachments)
       },
       newChat: () => {
         // A fresh chat abandons any resumed session.
