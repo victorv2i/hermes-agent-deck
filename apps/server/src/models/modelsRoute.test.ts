@@ -105,6 +105,10 @@ interface FakeOpts {
   fail?: Partial<Record<string, true>>
   onStart?: (path: string, at: number) => void
   onEnd?: (path: string, at: number) => void
+  /** Simulate the stock expensive-model guard: POST /api/model/set replies 200 +
+   * `{ ok: false, confirm_required: true, confirm_message }` unless the body
+   * carries `confirm_expensive_model: true`. */
+  expensiveGuard?: boolean
 }
 
 function makeFakeDashboard(opts: FakeOpts = {}): {
@@ -152,7 +156,21 @@ function makeFakeDashboard(opts: FakeOpts = {}): {
     // the forwarded body + echo the stock success shape.
     if (method === 'POST' && path === '/api/model/set') {
       posts.push({ path, body: parsedBody })
-      const b = parsedBody as { provider?: string; model?: string } | null
+      const b = parsedBody as {
+        provider?: string
+        model?: string
+        confirm_expensive_model?: boolean
+      } | null
+      if (opts.expensiveGuard && b?.confirm_expensive_model !== true) {
+        return Response.json({
+          ok: false,
+          scope: 'main',
+          provider: b?.provider,
+          model: b?.model,
+          confirm_required: true,
+          confirm_message: 'This model is expensive. Confirm to switch.',
+        })
+      }
       return Response.json({ ok: true, provider: b?.provider, model: b?.model })
     }
     if (method === 'POST' && path === '/api/providers/oauth/google/start') {
@@ -447,6 +465,63 @@ describe('POST /api/agent-deck/model/set (cross-provider switch proxy)', () => {
     expect(fake.posts[0]!.path).toBe('/api/model/set')
     expect(fake.posts[0]!.body).toEqual({ provider: 'google', model: 'google/gemini-3-pro' })
     expect(res.json()).toEqual({ ok: true, provider: 'google', model: 'google/gemini-3-pro' })
+  })
+
+  it('forwards confirmExpensiveModel as the stock confirm_expensive_model flag', async () => {
+    const fake = makeFakeDashboard({ expensiveGuard: true })
+    app = await buildApp(fake.client)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/model/set',
+      payload: { provider: 'openrouter', model: 'expensive-1', confirmExpensiveModel: true },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(fake.posts).toHaveLength(1)
+    expect(fake.posts[0]!.body).toEqual({
+      provider: 'openrouter',
+      model: 'expensive-1',
+      confirm_expensive_model: true,
+    })
+    // The confirmed switch goes through (the guard accepts the flag).
+    expect(res.json()).toEqual({ ok: true, provider: 'openrouter', model: 'expensive-1' })
+  })
+
+  it('passes the expensive-model confirm_required reply through verbatim (no silent ok)', async () => {
+    const fake = makeFakeDashboard({ expensiveGuard: true })
+    app = await buildApp(fake.client)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/model/set',
+      payload: { provider: 'openrouter', model: 'expensive-1' },
+    })
+    expect(res.statusCode).toBe(200)
+    // No confirm flag was forwarded (the guard stays in force) …
+    expect(fake.posts[0]!.body).toEqual({ provider: 'openrouter', model: 'expensive-1' })
+    // … and the guard's reply reaches the web layer intact so it can surface it.
+    const body = res.json<{ ok: boolean; confirm_required: boolean; confirm_message: string }>()
+    expect(body.ok).toBe(false)
+    expect(body.confirm_required).toBe(true)
+    expect(body.confirm_message).toMatch(/expensive/i)
+  })
+
+  it('does NOT forward a non-true confirmExpensiveModel (no accidental auto-confirm)', async () => {
+    const fake = makeFakeDashboard({ expensiveGuard: true })
+    app = await buildApp(fake.client)
+
+    for (const confirmExpensiveModel of ['true', 1, {}]) {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/agent-deck/model/set',
+        payload: { provider: 'openrouter', model: 'expensive-1', confirmExpensiveModel },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json<{ confirm_required?: boolean }>().confirm_required).toBe(true)
+    }
+    for (const post of fake.posts) {
+      expect(post.body).toEqual({ provider: 'openrouter', model: 'expensive-1' })
+    }
   })
 
   it('400s when provider or model is missing/blank (never reaches the dashboard)', async () => {

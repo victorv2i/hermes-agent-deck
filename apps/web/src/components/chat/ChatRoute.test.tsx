@@ -10,12 +10,17 @@ import { useChatStore } from '@/state/useChatStore'
 import { useHeaderStore } from '@/state/headerStore'
 import { initialChatState } from '@/state/chatStore'
 import type { ChatOutletContext } from '@/app/navigation'
+import type { SetModelResult } from '@/features/models/api'
 
 // Keep the surface hermetic: stub the models query so the header's active-model
 // label is deterministic and no fetch is attempted. `useSetModel` is stubbed so
 // a cross-provider pick's /model/set call is observable without a real fetch.
+// It resolves the honest SetModelResult shape; a test can resolve
+// `confirm-required` to simulate the gateway's expensive-model guard.
 const mockUseModels = vi.fn()
-const mockSetModelMutateAsync = vi.fn(async () => undefined)
+const mockSetModelMutateAsync = vi.fn<(vars?: unknown) => Promise<SetModelResult>>(async () => ({
+  status: 'switched',
+}))
 vi.mock('@/features/models/useModels', () => ({
   useModels: () => mockUseModels(),
   useSetModel: () => ({ mutateAsync: mockSetModelMutateAsync, isPending: false }),
@@ -119,7 +124,7 @@ describe('ChatRoute — live header (T1.3)', () => {
     useHeaderStore.setState({ content: null })
     localStorage.clear()
     mockSetModelMutateAsync.mockReset()
-    mockSetModelMutateAsync.mockResolvedValue(undefined)
+    mockSetModelMutateAsync.mockResolvedValue({ status: 'switched' })
     mockUseProfiles.mockReturnValue(profilesWith({ name: 'Sol' }))
     mockUseModels.mockReturnValue({
       data: {
@@ -285,6 +290,67 @@ describe('ChatRoute — live header (T1.3)', () => {
     await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'claude-sonnet-4', undefined))
   })
 
+  it('holds the run behind the expensive-model confirm and switches only on "Switch anyway"', async () => {
+    const user = userEvent.setup()
+    const send = vi.fn()
+    localStorage.setItem('agent-deck:selected-model', 'openai/gpt-5.5')
+    // The gateway's expensive-model guard declines the first POST (a 200 that
+    // did NOT switch), then the confirmed re-POST goes through.
+    mockSetModelMutateAsync
+      .mockResolvedValueOnce({
+        status: 'confirm-required',
+        confirmMessage: 'gpt-5.5 costs $30/M input tokens. Confirm to switch.',
+      })
+      .mockResolvedValueOnce({ status: 'switched' })
+    renderChatRoute({ send })
+
+    const textarea = screen.getAllByLabelText('Message your agent')[0]!
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Enter}')
+
+    // The guard's own warning surfaces; the run is HELD (nothing sent yet,
+    // because the picked model is not actually set).
+    expect(await screen.findByText(/costs \$30\/M input tokens/i)).toBeInTheDocument()
+    expect(send).not.toHaveBeenCalled()
+
+    // Only the explicit "Switch anyway" re-posts with the confirm flag, and the
+    // held run then proceeds on the confirmed model.
+    await user.click(screen.getByRole('button', { name: /switch anyway/i }))
+    await waitFor(() =>
+      expect(mockSetModelMutateAsync).toHaveBeenLastCalledWith({
+        provider: 'openai',
+        model: 'gpt-5.5',
+        confirmExpensiveModel: true,
+      }),
+    )
+    await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'gpt-5.5', undefined))
+  })
+
+  it('declining the expensive-model confirm reverts the picker and runs on the ACTIVE model', async () => {
+    const user = userEvent.setup()
+    const send = vi.fn()
+    localStorage.setItem('agent-deck:selected-model', 'openai/gpt-5.5')
+    mockSetModelMutateAsync.mockResolvedValue({
+      status: 'confirm-required',
+      confirmMessage: 'gpt-5.5 costs $30/M input tokens. Confirm to switch.',
+    })
+    renderChatRoute({ send })
+
+    const textarea = screen.getAllByLabelText('Message your agent')[0]!
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Enter}')
+    expect(await screen.findByText(/costs \$30\/M input tokens/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }))
+
+    // No confirmed re-POST (one declined attempt only) and the held run carries
+    // the gateway's ACTUAL active model — never the model that was not set.
+    await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'claude-opus-4', undefined))
+    expect(mockSetModelMutateAsync).toHaveBeenCalledTimes(1)
+    // The picker reverts to the active model so the UI never claims a phantom pick.
+    expect(screen.getByTestId('model-picker-trigger')).toHaveTextContent('Claude Opus 4')
+  })
+
   it('reports context tokens honestly in the header ring (no false %)', () => {
     useChatStore.setState({
       ...initialChatState,
@@ -381,7 +447,7 @@ describe('ChatRoute header context-ring limit (active-model gating)', () => {
     useHeaderStore.setState({ content: null })
     localStorage.clear()
     mockSetModelMutateAsync.mockReset()
-    mockSetModelMutateAsync.mockResolvedValue(undefined)
+    mockSetModelMutateAsync.mockResolvedValue({ status: 'switched' })
     mockUseProfiles.mockReturnValue(profilesWith({ name: 'Sol' }))
     mockUseModels.mockReturnValue(modelsWithCapabilities())
     seedUsageTurns()
@@ -428,7 +494,7 @@ describe('ChatRoute — first-run hand-off from Home (SW3)', () => {
     useHeaderStore.setState({ content: null })
     localStorage.clear()
     mockSetModelMutateAsync.mockReset()
-    mockSetModelMutateAsync.mockResolvedValue(undefined)
+    mockSetModelMutateAsync.mockResolvedValue({ status: 'switched' })
     mockUseProfiles.mockReturnValue(profilesWith({ name: 'Sol' }))
     mockUseModels.mockReturnValue({ data: undefined })
   })
@@ -470,7 +536,7 @@ describe('ChatRoute — per-conversation composer draft (P2)', () => {
     useHeaderStore.setState({ content: null })
     localStorage.clear()
     mockSetModelMutateAsync.mockReset()
-    mockSetModelMutateAsync.mockResolvedValue(undefined)
+    mockSetModelMutateAsync.mockResolvedValue({ status: 'switched' })
     mockUseProfiles.mockReturnValue(profilesWith({ name: 'Sol' }))
     mockUseModels.mockReturnValue({ data: undefined })
   })
@@ -508,7 +574,7 @@ describe('ChatRoute — fork from here (store-backed)', () => {
     useHeaderStore.setState({ content: null })
     localStorage.clear()
     mockSetModelMutateAsync.mockReset()
-    mockSetModelMutateAsync.mockResolvedValue(undefined)
+    mockSetModelMutateAsync.mockResolvedValue({ status: 'switched' })
     mockUseProfiles.mockReturnValue(profilesWith({ name: 'Sol' }))
     mockUseModels.mockReturnValue({ data: undefined })
     useChatStore.setState({

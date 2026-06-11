@@ -170,6 +170,104 @@ describe('ModelsRoute', () => {
     await waitFor(() => expect(modelsReads).toBeGreaterThan(readsBefore))
   })
 
+  it('surfaces the expensive-model confirm and only switches on "Switch anyway"', async () => {
+    const { toast } = await import('@/lib/toast')
+    vi.mocked(toast.success).mockClear()
+    const user = userEvent.setup()
+    const initial = {
+      activeModelId: 'opus',
+      provider: { id: 'anthropic', label: 'Anthropic' },
+      models: [
+        { id: 'opus', label: 'opus', provider: 'anthropic', active: true, usable: true },
+        { id: 'sonnet', label: 'sonnet', provider: 'anthropic', active: false, usable: true },
+      ],
+      capabilities: {},
+      auxiliary: [],
+    }
+    const setBodies: Array<Record<string, unknown>> = []
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (typeof url === 'string' && url.endsWith('/model/set')) {
+        const body = JSON.parse(init!.body as string) as Record<string, unknown>
+        setBodies.push(body)
+        // The gateway's expensive-model guard: a 200 that did NOT switch.
+        if (body.confirmExpensiveModel !== true) {
+          return Response.json({
+            ok: false,
+            confirm_required: true,
+            confirm_message: 'sonnet costs $25/M input tokens. Confirm to switch.',
+          })
+        }
+        return Response.json({ ok: true })
+      }
+      return Response.json(initial)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderRoute()
+    await waitFor(() => expect(screen.getByTestId('model-row-sonnet')).toBeInTheDocument())
+    const sonnetRow = screen.getByTestId('model-row-sonnet')
+    await user.click(within(sonnetRow).getByRole('button', { name: /set as active/i }))
+
+    // The guard's own message surfaces in the confirm dialog; no fake success.
+    expect(await screen.findByText(/costs \$25\/M input tokens/i)).toBeInTheDocument()
+    expect(toast.success).not.toHaveBeenCalled()
+
+    // Only the explicit "Switch anyway" re-posts with the confirm flag.
+    await user.click(screen.getByRole('button', { name: /switch anyway/i }))
+    await waitFor(() => expect(setBodies).toHaveLength(2))
+    expect(setBodies[0]).toEqual({ provider: 'anthropic', model: 'sonnet' })
+    expect(setBodies[1]).toEqual({
+      provider: 'anthropic',
+      model: 'sonnet',
+      confirmExpensiveModel: true,
+    })
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Switched to sonnet'))
+  })
+
+  it('declining the expensive-model confirm makes no switch and claims none', async () => {
+    const { toast } = await import('@/lib/toast')
+    vi.mocked(toast.success).mockClear()
+    const user = userEvent.setup()
+    const initial = {
+      activeModelId: 'opus',
+      provider: { id: 'anthropic', label: 'Anthropic' },
+      models: [
+        { id: 'opus', label: 'opus', provider: 'anthropic', active: true, usable: true },
+        { id: 'sonnet', label: 'sonnet', provider: 'anthropic', active: false, usable: true },
+      ],
+      capabilities: {},
+      auxiliary: [],
+    }
+    let setCalls = 0
+    const fetchMock = vi.fn(async (url: string) => {
+      if (typeof url === 'string' && url.endsWith('/model/set')) {
+        setCalls += 1
+        return Response.json({
+          ok: false,
+          confirm_required: true,
+          confirm_message: 'sonnet costs $25/M input tokens. Confirm to switch.',
+        })
+      }
+      return Response.json(initial)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderRoute()
+    await waitFor(() => expect(screen.getByTestId('model-row-sonnet')).toBeInTheDocument())
+    const sonnetRow = screen.getByTestId('model-row-sonnet')
+    await user.click(within(sonnetRow).getByRole('button', { name: /set as active/i }))
+    expect(await screen.findByText(/costs \$25\/M input tokens/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^cancel$/i }))
+    await waitFor(() =>
+      expect(screen.queryByText(/costs \$25\/M input tokens/i)).not.toBeInTheDocument(),
+    )
+    // No confirmed re-POST, no success claim: the active model truthfully stands.
+    expect(setCalls).toBe(1)
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(screen.getByTestId('model-row-opus')).toHaveAttribute('data-active', 'true')
+  })
+
   it('surfaces an honest toast (no silent no-op) when /model/set is rejected', async () => {
     const { toast } = await import('@/lib/toast')
     const user = userEvent.setup()

@@ -2,6 +2,10 @@ import { useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '@/lib/toast'
 import { fetchModels } from './api'
+import {
+  ExpensiveModelConfirmDialog,
+  type ExpensiveModelConfirm,
+} from './ExpensiveModelConfirmDialog'
 import { ModelsPage, type ConnectFeature, type SetActiveFeature } from './ModelsPage'
 import { useConnectProvider, useModels, useProviderOAuthProviders, useSetModel } from './useModels'
 
@@ -52,21 +56,54 @@ export function ModelsRoute({ embedded = false }: { embedded?: boolean } = {}) {
     )
   }, [])
 
-  // "Set as active": switch the active model via the real /model/set proxy. On
-  // success the mutation invalidates the models query so the active flag re-
+  // The gateway's expensive-model guard declined a switch and asked for an
+  // explicit confirmation; null = no confirm pending.
+  const [expensiveConfirm, setExpensiveConfirm] = useState<ExpensiveModelConfirm | null>(null)
+
+  // "Set as active": switch the active model via the real /model/set proxy. On a
+  // REAL switch the mutation invalidates the models query so the active flag re-
   // resolves to the pick; on a gateway rejection we surface an HONEST error toast
-  // (the BFF's scrubbed message) — never a silent no-op.
-  const onSetActive = useCallback(
-    (vars: { provider: string; model: string }) => {
+  // (the BFF's scrubbed message) — never a silent no-op. When the gateway's
+  // expensive-model guard declines with `confirm_required`, nothing switched:
+  // the guard's message goes in front of the user (the themed confirm dialog)
+  // and only their explicit "Switch anyway" re-posts with the confirm flag.
+  const runSetActive = useCallback(
+    (vars: { provider: string; model: string }, confirmExpensiveModel: boolean) => {
       setPendingId(`${vars.provider}/${vars.model}`)
-      setModelMutation.mutate(vars, {
-        onSuccess: () => toast.success(`Switched to ${vars.model}`),
-        onError: (err) => toast.error('Couldn’t switch the model', { description: err.message }),
-        onSettled: () => setPendingId(undefined),
-      })
+      setModelMutation.mutate(
+        { ...vars, confirmExpensiveModel },
+        {
+          onSuccess: (result) => {
+            if (result.status === 'confirm-required') {
+              // No switch happened (the active model stands) — surface the
+              // guard's honest warning and wait for an explicit decision.
+              setExpensiveConfirm({ ...vars, message: result.confirmMessage })
+              return
+            }
+            setExpensiveConfirm(null)
+            toast.success(`Switched to ${vars.model}`)
+          },
+          onError: (err) => toast.error('Couldn’t switch the model', { description: err.message }),
+          onSettled: () => setPendingId(undefined),
+        },
+      )
     },
     [setModelMutation],
   )
+  const onSetActive = useCallback(
+    (vars: { provider: string; model: string }) => runSetActive(vars, false),
+    [runSetActive],
+  )
+
+  // The explicit "Switch anyway" — the ONLY path that sends the confirm flag.
+  const onConfirmExpensive = useCallback(() => {
+    if (!expensiveConfirm) return
+    runSetActive({ provider: expensiveConfirm.provider, model: expensiveConfirm.model }, true)
+  }, [expensiveConfirm, runSetActive])
+
+  // Decline: nothing to revert — the switch never happened, so the page's active
+  // flag (from the models query) is still the truth.
+  const onCancelExpensive = useCallback(() => setExpensiveConfirm(null), [])
 
   const setActive: SetActiveFeature = {
     status: setModelMutation.isPending ? 'submitting' : 'idle',
@@ -112,12 +149,20 @@ export function ModelsRoute({ embedded = false }: { embedded?: boolean } = {}) {
       />
     )
   return (
-    <ModelsPage
-      status="success"
-      data={query.data}
-      connect={connect}
-      setActive={setActive}
-      embedded={embedded}
-    />
+    <>
+      <ModelsPage
+        status="success"
+        data={query.data}
+        connect={connect}
+        setActive={setActive}
+        embedded={embedded}
+      />
+      <ExpensiveModelConfirmDialog
+        confirm={expensiveConfirm}
+        busy={setModelMutation.isPending}
+        onConfirm={onConfirmExpensive}
+        onCancel={onCancelExpensive}
+      />
+    </>
   )
 }

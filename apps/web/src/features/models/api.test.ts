@@ -243,16 +243,62 @@ describe('setActiveModel', () => {
     )
     vi.stubGlobal('fetch', fetchMock)
 
-    await setActiveModel('anthropic', 'claude-opus-4-5-20251101')
+    const result = await setActiveModel('anthropic', 'claude-opus-4-5-20251101')
+    expect(result).toEqual({ status: 'switched' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0]!
-    // The wave-0 BFF proxy of the stock POST /api/model/set.
+    // The wave-0 BFF proxy of the stock POST /api/model/set. No confirm flag
+    // rides along unless explicitly passed (the guard stays in force).
     expect(url).toBe('/api/agent-deck/model/set')
     expect(init?.method).toBe('POST')
     expect(JSON.parse(init?.body as string)).toEqual({
       provider: 'anthropic',
       model: 'claude-opus-4-5-20251101',
     })
+  })
+
+  it('surfaces the expensive-model guard as confirm-required (a 200 that did NOT switch)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          ok: false,
+          confirm_required: true,
+          confirm_message: 'claude-opus-4-5 costs $25/M input. Confirm to switch.',
+        }),
+      ),
+    )
+    const result = await setActiveModel('anthropic', 'claude-opus-4-5-20251101')
+    expect(result).toEqual({
+      status: 'confirm-required',
+      confirmMessage: 'claude-opus-4-5 costs $25/M input. Confirm to switch.',
+    })
+  })
+
+  it('sends the explicit confirm flag on a user-confirmed expensive switch', async () => {
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
+      Response.json({ ok: true }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await setActiveModel('anthropic', 'claude-opus-4-5-20251101', true)
+    expect(result).toEqual({ status: 'switched' })
+    const [, init] = fetchMock.mock.calls[0]!
+    expect(JSON.parse(init?.body as string)).toEqual({
+      provider: 'anthropic',
+      model: 'claude-opus-4-5-20251101',
+      confirmExpensiveModel: true,
+    })
+  })
+
+  it('throws (never claims a switch) on a 200 ok:false WITHOUT confirm_required', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ ok: false, message: 'assignment rejected' })),
+    )
+    await expect(setActiveModel('anthropic', 'claude-opus-4-5-20251101')).rejects.toThrow(
+      /assignment rejected/,
+    )
   })
 
   it('throws an honest error on a gateway rejection (no silent no-op)', async () => {

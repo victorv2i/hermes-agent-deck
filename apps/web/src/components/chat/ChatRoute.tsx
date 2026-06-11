@@ -9,6 +9,10 @@ import { useChatStore } from '@/state/useChatStore'
 import { branchSendPolicy, FORK_COPY } from '@/state/chatStore'
 import { useHeaderSlot } from '@/state/headerStore'
 import { useModels, useSetModel } from '@/features/models/useModels'
+import {
+  ExpensiveModelConfirmDialog,
+  type ExpensiveModelConfirm,
+} from '@/features/models/ExpensiveModelConfirmDialog'
 import { useSelectedModel } from '@/features/models/useSelectedModel'
 import { useProfiles } from '@/features/profiles/useProfiles'
 import { seedDraft, NEW_CHAT_DRAFT_KEY } from '@/features/chat-input/draftStore'
@@ -187,44 +191,110 @@ export function ChatRoute() {
   // active-model chip re-resolves to the new pick); on a gateway rejection we
   // surface an HONEST toast and the run still proceeds (the gateway falls back to
   // its active model — never a silent wrong-model run masked as success).
+  //
+  // The gateway's expensive-model guard adds a third outcome: a 200 that did NOT
+  // switch (`confirm_required` + its pricing warning). The run is HELD while the
+  // themed confirm dialog surfaces that warning; "Switch anyway" re-posts with
+  // the explicit confirm flag, and a decline reverts the picker to the gateway's
+  // actual active model so the UI never claims a model that isn't set. Never
+  // auto-confirmed — the guard exists to stop accidental expensive switches.
   const activeModelId = models.data?.activeModelId ?? null
-  const ensureModelActive = useCallback(async () => {
-    if (!selectedEntry || !activeProviderId) return
-    if (selectedEntry.provider === activeProviderId && selectedEntry.id === activeModelId) return
+  const [expensiveConfirm, setExpensiveConfirm] = useState<
+    (ExpensiveModelConfirm & { resolve: (modelId: string | undefined) => void }) | null
+  >(null)
+  /** Resolves to the bare model id the held run should carry once the active
+   * model is settled (switched, declined back to the active model, or rejected). */
+  const ensureModelActive = useCallback(async (): Promise<string | undefined> => {
+    if (!selectedEntry || !activeProviderId) return modelArg
+    if (selectedEntry.provider === activeProviderId && selectedEntry.id === activeModelId) {
+      return modelArg
+    }
     try {
-      await setModel.mutateAsync({ provider: selectedEntry.provider, model: selectedEntry.id })
+      const result = await setModel.mutateAsync({
+        provider: selectedEntry.provider,
+        model: selectedEntry.id,
+      })
+      if (result.status === 'confirm-required') {
+        // Nothing switched. Hold the run on the user's explicit decision.
+        return await new Promise<string | undefined>((resolve) => {
+          setExpensiveConfirm({
+            provider: selectedEntry.provider,
+            model: selectedEntry.id,
+            message: result.confirmMessage,
+            resolve,
+          })
+        })
+      }
     } catch (err) {
       toast.error('Couldn’t switch the model', {
         description: err instanceof Error ? err.message : undefined,
       })
     }
-  }, [selectedEntry, activeProviderId, activeModelId, setModel])
+    return modelArg
+  }, [selectedEntry, activeProviderId, activeModelId, setModel, modelArg])
+
+  // "Switch anyway" — the ONLY path that sends the confirm flag. The held run
+  // then proceeds on the confirmed model (or, on a rejection, falls back exactly
+  // like the unconfirmed rejection path above: honest toast, gateway keeps its
+  // active model).
+  const handleConfirmExpensive = useCallback(async () => {
+    if (!expensiveConfirm) return
+    const { provider, model, resolve } = expensiveConfirm
+    try {
+      const result = await setModel.mutateAsync({ provider, model, confirmExpensiveModel: true })
+      if (result.status === 'confirm-required') {
+        // The guard still declined — nothing switched, so don't claim the pick.
+        toast.error('Couldn’t switch the model', { description: result.confirmMessage })
+        if (activeQualifiedId) selectModel(activeQualifiedId)
+        resolve(activeModelId ?? undefined)
+      } else {
+        resolve(model)
+      }
+    } catch (err) {
+      toast.error('Couldn’t switch the model', {
+        description: err instanceof Error ? err.message : undefined,
+      })
+      resolve(model)
+    } finally {
+      setExpensiveConfirm(null)
+    }
+  }, [expensiveConfirm, setModel, activeQualifiedId, selectModel, activeModelId])
+
+  // Decline: the switch never happened. Revert the picker to the gateway's
+  // ACTUAL active model (the UI must not claim a model that isn't set) and let
+  // the held run proceed on that active model.
+  const handleCancelExpensive = useCallback(() => {
+    if (!expensiveConfirm) return
+    if (activeQualifiedId) selectModel(activeQualifiedId)
+    expensiveConfirm.resolve(activeModelId ?? undefined)
+    setExpensiveConfirm(null)
+  }, [expensiveConfirm, activeQualifiedId, selectModel, activeModelId])
 
   const handleSend = useCallback(
     (text: string, attachments?: RunAttachment[]) => {
-      void ensureModelActive().then(() => send(text, modelArg, attachments))
+      void ensureModelActive().then((model) => send(text, model, attachments))
     },
-    [send, modelArg, ensureModelActive],
+    [send, ensureModelActive],
   )
   const handleRetry = useCallback(
     (turnId: string) => {
-      void ensureModelActive().then(() => retry(turnId, modelArg))
+      void ensureModelActive().then((model) => retry(turnId, model))
     },
-    [retry, modelArg, ensureModelActive],
+    [retry, ensureModelActive],
   )
   const handleEditTurn = useCallback(
     (turnId: string, text: string) => {
-      void ensureModelActive().then(() => editTurn(turnId, text, modelArg))
+      void ensureModelActive().then((model) => editTurn(turnId, text, model))
     },
-    [editTurn, modelArg, ensureModelActive],
+    [editTurn, ensureModelActive],
   )
   // Refinement row: send a follow-up prompt through the normal run path (honest —
   // it truly re-asks). Uses the current model selection for consistency.
   const handleSendRefinement = useCallback(
     (text: string) => {
-      void ensureModelActive().then(() => send(text, modelArg))
+      void ensureModelActive().then((model) => send(text, model))
     },
-    [send, modelArg, ensureModelActive],
+    [send, ensureModelActive],
   )
 
   // Fork from here (Lane D): create a NEW local branch rooted at a settled turn.
@@ -333,49 +403,60 @@ export function ChatRoute() {
   }, [sessionModel, selectedQualifiedId, modelList])
 
   return (
-    <ChatView
-      turns={turns}
-      runStatus={runStatus}
-      pendingApproval={pendingApproval}
-      error={error}
-      // The active agent's identity drives the first-person empty-state greeting
-      // and the per-group assistant avatar gutter (A1).
-      agent={agent}
-      // The composer hosts the real model picker (T1.2); a resumed session pins
-      // the picker to its own model so a re-run stays on that model. The picker
-      // value + onChange operate in qualifiedId space (unique across providers).
-      models={modelList}
-      model={pickerValue}
-      onModelChange={selectModel}
-      contextTokens={contextTokens}
-      contextLimit={contextLimit}
-      inputDisabled={connection === 'disconnected'}
-      // Honest send-gating: surface an actionable notice + disable the composer
-      // when the chat genuinely can't run, instead of a live-looking dead send.
-      blockedReason={blockedReason}
-      onConnectModel={() => navigate('/settings')}
-      startAgentAction={canStartAgent ? <StartAgentButton /> : undefined}
-      canAttachImages={canAttachImages}
-      autoFocusComposer={autoFocusComposer}
-      // Key the composer's persisted draft to the active conversation, so each
-      // chat keeps its own in-progress draft (a fresh chat maps to the `:new`
-      // sentinel) rather than all sharing one.
-      sessionId={activeSessionId}
-      onSend={handleSend}
-      onStop={stop}
-      onRetry={handleRetry}
-      onEditTurn={handleEditTurn}
-      onFork={handleFork}
-      forkBanner={forkBanner}
-      onReturnToOriginal={originalBranchId ? handleReturnToOriginal : undefined}
-      onRespondApproval={respondApproval}
-      onSendRefinement={handleSendRefinement}
-      // Composer slash-command handlers (mirror the ⌘K palette). `/model` is
-      // self-contained (opens the picker); these wire the rest.
-      onNewChat={newChat}
-      onClearChat={clearChat}
-      onToggleTheme={toggleTheme}
-    />
+    <>
+      <ChatView
+        turns={turns}
+        runStatus={runStatus}
+        pendingApproval={pendingApproval}
+        error={error}
+        // The active agent's identity drives the first-person empty-state greeting
+        // and the per-group assistant avatar gutter (A1).
+        agent={agent}
+        // The composer hosts the real model picker (T1.2); a resumed session pins
+        // the picker to its own model so a re-run stays on that model. The picker
+        // value + onChange operate in qualifiedId space (unique across providers).
+        models={modelList}
+        model={pickerValue}
+        onModelChange={selectModel}
+        contextTokens={contextTokens}
+        contextLimit={contextLimit}
+        inputDisabled={connection === 'disconnected'}
+        // Honest send-gating: surface an actionable notice + disable the composer
+        // when the chat genuinely can't run, instead of a live-looking dead send.
+        blockedReason={blockedReason}
+        onConnectModel={() => navigate('/settings')}
+        startAgentAction={canStartAgent ? <StartAgentButton /> : undefined}
+        canAttachImages={canAttachImages}
+        autoFocusComposer={autoFocusComposer}
+        // Key the composer's persisted draft to the active conversation, so each
+        // chat keeps its own in-progress draft (a fresh chat maps to the `:new`
+        // sentinel) rather than all sharing one.
+        sessionId={activeSessionId}
+        onSend={handleSend}
+        onStop={stop}
+        onRetry={handleRetry}
+        onEditTurn={handleEditTurn}
+        onFork={handleFork}
+        forkBanner={forkBanner}
+        onReturnToOriginal={originalBranchId ? handleReturnToOriginal : undefined}
+        onRespondApproval={respondApproval}
+        onSendRefinement={handleSendRefinement}
+        // Composer slash-command handlers (mirror the ⌘K palette). `/model` is
+        // self-contained (opens the picker); these wire the rest.
+        onNewChat={newChat}
+        onClearChat={clearChat}
+        onToggleTheme={toggleTheme}
+      />
+      {/* The expensive-model guard's confirm: the held run resolves through the
+          handlers above, so the user's decision (not a silent default) settles
+          which model the run carries. */}
+      <ExpensiveModelConfirmDialog
+        confirm={expensiveConfirm}
+        busy={setModel.isPending}
+        onConfirm={() => void handleConfirmExpensive()}
+        onCancel={handleCancelExpensive}
+      />
+    </>
   )
 }
 

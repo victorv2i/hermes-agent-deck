@@ -315,12 +315,22 @@ export const registerModelsRoutes: FastifyPluginAsync<ModelsRouteOptions> = asyn
   )
 
   // ── Cross-provider switch (the ONE mutation) ──
-  // POST /api/agent-deck/model/set  body { provider, model } → proxies the stock
-  // POST /api/model/set (web_server.py:1099). Validates provider+model are
-  // non-empty strings BEFORE any dashboard call (fail-closed). A dashboard
-  // failure surfaces as a generic 502 (never raw stderr / the token).
+  // POST /api/agent-deck/model/set  body { provider, model,
+  // confirmExpensiveModel? } → proxies the stock POST /api/model/set
+  // (web_server.py:1099). Validates provider+model are non-empty strings BEFORE
+  // any dashboard call (fail-closed). `confirmExpensiveModel: true` forwards as
+  // the stock `confirm_expensive_model` flag — the user's explicit answer to the
+  // gateway's expensive-model guard (which otherwise replies 200 +
+  // `{ ok: false, confirm_required: true, confirm_message }` instead of
+  // switching; that body passes through verbatim so the web layer can surface
+  // it). A dashboard failure surfaces as a generic 502 (never raw stderr / the
+  // token).
   app.post('/api/agent-deck/model/set', async (req, reply): Promise<unknown> => {
-    const body = req.body as { provider?: unknown; model?: unknown } | null
+    const body = req.body as {
+      provider?: unknown
+      model?: unknown
+      confirmExpensiveModel?: unknown
+    } | null
     const provider = typeof body?.provider === 'string' ? body.provider.trim() : ''
     const model = typeof body?.model === 'string' ? body.model.trim() : ''
     if (provider === '' || model === '') {
@@ -328,7 +338,12 @@ export const registerModelsRoutes: FastifyPluginAsync<ModelsRouteOptions> = asyn
       return { error: 'Body must be { provider: string, model: string }.' }
     }
     try {
-      return await dashboard.postJson<unknown>('/api/model/set', { provider, model })
+      return await dashboard.postJson<unknown>('/api/model/set', {
+        provider,
+        model,
+        // Only an explicit true rides through; the guard stays in force otherwise.
+        ...(body?.confirmExpensiveModel === true ? { confirm_expensive_model: true } : {}),
+      })
     } catch {
       reply.code(502)
       return { error: 'Unable to switch the model on the hermes dashboard.' }

@@ -280,14 +280,51 @@ export async function cancelProviderOAuth(sessionId: string, signal?: AbortSigna
 }
 
 /**
+ * The honest outcome of a switch attempt. `confirm-required` is NOT an error:
+ * the gateway's expensive-model guard answered 200 with
+ * `{ ok: false, confirm_required: true, confirm_message }` INSTEAD of switching
+ * — the model did not change, and the caller must put `confirmMessage` in front
+ * of the user and re-call with `confirmExpensiveModel: true` only on an explicit
+ * confirmation (never auto-confirm; the guard exists to stop accidental
+ * expensive switches).
+ */
+export type SetModelResult =
+  | { status: 'switched' }
+  | { status: 'confirm-required'; confirmMessage: string }
+
+/**
  * Switch the ACTIVE model/provider via the wave-0 BFF proxy of the stock
  * `POST /api/model/set` (`POST /api/agent-deck/model/set`, body `{ provider,
- * model }`). This is the REAL cross-provider switch — picking a model whose
- * provider differs from the running one must call this BEFORE/with the run, or
- * the pick silently no-ops (the run stays on the old provider). On a gateway
- * rejection `apiPost` throws a typed `ApiError` carrying the BFF's honest
- * message, which the caller surfaces as a toast — never a silent failure.
+ * model, confirmExpensiveModel? }`). This is the REAL cross-provider switch —
+ * picking a model whose provider differs from the running one must call this
+ * BEFORE/with the run, or the pick silently no-ops (the run stays on the old
+ * provider). On a gateway rejection `apiPost` throws a typed `ApiError` carrying
+ * the BFF's honest message, which the caller surfaces as a toast — never a
+ * silent failure. A 200 reply is INSPECTED, not assumed: the expensive-model
+ * guard declines with `confirm_required` (see {@link SetModelResult}), and any
+ * other `ok: false` throws rather than reading as a switch that never happened.
  */
-export async function setActiveModel(provider: string, model: string): Promise<void> {
-  await apiPost<unknown>('/api/agent-deck/model/set', { provider, model })
+export async function setActiveModel(
+  provider: string,
+  model: string,
+  confirmExpensiveModel = false,
+): Promise<SetModelResult> {
+  const raw = await apiPost<unknown>('/api/agent-deck/model/set', {
+    provider,
+    model,
+    ...(confirmExpensiveModel ? { confirmExpensiveModel: true } : {}),
+  })
+  const obj = asRecord(raw)
+  if (obj.confirm_required === true) {
+    return {
+      status: 'confirm-required',
+      confirmMessage:
+        asString(obj.confirm_message) ||
+        `${model} is priced well above typical models. Confirm to switch.`,
+    }
+  }
+  if (obj.ok === false) {
+    throw new Error(asString(obj.message) || 'The gateway declined the model switch.')
+  }
+  return { status: 'switched' }
 }

@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { connectProvider, fetchModels, fetchProviderOAuthProviders, setActiveModel } from './api'
+import {
+  connectProvider,
+  fetchModels,
+  fetchProviderOAuthProviders,
+  setActiveModel,
+  type SetModelResult,
+} from './api'
 import type { ModelsResponse, ProviderConnectResult } from './types'
 
 /** The models-roster query key, shared so other features (the gateway restart)
@@ -60,22 +66,31 @@ export function useConnectProvider() {
 interface SetModelVars {
   provider: string
   model: string
+  /** The user's EXPLICIT answer to the gateway's expensive-model guard. Only
+   * pass true after they confirmed the surfaced `confirmMessage`. */
+  confirmExpensiveModel?: boolean
 }
 
 /**
  * Mutation for the REAL cross-provider switch — proxies the stock
  * `POST /api/model/set` (via `setActiveModel`). Used by the composer's picker
  * (when a pick changes provider) AND by the Models page's "Set as active"
- * action. On success it INVALIDATES the models query so the active model + the
- * `usable`/active flags re-resolve and the UI reflects the pick. A rejection
- * propagates the typed `ApiError`, which the caller turns into an honest toast.
+ * action. On a REAL switch it INVALIDATES the models query so the active model
+ * + the `usable`/active flags re-resolve and the UI reflects the pick; a
+ * `confirm-required` resolution did NOT switch anything (the expensive-model
+ * guard declined), so nothing is invalidated and the caller must surface the
+ * confirm. A rejection propagates the typed `ApiError`, which the caller turns
+ * into an honest toast.
  */
 export function useSetModel() {
   const qc = useQueryClient()
-  return useMutation<void, Error, SetModelVars>({
-    mutationFn: ({ provider, model }) => setActiveModel(provider, model),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: modelsKey })
+  return useMutation<SetModelResult, Error, SetModelVars>({
+    mutationFn: ({ provider, model, confirmExpensiveModel }) =>
+      setActiveModel(provider, model, confirmExpensiveModel === true),
+    onSuccess: (result) => {
+      if (result.status === 'switched') {
+        qc.invalidateQueries({ queryKey: modelsKey })
+      }
     },
   })
 }
