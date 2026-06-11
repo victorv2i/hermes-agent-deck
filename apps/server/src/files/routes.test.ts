@@ -17,7 +17,10 @@ async function buildAppWithFiles(): Promise<{ app: FastifyInstance; service: Fil
     hermesDashboardUrl: dashboard.url,
     hermesDashboardHost: dashboard.host,
   })
-  const service = new FilesService(client)
+  // Pin the home dir to a non-existent path so the real $HOME (which the
+  // terminal-cwd root now mirrors, per hermes semantics) never leaks into a
+  // hermetic roots assertion.
+  const service = new FilesService(client, { homeDir: join(tmpRoot, 'no-such-home') })
   service.setRootResolver(async (id) =>
     id === 'tmp'
       ? { id: 'tmp', label: 'Tmp', description: '', path: tmpRoot, readOnly: false }

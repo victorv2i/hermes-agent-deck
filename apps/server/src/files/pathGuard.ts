@@ -235,6 +235,15 @@ export function isSensitivePath(rel: string, opts: { hermesScoped?: boolean } = 
   const name = lower[lower.length - 1]!
   if (nameIsSensitive(name) || nameIsSensitive(stripBackupSuffix(name))) return true
 
+  // The Hermes credential home reached THROUGH another root (e.g. the `$HOME`
+  // terminal-cwd root contains `~/.hermes`): a runtime-config file under any
+  // `.hermes` segment carries live provider keys, so it is sensitive regardless
+  // of the caller's `hermesScoped` flag (path-scoped, like `.git/config`).
+  if (lower.includes('.hermes')) {
+    if (HERMES_HOME_CONFIG_NAMES.has(name) || HERMES_HOME_CONFIG_NAMES.has(stripBackupSuffix(name)))
+      return true
+  }
+
   // Runtime-config family — credential-bearing ONLY inside the Hermes home, so
   // scoped to that root (parity with the `.git/config` scoping above) rather than
   // blocked by bare basename everywhere.

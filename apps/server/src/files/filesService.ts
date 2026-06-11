@@ -43,6 +43,7 @@ import {
   open,
 } from 'node:fs/promises'
 import { basename, dirname, extname, isAbsolute, join, resolve } from 'node:path'
+import { homedir } from 'node:os'
 import { parse as parseYaml } from 'yaml'
 import type { DashboardClient } from '../hermes/dashboardClient'
 import { resolveInsideRoot, assertRealpathInsideRoot, isSensitivePath } from './pathGuard'
@@ -178,33 +179,41 @@ async function isDir(absPath: string): Promise<boolean> {
   }
 }
 
+/** The `terminal.cwd` placeholder values hermes itself maps to `$HOME`
+ * (gateway/run.py: unset or one of these → `Path.home()`). */
+const TERMINAL_CWD_PLACEHOLDERS = new Set(['.', 'auto', 'cwd'])
+
 /**
- * Read `terminal.cwd` from `${hermesHome}/config.yaml`, resolved against
- * hermes_home, or null when absent/garbled. Stock ships `terminal.cwd: .`
- * (→ hermes_home itself). An ABSOLUTE cwd is honored as-is; a relative one is
- * resolved under hermes_home (never above it — a `..`-escaping value collapses to
- * hermes_home so a hostile config can't point Files at `/etc`). Presence-safe:
- * any read/parse failure returns null.
+ * Read `terminal.cwd` from `${hermesHome}/config.yaml`, MIRRORING hermes's own
+ * resolution (gateway/run.py): an unset/blank cwd or a placeholder (`.`, `auto`,
+ * `cwd`) means `$HOME` — that is where the agent's terminal actually runs, so
+ * Files/Terminal must point there too (NOT at hermes_home, which used to make
+ * the panels show a different tree than the agent works in). An ABSOLUTE cwd is
+ * honored as-is; any other relative value is resolved under hermes_home (never
+ * above it — a `..`-escaping value collapses to hermes_home so a hostile config
+ * can't point Files at `/etc`). Presence-safe: a missing/garbled config reads as
+ * unset (→ `$HOME`), exactly like hermes.
  */
-async function readTerminalCwd(hermesHome: string): Promise<string | null> {
+async function readTerminalCwd(hermesHome: string, home: string): Promise<string> {
   let raw: string
   try {
     raw = await readFile(join(hermesHome, 'config.yaml'), 'utf8')
   } catch {
-    return null
+    return home
   }
   let parsed: unknown
   try {
     parsed = parseYaml(raw)
   } catch {
-    return null
+    return home
   }
-  if (!parsed || typeof parsed !== 'object') return null
+  if (!parsed || typeof parsed !== 'object') return home
   const terminal = (parsed as Record<string, unknown>).terminal
-  if (!terminal || typeof terminal !== 'object') return null
+  if (!terminal || typeof terminal !== 'object') return home
   const cwd = (terminal as Record<string, unknown>).cwd
-  if (typeof cwd !== 'string' || cwd.trim() === '') return null
+  if (typeof cwd !== 'string' || cwd.trim() === '') return home
   const trimmed = cwd.trim()
+  if (TERMINAL_CWD_PLACEHOLDERS.has(trimmed)) return home
   if (isAbsolute(trimmed)) return resolve(trimmed)
   // Relative → confine under hermes_home; a `..`-escape collapses to home.
   const resolved = resolve(hermesHome, trimmed)
@@ -214,8 +223,15 @@ async function readTerminalCwd(hermesHome: string): Promise<string | null> {
 
 export class FilesService {
   private rootResolver: RootResolver
+  /** The user's home dir — what hermes resolves a placeholder `terminal.cwd`
+   * to. Injectable for hermetic tests. */
+  private readonly homeDir: string
 
-  constructor(private readonly dashboard: DashboardClient) {
+  constructor(
+    private readonly dashboard: DashboardClient,
+    opts: { homeDir?: string } = {},
+  ) {
+    this.homeDir = opts.homeDir ?? homedir()
     // Default: resolve a root id against the BFF-derived roots list.
     this.rootResolver = async (id) => {
       const roots = await this.listRoots()
@@ -240,18 +256,20 @@ export class FilesService {
    * shares these roots) permanently BLANK on a real install. This now sources, in
    * order, every root that ACTUALLY exists on disk:
    *
-   *   1. hermes_home itself ("Hermes home") — the guaranteed fallback so Files is
+   *   1. the agent's REAL terminal cwd ({@link readTerminalCwd}, mirroring
+   *      hermes: stock `terminal.cwd: .`/`auto`/unset → `$HOME`) — listed FIRST
+   *      so Files and the Terminal (which spawns in the first root) open where
+   *      the agent actually works.
+   *   2. hermes_home itself ("Hermes home") — the guaranteed fallback so Files is
    *      NEVER blank on a stock install.
-   *   2. each `${hermes_home}/playgrounds/<name>` directory (the stock scratch dirs).
-   *   3. the configured `terminal.cwd` from `${hermes_home}/config.yaml`, resolved
-   *      against hermes_home, when it exists (stock default `.` → hermes_home).
+   *   3. each `${hermes_home}/playgrounds/<name>` directory (the stock scratch dirs).
    *   4. `${hermes_home}/workspace` ONLY if it actually exists (never synthesized).
    *   5. each `${hermes_home}/profiles/<name>/workspace` that exists (named profiles).
    *
-   * Roots are de-duplicated by absolute path (so the stock `terminal.cwd: .`,
-   * which resolves to hermes_home, never produces a second "home" root). Returns
-   * `[]` (never throws) only when the dashboard is unreachable or `hermes_home`
-   * is absent.
+   * Roots are de-duplicated by absolute path. A `terminal.cwd` that resolves to
+   * hermes_home itself is NOT surfaced as a separate writable root — the
+   * read-only `home` root keeps owning that path. Returns `[]` (never throws)
+   * only when the dashboard is unreachable or `hermes_home` is absent.
    *
    * WRITABILITY: the genuine WORK roots (playgrounds, terminal.cwd, workspace,
    * named-profile workspaces) are writable (`readOnly: false`); only `home`
@@ -275,7 +293,22 @@ export class FilesService {
       roots.push(root)
     }
 
-    // 1. hermes_home itself — the guaranteed-existing fallback (Files never blank).
+    // 1. The agent's real terminal cwd (hermes semantics: stock placeholder →
+    //    $HOME), FIRST so the Files default and the Terminal's spawn dir match
+    //    where the agent actually runs commands. Never claims hermes_home itself
+    //    (that path belongs to the read-only `home` root below).
+    const terminalCwd = await readTerminalCwd(hermesHome, this.homeDir)
+    if (terminalCwd !== resolve(hermesHome) && (await isDir(terminalCwd))) {
+      add({
+        id: 'terminal-cwd',
+        label: terminalCwd === this.homeDir ? 'Home' : 'Terminal cwd',
+        description: 'where the agent works',
+        path: terminalCwd,
+        readOnly: false,
+      })
+    }
+
+    // 2. hermes_home itself — the guaranteed-existing fallback (Files never blank).
     if (await isDir(hermesHome)) {
       add({
         id: 'home',
@@ -286,7 +319,7 @@ export class FilesService {
       })
     }
 
-    // 2. ${hermes_home}/playgrounds/* — the stock scratch dirs.
+    // 3. ${hermes_home}/playgrounds/* — the stock scratch dirs.
     const playgroundsDir = join(hermesHome, 'playgrounds')
     let playgroundNames: string[]
     try {
@@ -310,18 +343,6 @@ export class FilesService {
           readOnly: false,
         })
       }
-    }
-
-    // 3. terminal.cwd from config.yaml (resolved against hermes_home), if it exists.
-    const terminalCwd = await readTerminalCwd(hermesHome)
-    if (terminalCwd && (await isDir(terminalCwd))) {
-      add({
-        id: 'terminal-cwd',
-        label: 'Terminal cwd',
-        description: 'config',
-        path: terminalCwd,
-        readOnly: false,
-      })
     }
 
     // 4. ${hermes_home}/workspace ONLY if it actually exists (never synthesized).

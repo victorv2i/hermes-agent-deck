@@ -11,13 +11,15 @@ let dashboard: MockDashboardHandle
 let tmpRoot: string
 
 /** Build a FilesService whose reads hit the mock dashboard and whose write root
- * is a real temp dir (registered under id "tmp"). */
-function makeService(): FilesService {
+ * is a real temp dir (registered under id "tmp"). The home dir is pinned to a
+ * non-existent path by default so the real `$HOME` never leaks into a hermetic
+ * roots assertion; tests of the $HOME terminal-cwd semantics pass their own. */
+function makeService(opts: { homeDir?: string } = {}): FilesService {
   const client = new DashboardClient({
     hermesDashboardUrl: dashboard.url,
     hermesDashboardHost: dashboard.host,
   })
-  return new FilesService(client)
+  return new FilesService(client, { homeDir: opts.homeDir ?? join(tmpRoot, 'no-such-home') })
 }
 
 beforeEach(async () => {
@@ -90,14 +92,45 @@ describe('FilesService.listRoots (derived from /api/status hermes_home + BFF fs)
     expect(roots.some((r) => r.path === join(tmpRoot, 'workdir'))).toBe(true)
   })
 
-  it('treats a `terminal.cwd: .` (the stock default) as hermes_home (no dupe root)', async () => {
-    // Stock ships `terminal.cwd: .` → resolves to hermes_home itself; must not
-    // produce a second root with the same path as `home`.
+  it('resolves the stock `terminal.cwd: .` to $HOME, FIRST in the roots (hermes semantics)', async () => {
+    // hermes itself maps `.`/`auto`/unset → Path.home() (gateway/run.py), so the
+    // agent's terminal runs in $HOME — Files/Terminal must show that tree, not
+    // hermes_home. Listed first so the Terminal pty (first existing root) opens
+    // where the agent actually works.
+    const fakeHome = join(tmpRoot, 'fake-home')
+    await mkdir(fakeHome, { recursive: true })
     await writeFile(join(tmpRoot, 'config.yaml'), 'terminal:\n  cwd: .\n')
     dashboard = await startMockDashboard({ statusBody: { hermes_home: tmpRoot } })
+    const roots = await makeService({ homeDir: fakeHome }).listRoots()
+    const cwdRoot = roots[0]
+    expect(cwdRoot).toMatchObject({
+      id: 'terminal-cwd',
+      label: 'Home',
+      path: fakeHome,
+      readOnly: false,
+    })
+    // The ~/.hermes root is still present (and still read-only).
+    const home = roots.find((r) => r.id === 'home')
+    expect(home).toMatchObject({ path: tmpRoot, readOnly: true })
+  })
+
+  it('treats a MISSING config.yaml as terminal.cwd unset → $HOME (hermes semantics)', async () => {
+    const fakeHome = join(tmpRoot, 'fake-home')
+    await mkdir(fakeHome, { recursive: true })
+    dashboard = await startMockDashboard({ statusBody: { hermes_home: tmpRoot } })
+    const roots = await makeService({ homeDir: fakeHome }).listRoots()
+    expect(roots.find((r) => r.id === 'terminal-cwd')?.path).toBe(fakeHome)
+  })
+
+  it('never surfaces hermes_home as a WRITABLE terminal-cwd root (no read-only bypass)', async () => {
+    // An absolute terminal.cwd pointing at hermes_home itself must not mint a
+    // second, writable root for the credential home — `home` keeps that path.
+    await writeFile(join(tmpRoot, 'config.yaml'), `terminal:\n  cwd: ${tmpRoot}\n`)
+    dashboard = await startMockDashboard({ statusBody: { hermes_home: tmpRoot } })
     const roots = await makeService().listRoots()
-    const paths = roots.map((r) => r.path)
-    expect(paths.filter((p) => p === tmpRoot)).toHaveLength(1)
+    const paths = roots.filter((r) => r.path === tmpRoot)
+    expect(paths).toHaveLength(1)
+    expect(paths[0]).toMatchObject({ id: 'home', readOnly: true })
   })
 
   it('keeps a real ${hermes_home}/workspace ONLY when it actually exists', async () => {
