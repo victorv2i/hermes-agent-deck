@@ -130,7 +130,7 @@ export class MockGatewayClient implements GatewayClientLike {
   ): AsyncGenerator<GatewayEvent, void, unknown> {
     const state = this.runs.get(runId)
     if (!state) return
-    const t = 1_700_000_000
+    const t = Math.floor(Date.now() / 1000)
 
     const aborted = () => Boolean(signal?.aborted) || state.stopped
     /** On stop/abort, emit a faithful terminal frame (the real gateway sends
@@ -164,7 +164,7 @@ export class MockGatewayClient implements GatewayClientLike {
     }
 
     // 1. streamed assistant text
-    const opening = ['Hello, ', 'from the ', 'mock agent.']
+    const opening = ['Taking a look ', 'at the build ', 'folder first.']
     for (let i = 0; i < opening.length; i++) {
       await sleep(STEP_MS, signal)
       if (aborted()) {
@@ -260,7 +260,28 @@ export class MockGatewayClient implements GatewayClientLike {
       return
     }
 
-    const closing = [' All done.', ' Anything else?']
+    yield {
+      event: 'tool.started',
+      run_id: runId,
+      timestamp: t + 31.5,
+      tool: 'bash',
+      preview: 'rm -rf ./build',
+    }
+    await sleep(STEP_MS * 16, signal)
+    if (aborted()) {
+      yield cancelled()
+      return
+    }
+    yield {
+      event: 'tool.completed',
+      run_id: runId,
+      timestamp: t + 31.8,
+      tool: 'bash',
+      duration: 0.46,
+      error: false,
+    }
+
+    const closing = [' Build folder cleared.', ' The repo is tidy and ready to ship.']
     for (let i = 0; i < closing.length; i++) {
       await sleep(STEP_MS, signal)
       if (aborted()) {
@@ -273,7 +294,8 @@ export class MockGatewayClient implements GatewayClientLike {
       event: 'run.completed',
       run_id: runId,
       timestamp: t + 40,
-      output: 'Hello, from the mock agent. All done. Anything else?',
+      output:
+        'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
       usage: { input_tokens: 12, output_tokens: 11, total_tokens: 23 },
     }
   }

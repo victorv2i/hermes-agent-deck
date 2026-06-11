@@ -120,6 +120,8 @@ describe('MockGatewayClient via /chat-run', () => {
       'tool.completed',
       'approval.request',
       'approval.responded',
+      'tool.started',
+      'tool.completed',
       'message.delta',
       'message.delta',
       'run.completed',
@@ -127,7 +129,7 @@ describe('MockGatewayClient via /chat-run', () => {
 
     // Monotonic, gap-free cursors on the buffered (non-transient) frames.
     const cursors = order.map((e) => e.cursor)
-    expect(cursors).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+    expect(cursors).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
 
     const text = order
       .filter(
@@ -136,7 +138,9 @@ describe('MockGatewayClient via /chat-run', () => {
       )
       .map((e) => e.delta)
       .join('')
-    expect(text).toBe('Hello, from the mock agent. All done. Anything else?')
+    expect(text).toBe(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+    )
 
     const approval = order.find((e) => e.event === 'approval.request')
     expect(approval).toMatchObject({
@@ -147,7 +151,9 @@ describe('MockGatewayClient via /chat-run', () => {
     const completed = order.find(
       (e): e is Extract<ChatServerEvent, { event: 'run.completed' }> => e.event === 'run.completed',
     )
-    expect(completed?.output).toBe('Hello, from the mock agent. All done. Anything else?')
+    expect(completed?.output).toBe(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+    )
   })
 
   it('cancels the run on abort, emitting run.cancelled', async () => {
