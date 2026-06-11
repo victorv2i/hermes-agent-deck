@@ -224,18 +224,65 @@ describe('ChatRoute — live header (T1.3)', () => {
     await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'gpt-5.5', undefined))
   })
 
-  it('does NOT switch the provider when the picked model is already on the active provider', async () => {
+  it('does NOT switch when the picked model IS the active (provider, model) pair', async () => {
     const user = userEvent.setup()
     const send = vi.fn()
-    // The active model (anthropic) is the default selection — same provider.
+    // The active model (anthropic) is the default selection — same pair.
     renderChatRoute({ send })
     const textarea = screen.getAllByLabelText('Message your agent')[0]!
     await user.type(textarea, 'hi')
     await user.keyboard('{Enter}')
 
     await waitFor(() => expect(send).toHaveBeenCalledWith('hi', 'claude-opus-4', undefined))
-    // No needless /model/set when the provider is unchanged.
+    // No needless /model/set when the active pair is unchanged.
     expect(mockSetModelMutateAsync).not.toHaveBeenCalled()
+  })
+
+  it('switches (POST /model/set) for a SAME-provider model change — never a silent no-op', async () => {
+    const user = userEvent.setup()
+    const send = vi.fn()
+    // Two models under the active provider: picking the inactive one must still
+    // hit /model/set (the run's body.model alone is cosmetic to the gateway).
+    mockUseModels.mockReturnValue({
+      data: {
+        activeModelId: 'claude-opus-4',
+        provider: { id: 'anthropic', label: 'Anthropic' },
+        models: [
+          {
+            id: 'claude-opus-4',
+            qualifiedId: 'anthropic/claude-opus-4',
+            label: 'Claude Opus 4',
+            provider: 'anthropic',
+            active: true,
+            usable: true,
+            source: 'config',
+          },
+          {
+            id: 'claude-sonnet-4',
+            qualifiedId: 'anthropic/claude-sonnet-4',
+            label: 'Claude Sonnet 4',
+            provider: 'anthropic',
+            active: false,
+            usable: true,
+            source: 'config',
+          },
+        ],
+      },
+    })
+    localStorage.setItem('agent-deck:selected-model', 'anthropic/claude-sonnet-4')
+    renderChatRoute({ send })
+
+    const textarea = screen.getAllByLabelText('Message your agent')[0]!
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() =>
+      expect(mockSetModelMutateAsync).toHaveBeenCalledWith({
+        provider: 'anthropic',
+        model: 'claude-sonnet-4',
+      }),
+    )
+    await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'claude-sonnet-4', undefined))
   })
 
   it('reports context tokens honestly in the header ring (no false %)', () => {

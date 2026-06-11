@@ -178,15 +178,19 @@ export function ChatRoute() {
   // the gateway expects), never the qualifiedId.
   const modelArg = selectedEntry?.id ?? undefined
 
-  // A pick whose provider differs from the running one is a REAL cross-provider
-  // switch: it must hit POST /api/model/set BEFORE the run, or the run silently
-  // stays on the old provider (the reported "picking opus did nothing" bug). We
-  // await the switch; on a gateway rejection we surface an HONEST toast and the
-  // run still proceeds (the gateway falls back to its active model — never a
-  // silent wrong-model run masked as success).
-  const ensureProviderActive = useCallback(async () => {
+  // A pick that differs from the ACTIVE (provider, model) pair is a REAL switch:
+  // it must hit POST /api/model/set BEFORE the run, or the run silently stays on
+  // the old model. That endpoint handles both a cross-provider switch AND a
+  // same-provider model change — the run's body.model alone is cosmetic to the
+  // gateway, so gating only on the provider made a same-provider pick a silent
+  // no-op. We await the switch (its success invalidates the models query, so the
+  // active-model chip re-resolves to the new pick); on a gateway rejection we
+  // surface an HONEST toast and the run still proceeds (the gateway falls back to
+  // its active model — never a silent wrong-model run masked as success).
+  const activeModelId = models.data?.activeModelId ?? null
+  const ensureModelActive = useCallback(async () => {
     if (!selectedEntry || !activeProviderId) return
-    if (selectedEntry.provider === activeProviderId) return
+    if (selectedEntry.provider === activeProviderId && selectedEntry.id === activeModelId) return
     try {
       await setModel.mutateAsync({ provider: selectedEntry.provider, model: selectedEntry.id })
     } catch (err) {
@@ -194,33 +198,33 @@ export function ChatRoute() {
         description: err instanceof Error ? err.message : undefined,
       })
     }
-  }, [selectedEntry, activeProviderId, setModel])
+  }, [selectedEntry, activeProviderId, activeModelId, setModel])
 
   const handleSend = useCallback(
     (text: string, attachments?: RunAttachment[]) => {
-      void ensureProviderActive().then(() => send(text, modelArg, attachments))
+      void ensureModelActive().then(() => send(text, modelArg, attachments))
     },
-    [send, modelArg, ensureProviderActive],
+    [send, modelArg, ensureModelActive],
   )
   const handleRetry = useCallback(
     (turnId: string) => {
-      void ensureProviderActive().then(() => retry(turnId, modelArg))
+      void ensureModelActive().then(() => retry(turnId, modelArg))
     },
-    [retry, modelArg, ensureProviderActive],
+    [retry, modelArg, ensureModelActive],
   )
   const handleEditTurn = useCallback(
     (turnId: string, text: string) => {
-      void ensureProviderActive().then(() => editTurn(turnId, text, modelArg))
+      void ensureModelActive().then(() => editTurn(turnId, text, modelArg))
     },
-    [editTurn, modelArg, ensureProviderActive],
+    [editTurn, modelArg, ensureModelActive],
   )
   // Refinement row: send a follow-up prompt through the normal run path (honest —
   // it truly re-asks). Uses the current model selection for consistency.
   const handleSendRefinement = useCallback(
     (text: string) => {
-      void ensureProviderActive().then(() => send(text, modelArg))
+      void ensureModelActive().then(() => send(text, modelArg))
     },
-    [send, modelArg, ensureProviderActive],
+    [send, modelArg, ensureModelActive],
   )
 
   // Fork from here (Lane D): create a NEW local branch rooted at a settled turn.
