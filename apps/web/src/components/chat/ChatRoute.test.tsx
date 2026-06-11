@@ -290,6 +290,27 @@ describe('ChatRoute — live header (T1.3)', () => {
     await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'claude-sonnet-4', undefined))
   })
 
+  it('still sends when the model switch FAILS (gateway/dashboard unreachable) instead of blocking the chat', async () => {
+    const user = userEvent.setup()
+    const send = vi.fn()
+    localStorage.setItem('agent-deck:selected-model', 'openai/gpt-5.5')
+    // The model service is down (network error, not a confirm). Only the
+    // gateway's explicit confirm_required may hold a run; any other switch
+    // failure degrades to an honest toast and the message still goes out.
+    mockSetModelMutateAsync.mockRejectedValueOnce(new Error('fetch failed'))
+    renderChatRoute({ send })
+
+    const textarea = screen.getAllByLabelText('Message your agent')[0]!
+    await user.type(textarea, 'hello')
+    await user.keyboard('{Enter}')
+
+    // The run proceeds on the picked model; the gateway falls back to its
+    // active model if the switch truly did not land. Never a dead send.
+    await waitFor(() => expect(send).toHaveBeenCalledWith('hello', 'gpt-5.5', undefined))
+    // No confirm dialog for a non-confirm failure.
+    expect(screen.queryByRole('button', { name: /switch anyway/i })).not.toBeInTheDocument()
+  })
+
   it('holds the run behind the expensive-model confirm and switches only on "Switch anyway"', async () => {
     const user = userEvent.setup()
     const send = vi.fn()

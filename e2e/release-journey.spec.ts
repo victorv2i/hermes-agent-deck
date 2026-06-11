@@ -159,10 +159,16 @@ test('release-readiness: shell → chat → theme → sessions → side-panel ex
   // The user's turn is echoed and the mock streams its fixed reply.
   await expect(page.getByText('Say hi')).toBeVisible()
   await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
-  // The scripted run pauses at an approval; Stop it so the journey continues from
-  // a settled, idle composer (no in-flight run bleeding into later steps).
-  const stop = page.getByTestId('composer-stop')
-  if (await stop.isVisible()) await stop.click()
+  // The scripted run always pauses at its approval gate; settle it
+  // DETERMINISTICALLY so the journey continues from an idle composer. The old
+  // conditional Stop click raced the run state on a loaded machine: when the
+  // point-in-time isVisible() check missed, the run stayed parked at the
+  // approval forever and the second send below never got its Send button back.
+  const approval = page.getByTestId('approval-card')
+  await expect(approval).toBeVisible()
+  await approval.getByRole('button', { name: /allow once/i }).click()
+  // The run resumes past the approval and completes; the composer returns to Send.
+  await expect(approval).toBeHidden()
   await expect(page.getByTestId('composer-send')).toBeVisible()
 
   // ── 3. Switch the THEME via the ⌘K command palette ─────────────────────────

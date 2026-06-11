@@ -96,10 +96,16 @@ export function VirtualMessageList({
 
   const reportAtBottom = useCallback(
     (next: boolean) => {
-      setAtBottom((prev) => {
-        if (prev !== next) onAtBottomChange?.(next)
-        return next
-      })
+      // Notify the parent OUTSIDE the state updater. React may replay updaters
+      // during a later render pass, and a parent setState inside one fires the
+      // "cannot update a component while rendering a different component"
+      // error (ChatView updated while VirtualMessageList renders). The ref
+      // mirrors the committed state, so the change check stays accurate here.
+      if (atBottomRef.current !== next) {
+        atBottomRef.current = next
+        onAtBottomChange?.(next)
+      }
+      setAtBottom(next)
     },
     [onAtBottomChange],
   )
