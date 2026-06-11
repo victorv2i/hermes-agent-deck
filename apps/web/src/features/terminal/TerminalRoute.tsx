@@ -3,6 +3,7 @@ import { Eraser, RotateCcw, SquareTerminal, TriangleAlert } from 'lucide-react'
 import { ConnectionDot, type ConnectionStatus } from '@/components/layout/ConnectionDot'
 import { Button } from '@/components/ui/button'
 import { SurfaceHeader } from '@/components/ui/surface-header'
+import { useVisualViewportInset } from '@/lib/useVisualViewportInset'
 import { useTerminalStatus, type TerminalStatusState } from './useTerminalStatus'
 import { useTerminalClis, type CliId } from './useTerminalClis'
 import { useTerminalAcknowledged, type AckStorage } from './useTerminalAcknowledged'
@@ -94,15 +95,23 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
     setLaunchCli(id)
   }, [])
 
+  // iOS never resizes the layout viewport for the on-screen keyboard, so without
+  // this the bottom of the terminal — the line you're typing on — sits behind it.
+  // Padding the surface by the keyboard's overlap shrinks the host; the view's
+  // ResizeObserver then refits the pty rows so the cursor stays visible.
+  const keyboardInset = useVisualViewportInset()
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div
+      className="flex min-h-0 flex-1 flex-col"
+      style={keyboardInset > 0 ? { paddingBottom: keyboardInset } : undefined}
+    >
       <Header
         probe={probeStatus(state)}
         live={available && sessionLive ? liveStatus : null}
         onClear={clear}
         onRestart={available && sessionLive ? restartActive : null}
       />
-      <MobileTerminalNote />
       {state.phase === 'loading' && <CenteredNote>Checking the terminal…</CenteredNote>}
 
       {state.phase === 'failed' && (
@@ -170,23 +179,6 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
           />
         </Suspense>
       )}
-    </div>
-  )
-}
-
-function MobileTerminalNote() {
-  return (
-    <div
-      role="note"
-      aria-label="Small touch keyboard terminal note"
-      className="border-b border-border bg-surface-1/70 px-4 py-3 text-xs leading-relaxed text-muted-foreground md:hidden"
-    >
-      <div className="flex gap-2">
-        <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden />
-        <p>
-          Real shells are awkward on small touch keyboards. For long terminal work, use a desktop.
-        </p>
-      </div>
     </div>
   )
 }

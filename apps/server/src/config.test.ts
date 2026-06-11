@@ -136,6 +136,19 @@ describe('loadConfig bind posture + terminal gating', () => {
     expect(loadConfig({}).terminalAllowHome).toBe(false)
     expect(loadConfig({ AGENT_DECK_TERMINAL_ALLOW_HOME: '1' }).terminalAllowHome).toBe(true)
   })
+  it('reads AGENT_DECK_TERMINAL_PARK_GRACE_MS with a 24h default', () => {
+    expect(loadConfig({}).terminalParkGraceMs).toBe(24 * 60 * 60 * 1000)
+    expect(loadConfig({ AGENT_DECK_TERMINAL_PARK_GRACE_MS: '600000' }).terminalParkGraceMs).toBe(
+      600_000,
+    )
+    // A non-numeric / non-positive override falls back to the default.
+    expect(loadConfig({ AGENT_DECK_TERMINAL_PARK_GRACE_MS: 'soon' }).terminalParkGraceMs).toBe(
+      24 * 60 * 60 * 1000,
+    )
+    expect(loadConfig({ AGENT_DECK_TERMINAL_PARK_GRACE_MS: '0' }).terminalParkGraceMs).toBe(
+      24 * 60 * 60 * 1000,
+    )
+  })
   it('throws when asked to bind a wildcard without the opt-in', () => {
     expect(() => loadConfig({ AGENT_DECK_HOST: '0.0.0.0' })).toThrow(UnsafeBindError)
   })

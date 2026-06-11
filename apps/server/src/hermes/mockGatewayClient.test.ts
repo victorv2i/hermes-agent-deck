@@ -34,6 +34,7 @@ const testConfig: ServerConfig = {
   trustedHosts: [],
   terminalEnabled: true,
   terminalAllowHome: false,
+  terminalParkGraceMs: 60_000,
   hermesHome: '/tmp/hermes-test-home',
   hermesGatewayUrl: 'http://127.0.0.1:8643',
   hermesBin: '/tmp/hermes',

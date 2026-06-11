@@ -73,6 +73,9 @@ registerTerminalHandlers(io, {
   // fall back to $HOME unless explicitly allowed (both resolved in loadConfig).
   enabled: config.terminalEnabled,
   allowHome: config.terminalAllowHome,
+  // Keep a disconnected shell parked long enough for a phone user to come back
+  // hours later (default 24h; AGENT_DECK_TERMINAL_PARK_GRACE_MS overrides).
+  parkGraceMs: config.terminalParkGraceMs,
   // Use the SHARED host/origin allowlist (incl. the bound host + any configured
   // AGENT_DECK_TRUSTED_HOSTS) instead of the local loopback-only default — so the
   // terminal WS isn't rejected on a legitimate bound-host / reverse-proxy origin

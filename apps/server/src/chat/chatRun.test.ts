@@ -41,6 +41,7 @@ function testConfig(gatewayUrl: string): ServerConfig {
     trustedHosts: [],
     terminalEnabled: true,
     terminalAllowHome: false,
+    terminalParkGraceMs: 60_000,
     hermesHome: '/tmp/hermes-test-home',
     hermesGatewayUrl: gatewayUrl,
     hermesBin: '/tmp/hermes',

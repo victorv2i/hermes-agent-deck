@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { MobileKeyBar } from './MobileKeyBar'
 import { TerminalSocket, type TerminalSocketLike, type TerminalStatus } from './terminalSocket'
 import { buildTerminalTheme } from './terminalTheme'
 import { handleTerminalLink } from '@/features/preview/terminalLinkHandler'
@@ -141,6 +142,34 @@ export function TerminalView({
   const [status, setStatus] = useState<TerminalStatus>('connecting')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [exitCode, setExitCode] = useState<number | null>(null)
+  // Sticky Ctrl for the touch key bar: armed = the NEXT typed character is sent
+  // as its control code (so Ctrl→C on a phone keyboard sends ^C). State drives
+  // the key's pressed look; the ref lets the mount-once engine.onData closure
+  // read it without re-running the effect.
+  const [ctrlArmed, setCtrlArmed] = useState(false)
+  const ctrlArmedRef = useRef(false)
+  const armCtrl = useCallback((armed: boolean) => {
+    ctrlArmedRef.current = armed
+    setCtrlArmed(armed)
+  }, [])
+  // Send-to-shell handle for the touch key bar (set once the socket exists).
+  const inputRef = useRef<((data: string) => void) | null>(null)
+
+  // The one input path (typed keys AND key-bar taps): applies the armed sticky
+  // Ctrl to a single printable character, then disarms it either way.
+  const applyCtrl = useCallback(
+    (data: string): string => {
+      if (!ctrlArmedRef.current) return data
+      armCtrl(false)
+      if (data.length === 1) {
+        const code = data.toUpperCase().charCodeAt(0)
+        // ^@ through ^_ — the full control range (letters, [, ], etc.).
+        if (code >= 64 && code <= 95) return String.fromCharCode(code & 0x1f)
+      }
+      return data
+    },
+    [armCtrl],
+  )
   // The connection dropped and reconnected: the server force-killed the pty, so
   // the prior shell is gone. We show an honest overlay rather than silently
   // swapping in a fresh shell that looks like the same session.
@@ -210,9 +239,11 @@ export function TerminalView({
       }
       engine = created
       engine.open(host)
-      // Keystrokes / paste → wire.
-      engine.onData((data) => term.input(data))
+      // Keystrokes / paste → wire (through the sticky-Ctrl transform).
+      engine.onData((data) => term.input(applyCtrl(data)))
       engine.focus()
+      // Expose the same wire path to the touch key bar.
+      inputRef.current = (data) => term.input(data)
       // Expose Clear to the header now that the engine is live.
       onClearReadyRef.current?.(() => engine?.clear())
 
@@ -263,6 +294,7 @@ export function TerminalView({
         cancelAnimationFrame(initialFitFrame)
       }
       onClearReadyRef.current?.(null)
+      inputRef.current = null
       resizeObserver?.disconnect()
       term.dispose()
       engine?.dispose()
@@ -311,6 +343,14 @@ export function TerminalView({
         />
         {overlay}
       </div>
+      {/* Touch keys (Esc/Tab/Ctrl/arrows/^C) — only on coarse-pointer devices,
+          where the soft keyboard has none of them. Taps never steal xterm focus. */}
+      <MobileKeyBar
+        className="hidden pointer-coarse:flex"
+        ctrlArmed={ctrlArmed}
+        onCtrlToggle={() => armCtrl(!ctrlArmedRef.current)}
+        onKey={(data) => inputRef.current?.(applyCtrl(data))}
+      />
     </div>
   )
 }

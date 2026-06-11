@@ -169,6 +169,17 @@ export function resolveHermesGatewayUrl(
   return stock
 }
 
+/** Default parked-shell lifetime: long enough to leave on a phone and come back. */
+const DEFAULT_TERMINAL_PARK_GRACE_MS = 24 * 60 * 60 * 1000
+
+/** Parse AGENT_DECK_TERMINAL_PARK_GRACE_MS; non-numeric/non-positive → default. */
+function resolveTerminalParkGraceMs(env: NodeJS.ProcessEnv): number {
+  const raw = env.AGENT_DECK_TERMINAL_PARK_GRACE_MS?.trim()
+  if (!raw) return DEFAULT_TERMINAL_PARK_GRACE_MS
+  const ms = Number(raw)
+  return Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_TERMINAL_PARK_GRACE_MS
+}
+
 export interface ServerConfig {
   host: string
   port: number
@@ -197,6 +208,13 @@ export interface ServerConfig {
    * AGENT_DECK_TERMINAL_ALLOW_HOME=1 opts in.
    */
   terminalAllowHome: boolean
+  /**
+   * How long a disconnected (parked) terminal shell survives awaiting a
+   * reattach, in ms. Default 24h: a phone backgrounding the tab drops the
+   * socket, and the shell must still be there when the user comes back hours
+   * later. AGENT_DECK_TERMINAL_PARK_GRACE_MS overrides (a positive integer).
+   */
+  terminalParkGraceMs: number
   hermesHome: string
   hermesGatewayUrl: string
   hermesBin: string
@@ -235,6 +253,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     trustedHosts: resolveTrustedHosts(env),
     terminalEnabled: !remote || env.AGENT_DECK_ENABLE_TERMINAL === '1',
     terminalAllowHome: env.AGENT_DECK_TERMINAL_ALLOW_HOME === '1',
+    terminalParkGraceMs: resolveTerminalParkGraceMs(env),
     hermesHome,
     hermesGatewayUrl: resolveHermesGatewayUrl(env, join(hermesHome, 'config.yaml')),
     hermesBin: env.HERMES_BIN ?? join(homedir(), '.local', 'bin', 'hermes'),

@@ -232,7 +232,7 @@ describe('TerminalRoute', () => {
     expect(await screen.findByRole('heading', { name: 'Terminal' })).toBeInTheDocument()
   })
 
-  it('renders a mobile-only note about small touch keyboards', async () => {
+  it('no longer discourages mobile use (the touch key bar replaced the warning note)', async () => {
     renderRoute(
       <TerminalRoute
         fetchImpl={availableFetch()}
@@ -240,12 +240,9 @@ describe('TerminalRoute', () => {
         ackStorage={ackedStorage()}
       />,
     )
-    const note = await screen.findByRole('note', {
-      name: /small touch keyboard terminal note/i,
-    })
-    expect(note).toHaveTextContent(/real shells are awkward on small touch keyboards/i)
-    expect(note).toHaveTextContent(/for long terminal work, use a desktop/i)
-    expect(note.className).toContain('md:hidden')
+    await screen.findByRole('heading', { name: 'Terminal' })
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+    expect(screen.queryByText(/use a desktop/i)).not.toBeInTheDocument()
   })
 
   it('renders exactly ONE header for the surface (T1.8 — no double header)', async () => {
