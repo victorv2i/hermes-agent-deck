@@ -42,8 +42,8 @@ It runs locally, next to the CLI and Telegram, and talks to the Hermes gateway a
 - **⌘K command palette** and deep keyboard support throughout, with navigation/command labels flowing through the i18n catalog. Full app translation is still pre-release work.
 - **Honest security and remote posture:** frictionless on loopback, bearer-gated and Host-allowlisted on a remote bind. No hand-waving; the boundaries are spelled out.
 
-| Every agent gets a face | Three theme families, light and dark |
-| --- | --- |
+| Every agent gets a face                                                                           | Three theme families, light and dark                           |
+| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | ![The Agents roster: each agent with its own avatar, model, and skills](assets/readme/agents.png) | ![Settings: the theme family picker](assets/readme/themes.png) |
 
 ## Quickstart

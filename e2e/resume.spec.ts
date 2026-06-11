@@ -200,13 +200,13 @@ test('forking a HISTORICAL message of a resumed session does NOT reuse the origi
   await page.getByText('refactor the parser please').hover()
   await page.getByRole('button', { name: 'Fork from here' }).first().click()
 
-  // The honest copy says the next message is a NEW chat, and the earlier turns are
-  // reference-only — never a claim that Hermes saved/branched the session.
+  // The honest copy says the next message is a NEW chat, and the earlier turns
+  // are sent along as context — never a claim that Hermes saved/branched the session.
   const banner = page.getByTestId('fork-banner')
   await expect(banner).toBeVisible()
   await expect(banner).toContainText(/forked locally/i)
   await expect(banner).toContainText(/new chat/i)
-  await expect(banner).toContainText(/reference only/i)
+  await expect(banner).toContainText(/sent along as context/i)
   await expect(banner).not.toContainText(/persisted/i)
 
   // Capture the run command the socket emits so we can assert session_id is NOT

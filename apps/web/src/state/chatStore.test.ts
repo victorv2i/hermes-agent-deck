@@ -734,7 +734,11 @@ describe('chatStore reducer', () => {
       s = applyEvent(s, ev({ event: 'run.completed', run_id: RUN, output: 'one', cursor: 2 }), T)
       s = applyEvent(s, ev({ event: 'run.started', run_id: 'run-2', cursor: 1 }), T + 10)
       expect(s.runId).toBe('run-2')
-      s = applyEvent(s, ev({ event: 'message.delta', run_id: 'run-2', delta: 'two', cursor: 2 }), T + 11)
+      s = applyEvent(
+        s,
+        ev({ event: 'message.delta', run_id: 'run-2', delta: 'two', cursor: 2 }),
+        T + 11,
+      )
       expect(lastAssistant(s).content).toBe('two')
     })
 

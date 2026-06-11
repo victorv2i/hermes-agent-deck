@@ -415,11 +415,7 @@ export function applyEvent(
   // run announces itself with `run.started` (handled inside the reducer, which
   // adopts the new run id and rebases the cursor); only that path switches runs.
   // The runId===null adoption case still accepts, exactly like the heartbeat.
-  if (
-    event.event !== 'run.started' &&
-    state.runId !== null &&
-    state.runId !== event.run_id
-  ) {
+  if (event.event !== 'run.started' && state.runId !== null && state.runId !== event.run_id) {
     return state
   }
   const next = reduceEvent(state, event)
