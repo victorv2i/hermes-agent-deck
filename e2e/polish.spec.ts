@@ -1,5 +1,11 @@
-import { test, expect } from './fixtures'
+import { test, expect as baseExpect } from './fixtures'
 import type { Page, Route, ConsoleMessage } from '@playwright/test'
+
+// Stable-marker waits with a WIDE uniform budget: these flows are deterministic
+// (REST fully stubbed), but under oversubscribed parallel load the dev-served
+// route transitions exceed the 5s default. See reload.spec.ts for the full
+// rationale. The per-test budget below is widened to match.
+const expect = baseExpect.configure({ timeout: 30_000 })
 
 const HEALTH = {
   status: 'ok',
@@ -70,6 +76,9 @@ function trackConsole(page: Page): string[] {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Match the widened per-assertion budget above so a slow-but-correct wait is
+  // never cut off by the 30s default test budget.
+  test.setTimeout(120_000)
   await stubBff(page)
 })
 
@@ -137,8 +146,14 @@ test('mobile: the rail collapses to a slide-over opened by the menu button', asy
   await expect(openRail).not.toHaveAttribute('aria-hidden', 'true')
   await expect(openRail.getByRole('button', { name: /new chat/i })).toBeVisible()
 
-  // The backdrop dismisses the slide-over.
-  await page.getByTestId('mobile-rail-backdrop').click()
+  // The backdrop dismisses the slide-over. The backdrop spans the FULL viewport
+  // (fixed inset-0) while the rail (260px wide, higher z) covers its left side —
+  // including the element CENTER on a 390px viewport. A default (center) click
+  // therefore only ever landed while the rail was still sliding in (an inverted
+  // animation race: it hit the backdrop mid-transition and was intercepted once
+  // the spring settled). Click a point in the always-exposed strip right of the
+  // rail instead — deterministic regardless of animation state.
+  await page.getByTestId('mobile-rail-backdrop').click({ position: { x: 360, y: 400 } })
   await expect(rail).toHaveAttribute('data-mobile-open', 'false')
   await expect(rail).toHaveAttribute('aria-hidden', 'true')
   await expect(rail).toHaveAttribute('inert', '')

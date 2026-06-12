@@ -1,5 +1,13 @@
-import { test, expect, MOCK_MODELS } from './fixtures'
+import { test, expect as baseExpect, MOCK_MODELS } from './fixtures'
 import type { Page, ConsoleMessage } from '@playwright/test'
+
+// Every wait in this spec anchors on a STABLE marker (a streamed text, the
+// approval card, the composer state) — correctness, not latency, is under test.
+// Under full-suite parallel load on a contended box (Playwright sizes its worker
+// pool from the full CPU count, so a constrained run oversubscribes heavily) the
+// mock-paced milestones legitimately exceed the 5s default, so the whole spec
+// rides a wide per-assertion budget instead of sprinkling ad-hoc timeouts.
+const expect = baseExpect.configure({ timeout: 30_000 })
 
 const HEALTH = {
   status: 'ok',
@@ -18,9 +26,10 @@ const HEALTH = {
  * The run pump is SERVER-OWNED (apps/server/src/chat/runManager.ts): a browser
  * reload mid-stream tears down the socket, but the BFF keeps draining the
  * gateway SSE into its RunStore. On reload the web client adopts the persisted
- * {runId, lastCursor} from sessionStorage and auto-`resume`s, replaying what it
- * missed and tailing the rest. So a tab reload mid-run is free: the run finishes
- * and the full reply is present.
+ * {runId, lastCursor} from sessionStorage and auto-`resume`s the WHOLE run from
+ * cursor 0 (the reload lost the in-memory transcript), rebuilding the live
+ * conversation and tailing the rest. So a tab reload mid-run is free: the run
+ * finishes and the full reply is present.
  *
  * Rides the same in-process MOCK gateway as chat.spec.ts (no live :8643), so
  * it's part of the `pnpm verify` gate. The scripted run streams text → a tool
@@ -136,7 +145,7 @@ test('reload mid-stream AFTER a fork keeps the run alive, does not duplicate eve
 
   // Full page reload mid-stream — the socket that issued the fork's run dies. If
   // the run were socket-owned it would abort here. The post-reload re-establish
-  // (reconnect + replay from lastCursor) is genuinely heavier than a normal frame,
+  // (reconnect + full replay of the run) is genuinely heavier than a normal frame,
   // so allow a generous (30s) window before asserting — under full-suite parallel
   // load on a contended box the fork's reconnect+replay can exceed 15s. This is
   // latency, not a hang (it passes 3/3 isolated in ~4s); the guarantee under test is
@@ -145,7 +154,7 @@ test('reload mid-stream AFTER a fork keeps the run alive, does not duplicate eve
   await expect(page.getByTestId('connection-dot')).toBeVisible({ timeout: 30000 })
 
   // The run was NOT lost (server-owned pump) and resumes: it keeps streaming after
-  // reload and reaches its approval, replayed from lastCursor.
+  // reload and reaches its approval, replayed on resume.
   const approval2 = page.getByTestId('approval-card')
   await expect(approval2).toBeVisible({ timeout: 60000 })
   await expect(approval2).toContainText('rm -rf ./build')
@@ -169,6 +178,9 @@ test('reload mid-stream AFTER a fork keeps the run alive, does not duplicate eve
 test('a full page reload mid-stream keeps the run alive; it completes after reload', async ({
   page,
 }) => {
+  // Same wide-budget rationale as the fork test above: correctness, not latency,
+  // is under test, and the post-reload re-establish runs long under parallel load.
+  test.setTimeout(120_000)
   const errors = trackConsole(page)
   await stubDashboardRest(page)
   await page.goto('/chat')
@@ -182,14 +194,19 @@ test('a full page reload mid-stream keeps the run alive; it completes after relo
 
   // Full page reload — the socket that issued the run is destroyed. If the run
   // were socket-owned, the BFF would abort the pump here and the run would die.
+  // The reload may land BEFORE the approval frame (the resume replay then carries
+  // it) or AFTER it (the persisted cursor is already past it, and the BFF
+  // re-surfaces the still-pending approval as a transient frame on resume) —
+  // both timings converge on the approval card below, so this wait is
+  // deterministic regardless of where the reload lands in the stream.
   await page.reload()
 
   // After reload the client adopts the persisted run and auto-resumes. Because
   // the pump is server-owned, the run kept going while we were gone: the tool
   // chip and the approval prompt the run reaches are present post-reload.
-  await expect(page.getByTestId('connection-dot')).toBeVisible()
+  await expect(page.getByTestId('connection-dot')).toBeVisible({ timeout: 30_000 })
   const approval = page.getByTestId('approval-card')
-  await expect(approval).toBeVisible()
+  await expect(approval).toBeVisible({ timeout: 30_000 })
   await expect(approval).toContainText('rm -rf ./build')
 
   // Resolve the approval → the run streams its closing text and completes.

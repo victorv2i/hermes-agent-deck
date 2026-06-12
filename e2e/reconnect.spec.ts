@@ -1,5 +1,11 @@
-import { test, expect, MOCK_MODELS } from './fixtures'
+import { test, expect as baseExpect, MOCK_MODELS } from './fixtures'
 import type { Page, ConsoleMessage } from '@playwright/test'
+
+// Stable-marker waits with a WIDE uniform budget: correctness (the run survives
+// a transport drop), not latency, is under test, and under oversubscribed
+// parallel load the mock-paced milestones exceed the 5s default. See
+// reload.spec.ts for the full rationale.
+const expect = baseExpect.configure({ timeout: 30_000 })
 
 const HEALTH = {
   status: 'ok',
@@ -98,18 +104,37 @@ test('a socket drop while a tool is still running auto-reconnects in place: the 
   page,
   context,
 }) => {
+  // The durability guarantee under test is correctness (the run survives a
+  // transport drop), not latency — under full-suite parallel load on a contended
+  // box the dev-served first load + socket dial legitimately run long, so the
+  // budget is wide (same documented latency-tolerance pattern as reload.spec).
+  test.setTimeout(120_000)
   const errors = trackConsole(page)
   await stubDashboardRest(page)
 
   await page.goto('/chat')
   const dot = page.getByTestId('connection-dot')
-  await expect(dot).toHaveAttribute('data-status', 'online')
+  // First page load: module transform + the first socket dial can take well over
+  // the 5s default under contention; the marker (the dot flipping to `online`)
+  // is the right anchor, it just needs an honest budget.
+  await expect(dot).toHaveAttribute('data-status', 'online', { timeout: 30_000 })
 
   // Start the run. The scripted mock streams text → tool.started(bash) → (60ms) →
   // tool.completed → (60ms) → approval.request (PAUSE). Tool calls render INLINE
   // in the transcript as ToolCards (the toolcard-trigger shows a friendly action
   // label; the raw tool name is revealed in its expanded detail panel).
   await sendMessage(page, 'Say hi and clean the build')
+
+  // Settle the markdown chunk BEFORE dropping the link: the first assistant
+  // tokens lazy-load the markdown renderer (React.lazy) from the dev server,
+  // and going offline while that dynamic import is in flight rejects the import
+  // and blows the route's error boundary (a dev-harness artifact, not run
+  // durability). The text alone is NOT the settle marker — the Suspense
+  // fallback shows the same raw text while the chunk is still loading — so wait
+  // for the fallback to be gone (the import resolved). Nothing else lazy-loads
+  // during the offline window.
+  await expect(page.getByText(/Taking a look/)).toBeVisible()
+  await expect(page.getByTestId('markdown-fallback')).toHaveCount(0)
 
   // Wait for the bash tool call to land inline — the in-flight tool we will drop
   // the link underneath. The mock streams tool.started the instant the run begins
