@@ -4,7 +4,9 @@
  * unavailable" panel instead of a dead WebSocket when node-pty failed to build.
  *
  * Mounted by the integrator at base `/api/agent-deck/terminal`:
- *   GET /api/agent-deck/terminal/status → { available, cwd_available, reason? }
+ *   GET /api/agent-deck/terminal/status   → { available, cwd_available, reason? }
+ *   GET /api/agent-deck/terminal/clis     → { clis }
+ *   GET /api/agent-deck/terminal/sessions → TerminalSessionsResponse (tmux list)
  *
  * `cwd_available` reports whether a workspace cwd resolves (or $HOME is opted in)
  * BEFORE the shell is spawned, so the UI can render a calm "no workspace" panel
@@ -14,8 +16,14 @@
  * {@link ./terminalNamespace}, not a REST route.
  */
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify'
+import type { TerminalSessionsResponse } from '@agent-deck/protocol'
 import { terminalAvailability, type NodePtyLike } from './ptyBridge'
 import { detectClis as defaultDetectClis, type DetectedCli } from './cliDetector'
+import {
+  tmuxAvailable as defaultTmuxAvailable,
+  listTmuxSessions as defaultListTmuxSessions,
+  type TmuxSessionInfo,
+} from './tmux'
 
 export interface TerminalRoutesOptions extends FastifyPluginOptions {
   /** Inject a node-pty loader for tests; defaults to the real lazy loader. */
@@ -40,6 +48,10 @@ export interface TerminalRoutesOptions extends FastifyPluginOptions {
    * offers ONLY installed CLIs (honest, never assumed).
    */
   detectClis?: () => Promise<DetectedCli[]>
+  /** Probe for tmux (persistent sessions). Injectable for tests. */
+  tmuxAvailable?: () => Promise<boolean>
+  /** Lister for the tmux server's sessions. Injectable for tests. */
+  listTmuxSessions?: () => Promise<TmuxSessionInfo[]>
 }
 
 /** Probe payload the UI consumes (snake_case `cwd_available` per the wire shape). */
@@ -87,6 +99,27 @@ export async function terminalRoutes(
   const detect = options.detectClis ?? defaultDetectClis
   app.get('/clis', async (): Promise<{ clis: DetectedCli[] }> => {
     return { clis: await detect() }
+  })
+
+  // The persistent-session list: every tmux session on the user's server, both
+  // deck-owned (adk_*, resumable/killable from the deck) and foreign (the
+  // user's own, attachable only). Without tmux this is HONESTLY empty —
+  // terminals still work via the in-process park/reattach fallback.
+  const canTmux = options.tmuxAvailable ?? (() => defaultTmuxAvailable())
+  const listSessions = options.listTmuxSessions ?? (() => defaultListTmuxSessions())
+  app.get('/sessions', async (): Promise<TerminalSessionsResponse> => {
+    if (!(await canTmux())) {
+      return { tmuxAvailable: false, sessions: [] }
+    }
+    const sessions = (await listSessions()).map((s) => ({
+      name: s.name,
+      deckOwned: s.deckOwned,
+      attachedCount: s.attachedCount,
+      createdEpoch: s.createdEpoch,
+      // Every tmux-backed session outlives deck restarts and disconnects.
+      persistent: true,
+    }))
+    return { tmuxAvailable: true, sessions }
   })
 }
 

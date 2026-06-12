@@ -1,8 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { terminalRoutes } from './terminalRoutes'
+import { TerminalSessionsResponse } from '@agent-deck/protocol'
+import { terminalRoutes, type TerminalRoutesOptions } from './terminalRoutes'
 import type { NodePtyLike } from './ptyBridge'
 import type { DetectedCli } from './cliDetector'
+import type { TmuxSessionInfo } from './tmux'
 
 let app: FastifyInstance | undefined
 afterEach(async () => {
@@ -15,6 +17,7 @@ async function build(
   enabled = true,
   cwdAvailable: () => Promise<boolean> = async () => true,
   detectClis?: () => Promise<DetectedCli[]>,
+  tmux?: Pick<TerminalRoutesOptions, 'tmuxAvailable' | 'listTmuxSessions'>,
 ): Promise<FastifyInstance> {
   app = Fastify({ logger: false })
   await app.register(terminalRoutes, {
@@ -23,6 +26,7 @@ async function build(
     enabled,
     cwdAvailable,
     detectClis,
+    ...tmux,
   })
   await app.ready()
   return app
@@ -111,5 +115,66 @@ describe('terminalRoutes GET /clis', () => {
     // The missing CLI carries a real install hint; the available ones don't.
     expect(body.clis.find((c) => c.id === 'claude')?.installUrl).toMatch(/^https?:\/\//)
     expect(body.clis.find((c) => c.id === 'hermes')?.installUrl).toBeUndefined()
+  })
+})
+
+describe('terminalRoutes GET /sessions', () => {
+  const stub: NodePtyLike = { spawn: () => ({}) as never }
+
+  it('lists deck-owned + foreign tmux sessions (all persistent) when tmux is available', async () => {
+    const listed: TmuxSessionInfo[] = [
+      { name: 'adk_term-1-ab', createdEpoch: 1765000000, attachedCount: 1, deckOwned: true },
+      { name: 'victors_own', createdEpoch: 1764000000, attachedCount: 0, deckOwned: false },
+    ]
+    const a = await build(
+      async () => stub,
+      true,
+      async () => true,
+      undefined,
+      { tmuxAvailable: async () => true, listTmuxSessions: async () => listed },
+    )
+    const res = await a.inject({ method: 'GET', url: '/api/agent-deck/terminal/sessions' })
+    expect(res.statusCode).toBe(200)
+    // The wire shape is the shared protocol contract.
+    const body = TerminalSessionsResponse.parse(res.json())
+    expect(body.tmuxAvailable).toBe(true)
+    expect(body.sessions).toEqual([
+      {
+        name: 'adk_term-1-ab',
+        deckOwned: true,
+        attachedCount: 1,
+        createdEpoch: 1765000000,
+        persistent: true,
+      },
+      {
+        name: 'victors_own',
+        deckOwned: false,
+        attachedCount: 0,
+        createdEpoch: 1764000000,
+        persistent: true,
+      },
+    ])
+  })
+
+  it('reports tmuxAvailable:false with an empty list when tmux is missing/disabled', async () => {
+    const a = await build(
+      async () => stub,
+      true,
+      async () => true,
+      undefined,
+      {
+        tmuxAvailable: async () => false,
+        // Must never be consulted without tmux.
+        listTmuxSessions: async () => {
+          throw new Error('should not list without tmux')
+        },
+      },
+    )
+    const res = await a.inject({ method: 'GET', url: '/api/agent-deck/terminal/sessions' })
+    expect(res.statusCode).toBe(200)
+    expect(TerminalSessionsResponse.parse(res.json())).toEqual({
+      tmuxAvailable: false,
+      sessions: [],
+    })
   })
 })

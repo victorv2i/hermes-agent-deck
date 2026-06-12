@@ -5,17 +5,37 @@
  * see {@link ./ptyBridge}). Wire protocol:
  *
  *   client → server:
- *     'terminal.start'  { cols?, rows?, cwd?, sessionId? }  open/resume the shell
+ *     'terminal.start'  { cols?, rows?, cwd?, sessionId?, attach? }  open/resume
  *     'terminal.input'  string                    keystrokes / paste
  *     'terminal.resize' { cols, rows }            window resize → pty.resize
+ *     'terminal.close'  (no payload)              explicit close: end the session
  *   server → client:
- *     'terminal.ready'  { pid, resumed? }         shell spawned (resumed=true on reattach)
+ *     'terminal.ready'  { pid, resumed?, persistent? }  shell spawned (resumed=true
+ *                                                  on reattach; persistent=true when
+ *                                                  tmux-backed)
  *     'terminal.data'   string                    shell output (stdout+stderr)
- *     'terminal.exit'   { exitCode }              shell exited
+ *     'terminal.exit'   { exitCode, detached? }   shell exited (detached=true when a
+ *                                                  tmux client detached but the
+ *                                                  session lives on)
  *     'terminal.error'  { message }               could not start (e.g. node-pty
  *                                                  unavailable) — UI shows it calmly
  *
- * PARK + REATTACH (refresh-survives, multi-machine):
+ * TMUX PERSISTENCE (the strong layer, when tmux is installed):
+ *  - A `terminal.start` with a stable `sessionId` is backed by a DECK-OWNED tmux
+ *    session (`adk_*`, see {@link ./tmux}): the pty runs `tmux new-session -A`,
+ *    so the shell lives in the tmux server and survives BFF restarts, arbitrarily
+ *    long disconnects, and is shareable across devices (even the user's own
+ *    `tmux attach`). On disconnect the pty CLIENT is simply disposed — no park
+ *    buffer, no grace timer; the next start with the same id reattaches via -A.
+ *  - `terminal.start` with `attach: <name>` attaches to a FOREIGN tmux session
+ *    (one the user created). Attach only — the deck never creates or kills
+ *    foreign sessions.
+ *  - `terminal.close` (explicit user close): a deck-owned tmux session is
+ *    killed; a foreign one is merely detached; a plain shell is killed.
+ *  - AGENT_DECK_DISABLE_TMUX=1 (or no tmux on the host) falls back to the
+ *    park/reattach machinery below, unchanged.
+ *
+ * PARK + REATTACH (refresh-survives fallback, no tmux):
  *  - When `terminal.start` carries a stable, client-supplied `sessionId`, a later
  *    socket 'disconnect' PARKS the pty (keeps it alive for a grace window) and
  *    buffers its output instead of killing it. A reconnect (a refresh, or a connect
@@ -47,6 +67,14 @@ import {
 } from './ptyBridge'
 import { socketHandshakeOk, type AuthConfig } from '../auth/auth'
 import { resolveCliPreset as defaultResolveCliPreset, type ResolvedCliPreset } from './cliDetector'
+import {
+  tmuxAvailable as defaultTmuxAvailable,
+  deckSessionName,
+  hasTmuxSession,
+  killDeckSession,
+  enableAggressiveResize,
+  sendKeys,
+} from './tmux'
 
 export const TERMINAL_NAMESPACE = '/agent-deck-terminal'
 
@@ -102,6 +130,18 @@ export interface TerminalOptions {
    * detection). Returns `{ command: null }` for the raw shell (no seed).
    */
   resolveCliPreset?: (id: string) => Promise<ResolvedCliPreset>
+  /**
+   * Probe whether tmux can back persistent sessions. Injectable for tests;
+   * defaults to the real {@link tmuxAvailable} (cached `tmux -V`, honoring
+   * AGENT_DECK_DISABLE_TMUX=1).
+   */
+  tmuxAvailable?: () => Promise<boolean>
+  /**
+   * Extra tmux socket args (e.g. `['-L', 'adk_test_x']`) so tests run against a
+   * THROWAWAY tmux server. Production omits this (the user's default server,
+   * which is what makes deck sessions shareable with their own tmux).
+   */
+  tmuxSocketArgs?: string[]
 }
 
 /** A structured terminal-session audit record (NO secrets, NO shell I/O). */
@@ -149,6 +189,8 @@ interface StartPayload {
   cli?: string
   /** Optional stable, client-supplied session id enabling park/reattach. */
   sessionId?: string
+  /** Optional FOREIGN tmux session name to attach to (never created/killed). */
+  attach?: string
 }
 
 /** Bound a client-supplied session id so it can't be abused as a giant map key. */
@@ -163,12 +205,17 @@ function parseStart(payload: unknown): StartPayload {
     p.sessionId.length <= MAX_SESSION_ID_LEN
       ? p.sessionId
       : undefined
+  const attach =
+    typeof p.attach === 'string' && p.attach.length > 0 && p.attach.length <= MAX_SESSION_ID_LEN
+      ? p.attach
+      : undefined
   return {
     cols: typeof p.cols === 'number' ? p.cols : undefined,
     rows: typeof p.rows === 'number' ? p.rows : undefined,
     cwd: typeof p.cwd === 'string' ? p.cwd : undefined,
     cli: typeof p.cli === 'string' ? p.cli : undefined,
     sessionId,
+    attach,
   }
 }
 
@@ -197,6 +244,8 @@ export function registerTerminalHandlers(
   const enabled = options.enabled ?? true
   const audit = options.audit ?? defaultAudit
   const resolveCliPreset = options.resolveCliPreset ?? defaultResolveCliPreset
+  const canTmux = options.tmuxAvailable ?? (() => defaultTmuxAvailable())
+  const tmuxSocketArgs = options.tmuxSocketArgs
   const namespace = io.of(TERMINAL_NAMESPACE)
 
   /**
@@ -219,6 +268,14 @@ export function registerTerminalHandlers(
     buffer: string
     /** True for reattachable (stable-id) sessions; false for anonymous shells. */
     reattachable: boolean
+    /**
+     * The tmux session backing this pty, when tmux-backed. The pty is then just
+     * a tmux CLIENT: disconnect disposes it immediately (no park — tmux holds
+     * the shell) and a client exit may be a mere DETACH, not a shell death.
+     */
+    tmuxName?: string
+    /** True when the backing tmux session is deck-owned (`adk_*`, killable). */
+    deckOwned?: boolean
     /** The park-reap timer, set while parked, cleared on reattach/exit. */
     parkTimer: ReturnType<typeof setTimeout> | null
     /** Fired exactly once when the pty exits or is reaped (for the stop audit). */
@@ -304,11 +361,13 @@ export function registerTerminalHandlers(
       if (started) return
       started = true
 
-      const { cols, rows, cwd, cli, sessionId } = parseStart(payload)
+      const { cols, rows, cwd, cli, sessionId, attach } = parseStart(payload)
 
-      // REATTACH: a stable session id that names a still-managed (live/parked) pty
-      // resumes the SAME shell — swap the sink, replay the buffered scrollback, and
-      // cancel the park-reap timer. No new pty, no cap charge.
+      // REATTACH (in-memory, non-tmux fallback): a stable session id that names a
+      // still-managed (live/parked) pty resumes the SAME shell — swap the sink,
+      // replay the buffered scrollback, and cancel the park-reap timer. No new
+      // pty, no cap charge. (tmux-backed sessions are never keyed by the bare
+      // sessionId, so they always take the tmux create-or-attach path below.)
       if (sessionId) {
         const existing = sessions.get(sessionId)
         if (existing) {
@@ -357,10 +416,49 @@ export function registerTerminalHandlers(
         }
       }
 
+      // TMUX BACKING: with tmux on the host, a stable-id session rides a
+      // DECK-OWNED tmux session — the shell lives in the tmux server, so it
+      // survives BFF restarts and any disconnect gap, and is shareable across
+      // devices. `attach` targets a FOREIGN session instead (attach only).
+      let tmuxSpec: { mode: 'deck' | 'foreign'; sessionName: string } | null = null
+      let tmuxResumed = false
+      if (attach) {
+        if (!(await canTmux())) {
+          socket.emit('terminal.error', {
+            message: 'tmux is not available on this host, so sessions cannot be attached.',
+          })
+          started = false
+          return
+        }
+        // Attach NEVER creates: a missing foreign name is refused honestly here
+        // (and the spawn below uses attach-session without -A as the backstop).
+        if (!(await hasTmuxSession(attach, tmuxSocketArgs))) {
+          socket.emit('terminal.error', {
+            message: 'That tmux session does not exist anymore.',
+          })
+          started = false
+          return
+        }
+        tmuxSpec = { mode: 'foreign', sessionName: attach }
+      } else if (sessionId && (await canTmux())) {
+        const name = deckSessionName(sessionId)
+        // Known BEFORE the spawn so the client can be told this is a resume (-A
+        // makes create-vs-attach one path, including across a BFF restart).
+        tmuxResumed = await hasTmuxSession(name, tmuxSocketArgs)
+        tmuxSpec = { mode: 'deck', sessionName: name }
+      }
+
       let spawned: Awaited<ReturnType<typeof spawnTerminal>>
       try {
         spawned = await spawnTerminal(
-          { cols, rows, cwd, roots: options.roots, allowHome: options.allowHome },
+          {
+            cols,
+            rows,
+            cwd,
+            roots: options.roots,
+            allowHome: options.allowHome,
+            tmux: tmuxSpec ? { ...tmuxSpec, socketArgs: tmuxSocketArgs } : undefined,
+          },
           loader,
         )
       } catch (err) {
@@ -387,7 +485,12 @@ export function registerTerminalHandlers(
 
       // A stable id makes the session reattachable; an anonymous shell gets a
       // synthetic per-socket key (counted by the cap, but never resumable).
-      const id = sessionId ?? `anon:${socket.id}`
+      // A tmux-backed session is keyed PER CLIENT: reattach happens in tmux
+      // (`-A`), never via the in-memory map, and two devices on the same id are
+      // two tmux clients sharing one session.
+      const id = tmuxSpec
+        ? `tmux:${tmuxSpec.sessionName}:${socket.id}`
+        : (sessionId ?? `anon:${socket.id}`)
       boundId = id
       const s: ManagedSession = {
         pty: proc,
@@ -395,7 +498,10 @@ export function registerTerminalHandlers(
         cwd: spawned.cwd,
         sink: socket,
         buffer: '',
-        reattachable: sessionId !== undefined,
+        // tmux holds the shell; the in-memory park machinery stays out of it.
+        reattachable: tmuxSpec ? false : sessionId !== undefined,
+        tmuxName: tmuxSpec?.sessionName,
+        deckOwned: tmuxSpec?.mode === 'deck',
         parkTimer: null,
         closed: false,
         onClosed: (exitCode) => {
@@ -428,6 +534,32 @@ export function registerTerminalHandlers(
       })
       proc.onExit(({ exitCode }) => {
         if (s.closed) return
+        if (s.tmuxName) {
+          // A tmux CLIENT exit is not necessarily a shell death: a detach (the
+          // user's `tmux detach`, or another client's takeover) leaves the
+          // session alive in the tmux server. Distinguish honestly via a
+          // session-still-exists check before reporting.
+          const name = s.tmuxName
+          void hasTmuxSession(name, tmuxSocketArgs)
+            .catch(() => false)
+            .then((stillExists) => {
+              if (s.closed) return
+              s.closed = true
+              s.sink?.emit(
+                'terminal.exit',
+                stillExists ? { exitCode, detached: true } : { exitCode },
+              )
+              try {
+                proc.kill()
+              } catch {
+                // already dead
+              }
+              sessions.delete(id)
+              // A detach is NOT a shell death: audit it like a teardown (null).
+              s.onClosed(stillExists ? null : exitCode)
+            })
+          return
+        }
         s.closed = true
         s.sink?.emit('terminal.exit', { exitCode })
         if (s.parkTimer) {
@@ -444,12 +576,41 @@ export function registerTerminalHandlers(
         sessions.delete(id)
         s.onClosed(exitCode)
       })
-      socket.emit('terminal.ready', { pid: proc.pid })
+      // Best effort: size the shared tmux session to the most-recently-active
+      // client instead of the smallest attached one (multi-device comfort).
+      if (tmuxSpec?.mode === 'deck') {
+        void enableAggressiveResize(tmuxSpec.sessionName, tmuxSocketArgs)
+      }
+      const ready: { pid: number; resumed?: boolean; persistent?: boolean } = { pid: proc.pid }
+      if (tmuxSpec) ready.persistent = true
+      if (tmuxResumed) ready.resumed = true
+      socket.emit('terminal.ready', ready)
       // Seed the preset's command into the user's own shell (transparent — they
       // SEE it run, and an alias/function/version-shim resolves exactly as typed).
-      // Fixed internal command string → no injection surface.
-      if (seedCommand) {
-        proc.write(`${seedCommand}\r`)
+      // Fixed internal command string → no injection surface. NEVER into a
+      // resumed tmux session (it already ran on creation) or a foreign one.
+      if (seedCommand && !tmuxResumed && tmuxSpec?.mode !== 'foreign') {
+        if (tmuxSpec) {
+          // Writing to the tmux client this early can be EATEN by its pty line
+          // discipline (the client is still entering raw mode), so seed through
+          // the tmux server instead: wait for `-A` to create the session, then
+          // send-keys — the command is still visibly typed into the shell.
+          const name = tmuxSpec.sessionName
+          void (async () => {
+            for (let i = 0; i < 100; i += 1) {
+              if (s.closed) return
+              if (await hasTmuxSession(name, tmuxSocketArgs)) {
+                await sendKeys(name, seedCommand, tmuxSocketArgs)
+                return
+              }
+              await new Promise((r) => setTimeout(r, 50))
+            }
+          })().catch(() => {
+            // best effort: a failed seed leaves a plain shell, never a crash
+          })
+        } else {
+          proc.write(`${seedCommand}\r`)
+        }
       }
     })
 
@@ -464,6 +625,23 @@ export function registerTerminalHandlers(
       if (s && s.sink === socket && dims) s.pty.resize(dims.cols, dims.rows)
     })
 
+    // EXPLICIT CLOSE (the user said "done", not a mere tab drop):
+    //  - deck-owned tmux session → kill it in the tmux server too (its whole
+    //    point was outliving disconnects; an explicit close ends it for real)
+    //  - foreign tmux session → only detach (never kill what the user created)
+    //  - plain shell → kill immediately (no park grace)
+    socket.on('terminal.close', () => {
+      if (!boundId) return
+      const s = sessions.get(boundId)
+      if (!s || s.sink !== socket) return
+      if (s.tmuxName && s.deckOwned) {
+        void killDeckSession(s.tmuxName, tmuxSocketArgs).catch(() => {
+          // already gone (e.g. the shell exited) — disposal below still applies
+        })
+      }
+      disposeSession(boundId, null)
+    })
+
     socket.on('disconnect', () => {
       if (!boundId) return
       const s = sessions.get(boundId)
@@ -472,6 +650,10 @@ export function registerTerminalHandlers(
       if (!s || s.sink !== socket) return
       if (!s.reattachable) {
         // Anonymous (no stable id) shell: force-kill immediately, as before.
+        // tmux-backed sessions also land here: disposing kills only the tmux
+        // CLIENT pty — the shell lives on in the tmux server, and the next
+        // start with the same stable id reattaches via `new-session -A` (even
+        // across a BFF restart). No park buffer, no grace timer needed.
         disposeSession(boundId, null)
         return
       }

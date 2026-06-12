@@ -227,6 +227,24 @@ export function ptyEnv(env: NodeJS.ProcessEnv = process.env): Record<string, str
   return out
 }
 
+/**
+ * tmux backing for a spawned terminal. When present, the pty runs a tmux CLIENT
+ * instead of a bare shell, so the SHELL lives in the tmux server and survives
+ * BFF restarts and disconnects of any length (see {@link ./tmux}).
+ *
+ *  - `deck`: `tmux -u new-session -A -s <name> -c <cwd>` — create-or-attach in
+ *    one path, so a reattach after a BFF restart needs zero extra state.
+ *  - `foreign`: `tmux -u attach-session -t =<name>` — attach to a session the
+ *    USER created. NEVER `-A`: the deck must never create a foreign name.
+ */
+export interface TmuxSpawnOptions {
+  mode: 'deck' | 'foreign'
+  /** The tmux session name (for `deck` mode: a deckSessionName() `adk_*`). */
+  sessionName: string
+  /** Extra tmux socket args (tests: a throwaway `-L` server). */
+  socketArgs?: string[]
+}
+
 export interface SpawnTerminalOptions {
   cols?: number
   rows?: number
@@ -236,6 +254,8 @@ export interface SpawnTerminalOptions {
   /** Permit a last-resort $HOME cwd when no root resolves (operator opt-in). */
   allowHome?: boolean
   env?: NodeJS.ProcessEnv
+  /** When set, run a tmux client (persistence layer) instead of a bare shell. */
+  tmux?: TmuxSpawnOptions
 }
 
 /** Thrown when no safe cwd can be resolved (no workspace root + $HOME not allowed). */
@@ -282,7 +302,37 @@ export async function spawnTerminal(
   if (cwd === null) {
     throw new NoWorkspaceRootError()
   }
-  const proc = pty.spawn(shell, [], {
+  // tmux backing: the pty runs a tmux CLIENT; the shell itself lives in the
+  // tmux server, which is what survives BFF restarts and long disconnects.
+  // `-u` forces UTF-8 so box drawing renders regardless of the curated env.
+  const [file, args] = options.tmux
+    ? [
+        'tmux',
+        options.tmux.mode === 'deck'
+          ? // -A: attach when the session already exists, create otherwise.
+            // `-c cwd` anchors the shell on creation; ignored on attach.
+            [
+              ...(options.tmux.socketArgs ?? []),
+              '-u',
+              'new-session',
+              '-A',
+              '-s',
+              options.tmux.sessionName,
+              '-c',
+              cwd,
+            ]
+          : // Foreign session: attach ONLY (`=name` = exact match). Without -A
+            // this fails rather than creating a session the deck doesn't own.
+            [
+              ...(options.tmux.socketArgs ?? []),
+              '-u',
+              'attach-session',
+              '-t',
+              `=${options.tmux.sessionName}`,
+            ],
+      ]
+    : [shell, [] as string[]]
+  const proc = pty.spawn(file, args, {
     name: 'xterm-256color',
     cols: clampDim(options.cols, DEFAULT_COLS),
     rows: clampDim(options.rows, DEFAULT_ROWS),

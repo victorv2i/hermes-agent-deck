@@ -18,13 +18,17 @@ import {
 /** A fake pty that records spawn args + lets the test drive data/exit. */
 function fakeNodePty(): {
   mod: NodePtyLike
-  last: () => { file: string; opts: Record<string, unknown>; proc: FakeProc } | undefined
+  last: () =>
+    | { file: string; args: string[] | string; opts: Record<string, unknown>; proc: FakeProc }
+    | undefined
 } {
-  let last: { file: string; opts: Record<string, unknown>; proc: FakeProc } | undefined
+  let last:
+    | { file: string; args: string[] | string; opts: Record<string, unknown>; proc: FakeProc }
+    | undefined
   const mod: NodePtyLike = {
-    spawn(file, _args, opts) {
+    spawn(file, args, opts) {
       const proc = new FakeProc()
-      last = { file, opts: opts as Record<string, unknown>, proc }
+      last = { file, args, opts: opts as Record<string, unknown>, proc }
       return proc
     },
   }
@@ -247,6 +251,117 @@ describe('spawnTerminal (injected node-pty)', () => {
     } finally {
       rmSync(home, { recursive: true, force: true })
     }
+  })
+})
+
+describe('spawnTerminal tmux backing (injected node-pty)', () => {
+  it('spawns a deck-owned session via `tmux -u new-session -A` (create-or-attach)', async () => {
+    const { mod, last } = fakeNodePty()
+    const dir = mkdtempSync(join(tmpdir(), 'pty-tmux-'))
+    try {
+      const { cwd } = await spawnTerminal(
+        {
+          cwd: dir,
+          roots: [dir],
+          env: { SHELL: '/bin/sh' } as NodeJS.ProcessEnv,
+          tmux: { mode: 'deck', sessionName: 'adk_sess1' },
+        },
+        mod,
+      )
+      const call = last()!
+      expect(call.file).toBe('tmux')
+      // -A = attach if the session already exists, create otherwise: reattach
+      // after a BFF restart is the SAME code path with zero extra state.
+      expect(call.args).toEqual(['-u', 'new-session', '-A', '-s', 'adk_sess1', '-c', dir])
+      expect(cwd).toBe(dir)
+      // The tmux client still runs with the sanitized env + forced TERM.
+      expect((call.opts.env as Record<string, string>).TERM).toBe('xterm-256color')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('prepends socket override args (throwaway tmux server seam)', async () => {
+    const { mod, last } = fakeNodePty()
+    const dir = mkdtempSync(join(tmpdir(), 'pty-tmux-'))
+    try {
+      await spawnTerminal(
+        {
+          cwd: dir,
+          roots: [dir],
+          env: { SHELL: '/bin/sh' } as NodeJS.ProcessEnv,
+          tmux: { mode: 'deck', sessionName: 'adk_s', socketArgs: ['-L', 'adk_test_x'] },
+        },
+        mod,
+      )
+      expect(last()!.args).toEqual([
+        '-L',
+        'adk_test_x',
+        '-u',
+        'new-session',
+        '-A',
+        '-s',
+        'adk_s',
+        '-c',
+        dir,
+      ])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('attaches to a FOREIGN session with attach-session (NEVER -A, never creates)', async () => {
+    const { mod, last } = fakeNodePty()
+    const dir = mkdtempSync(join(tmpdir(), 'pty-tmux-'))
+    try {
+      await spawnTerminal(
+        {
+          cwd: dir,
+          roots: [dir],
+          env: { SHELL: '/bin/sh' } as NodeJS.ProcessEnv,
+          tmux: { mode: 'foreign', sessionName: 'users_own' },
+        },
+        mod,
+      )
+      const call = last()!
+      expect(call.file).toBe('tmux')
+      // attach-session fails when the name does not exist; the deck must never
+      // create a session under a foreign name.
+      expect(call.args).toEqual(['-u', 'attach-session', '-t', '=users_own'])
+      expect(call.args).not.toContain('-A')
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('still spawns the bare shell when no tmux option is given (unchanged path)', async () => {
+    const { mod, last } = fakeNodePty()
+    const dir = mkdtempSync(join(tmpdir(), 'pty-tmux-'))
+    try {
+      await spawnTerminal(
+        { cwd: dir, roots: [dir], env: { SHELL: '/bin/sh' } as NodeJS.ProcessEnv },
+        mod,
+      )
+      expect(last()!.file).toBe('/bin/sh')
+      expect(last()!.args).toEqual([])
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('still enforces the cwd containment guard on the tmux path', async () => {
+    const { mod, last } = fakeNodePty()
+    await expect(
+      spawnTerminal(
+        {
+          roots: [],
+          env: { SHELL: '/bin/sh' } as NodeJS.ProcessEnv,
+          tmux: { mode: 'deck', sessionName: 'adk_x' },
+        },
+        mod,
+      ),
+    ).rejects.toThrow(/no allowlisted workspace root/i)
+    expect(last()).toBeUndefined()
   })
 })
 

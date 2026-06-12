@@ -1,6 +1,13 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { createServer, type Server as HttpServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
+
+// This whole suite exercises the BARE-SHELL path (fake ptys + park machinery).
+// Disable tmux backing process-wide so a tmux install on the host never reroutes
+// stable-id sessions onto the tmux path — which also proves the
+// AGENT_DECK_DISABLE_TMUX=1 fallback keeps every existing behavior intact.
+// (The tmux-backed path has its own real-shell suite: terminalNamespace.tmux.test.ts.)
+process.env.AGENT_DECK_DISABLE_TMUX = '1'
 import { io as ioClient, type Socket as ClientSocket } from 'socket.io-client'
 import type { Server as SocketIOServer } from 'socket.io'
 import {
@@ -505,6 +512,28 @@ describe('/agent-deck-terminal park + reattach (refresh-survives, stable session
     // Reattaches (same pid) rather than hitting the "too many" cap error.
     await expect(ready).resolves.toBeDefined()
     expect(procs).toHaveLength(1)
+  })
+
+  it('terminal.close KILLS a plain stable-id session (no park, slot freed)', async () => {
+    // An explicit close is the user saying "done": the shell must die NOW, not
+    // park for the grace window like a mere disconnect would.
+    const { url, procs } = await boot({ maxSessions: 1 })
+    const c1 = connect(url)
+    await waitFor(c1, 'connect')
+    c1.emit('terminal.start', { sessionId: 'sess-close-1' })
+    await waitFor(c1, 'terminal.ready')
+    c1.emit('terminal.close')
+    await new Promise((r) => setTimeout(r, 100))
+    expect(procs[0]!.killed).toBe(true)
+
+    // The slot is freed immediately: a new session fits under the cap of 1.
+    const c2 = connect(url)
+    await waitFor(c2, 'connect')
+    const ready = waitFor<{ pid: number; resumed?: boolean }>(c2, 'terminal.ready')
+    c2.emit('terminal.start', { sessionId: 'sess-close-2' })
+    const r = await ready
+    expect(r.resumed).toBeFalsy()
+    expect(procs).toHaveLength(2)
   })
 
   it('frees the parked slot when the parked shell EXITS on its own while parked', async () => {
