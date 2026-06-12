@@ -147,7 +147,7 @@ describe('TerminalSocket', () => {
     const fake = new FakeSocket()
     new TerminalSocket({ onData: vi.fn(), onStatusChange, onResumed, onReady }, { socket: fake })
     fake.fire('terminal.ready', { pid: 555, resumed: true })
-    expect(onReady).toHaveBeenCalledWith({ pid: 555 })
+    expect(onReady).toHaveBeenCalledWith({ pid: 555, persistent: false })
     expect(onResumed).toHaveBeenCalledTimes(1)
     expect(onStatusChange).toHaveBeenCalledWith('connected')
   })
@@ -174,7 +174,7 @@ describe('TerminalSocket', () => {
     )
 
     fake.fire('terminal.ready', { pid: 4242 })
-    expect(onReady).toHaveBeenCalledWith({ pid: 4242 })
+    expect(onReady).toHaveBeenCalledWith({ pid: 4242, persistent: false })
 
     fake.fire('terminal.exit', { exitCode: 0 })
     expect(onExit).toHaveBeenCalledWith({ exitCode: 0 })
@@ -214,5 +214,97 @@ describe('TerminalSocket', () => {
     expect(onStatusChange).toHaveBeenCalledWith('connected')
     fake.fire('connect_error')
     expect(onStatusChange).toHaveBeenCalledWith('error')
+  })
+
+  it('forwards a foreign attach target in terminal.start (never with a sessionId)', () => {
+    const fake = new FakeSocket()
+    const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
+    t.start({ cols: 80, rows: 24, attach: 'victors_own' })
+    t.connect()
+    const starts = fake.emitsFor('terminal.start')
+    expect(starts).toHaveLength(1)
+    expect(starts[0]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'victors_own' })
+  })
+
+  it('RE-STARTS to reattach on reconnect for a foreign attach session', () => {
+    // A foreign tmux session outlives the drop on the server side just like a
+    // deck one, so a reconnect re-`start`s with the same attach target.
+    const onReconnectDropped = vi.fn()
+    const fake = new FakeSocket()
+    const t = new TerminalSocket({ onData: vi.fn(), onReconnectDropped }, { socket: fake })
+    t.start({ cols: 80, rows: 24, attach: 'victors_own' })
+    t.connect()
+    fake.disconnect()
+    fake.connect()
+    const starts = fake.emitsFor('terminal.start')
+    expect(starts).toHaveLength(2)
+    expect(starts[1]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'victors_own' })
+    expect(onReconnectDropped).not.toHaveBeenCalled()
+  })
+
+  it('reports persistent:true in onReady for a tmux-backed shell', () => {
+    const onReady = vi.fn()
+    const fake = new FakeSocket()
+    new TerminalSocket({ onData: vi.fn(), onReady }, { socket: fake })
+    fake.fire('terminal.ready', { pid: 7, persistent: true })
+    expect(onReady).toHaveBeenCalledWith({ pid: 7, persistent: true })
+  })
+
+  it('close() emits terminal.close (and nothing after dispose)', () => {
+    const fake = new FakeSocket()
+    const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
+    t.connect()
+    t.close()
+    expect(fake.emitsFor('terminal.close')).toHaveLength(1)
+    t.dispose()
+    t.close()
+    expect(fake.emitsFor('terminal.close')).toHaveLength(1)
+  })
+
+  describe('visibility-driven reconnect', () => {
+    it('redials immediately when the page becomes visible while disconnected', () => {
+      const fake = new FakeSocket()
+      const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
+      t.start({ cols: 80, rows: 24, sessionId: 'term-9:0' })
+      t.connect()
+      expect(fake.connectCalls).toBe(1)
+      // The transport dropped (e.g. the phone went to the background)...
+      fake.connected = false
+      fake.fire('disconnect')
+      // ...and the user comes back: visible again → dial NOW, no backoff wait.
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(fake.connectCalls).toBe(2)
+      // The reconnect handler then re-starts the stable-id session (reattach).
+      expect(fake.emitsFor('terminal.start')).toHaveLength(2)
+    })
+
+    it('pageshow (bfcache restore) also triggers the redial', () => {
+      const fake = new FakeSocket()
+      const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
+      t.start({ cols: 80, rows: 24, sessionId: 'term-9:0' })
+      t.connect()
+      fake.connected = false
+      fake.fire('disconnect')
+      window.dispatchEvent(new Event('pageshow'))
+      expect(fake.connectCalls).toBe(2)
+    })
+
+    it('does NOT dial before the first connect, while connected, or after dispose', () => {
+      const fake = new FakeSocket()
+      const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
+      // Never connected yet: the initial dial is the socket's own business.
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(fake.connectCalls).toBe(0)
+      t.connect()
+      // Connected: nothing to do.
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(fake.connectCalls).toBe(1)
+      // Disposed: the listener is removed.
+      fake.connected = false
+      t.dispose()
+      document.dispatchEvent(new Event('visibilitychange'))
+      window.dispatchEvent(new Event('pageshow'))
+      expect(fake.connectCalls).toBe(1)
+    })
   })
 })

@@ -89,4 +89,89 @@ describe('TerminalLauncher', () => {
       expect(screen.getByRole('button', { name: /launch the hermes cli/i })).toBeEnabled()
     })
   })
+
+  describe('tmux persistence sections', () => {
+    const nowEpoch = Math.floor(Date.now() / 1000)
+    const session = (name: string, deckOwned: boolean, attachedCount = 0) => ({
+      name,
+      deckOwned,
+      attachedCount,
+      createdEpoch: nowEpoch - 2 * 3600,
+      lastActivityEpoch: nowEpoch - 5 * 60,
+      persistent: true,
+    })
+
+    it('says honestly when shells cannot persist (no tmux)', () => {
+      render(
+        <TerminalLauncher
+          clis={installed}
+          onLaunch={() => {}}
+          tmux={{ tmuxAvailable: false, sessions: [] }}
+        />,
+      )
+      expect(
+        screen.getByText('Shells on this host are not persistent (tmux not installed).'),
+      ).toBeInTheDocument()
+    })
+
+    it('says nothing about persistence while the list is unknown', () => {
+      render(<TerminalLauncher clis={installed} onLaunch={() => {}} />)
+      expect(screen.queryByText(/not persistent/i)).toBeNull()
+      expect(screen.queryByText(/your tmux sessions/i)).toBeNull()
+    })
+
+    it('lists the users own tmux sessions with an Attach button each', () => {
+      const onAttach = vi.fn()
+      render(
+        <TerminalLauncher
+          clis={installed}
+          onLaunch={() => {}}
+          onAttach={onAttach}
+          tmux={{
+            tmuxAvailable: true,
+            sessions: [session('victors_own', false, 1), session('scratch', false)],
+          }}
+        />,
+      )
+      expect(screen.getByText('Your tmux sessions')).toBeInTheDocument()
+      // Compact created / last-activity ages render per row.
+      expect(screen.getAllByText(/created 2h ago · active 5m ago/)).toHaveLength(2)
+      fireEvent.click(screen.getByRole('button', { name: /attach to scratch/i }))
+      expect(onAttach).toHaveBeenCalledWith('scratch')
+    })
+
+    it('offers to reattach running deck shells (recovery after data loss)', () => {
+      const onResume = vi.fn()
+      render(
+        <TerminalLauncher
+          clis={installed}
+          onLaunch={() => {}}
+          onResume={onResume}
+          tmux={{
+            tmuxAvailable: true,
+            sessions: [session('adk_term-1-ab12-0', true)],
+          }}
+        />,
+      )
+      expect(screen.getByText(/deck shell is still running/i)).toBeInTheDocument()
+      // The row shows the wire id (the adk_ prefix is deck plumbing).
+      expect(screen.getByText('term-1-ab12-0')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /reattach/i }))
+      expect(onResume).toHaveBeenCalledTimes(1)
+    })
+
+    it('renders no session sections when the tmux server is empty', () => {
+      render(
+        <TerminalLauncher
+          clis={installed}
+          onLaunch={() => {}}
+          onAttach={() => {}}
+          onResume={() => {}}
+          tmux={{ tmuxAvailable: true, sessions: [] }}
+        />,
+      )
+      expect(screen.queryByText('Your tmux sessions')).toBeNull()
+      expect(screen.queryByText(/still running/i)).toBeNull()
+    })
+  })
 })

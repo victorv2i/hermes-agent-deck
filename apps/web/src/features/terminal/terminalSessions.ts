@@ -29,6 +29,19 @@ export interface TerminalSession {
   title: string
   /** Bumped by {@link restartSession} to force a fresh remount (new shell). */
   epoch: number
+  /**
+   * A FOREIGN tmux session name this tab attaches to (one the user created in
+   * their own tmux). The view sends `attach` instead of `sessionId`; the tab's
+   * close affordance is DETACH (the deck never kills a foreign session).
+   */
+  attach?: string
+  /**
+   * A RECOVERED deck session's raw wire id (the server's `adk_<wire>` name
+   * minus the prefix), set when the server list knew a deck-owned session this
+   * browser's storage forgot. {@link sessionKey} sends it verbatim so the
+   * reattach maps back to the SAME tmux session name.
+   */
+  wire?: string
 }
 
 export interface SessionsState {
@@ -54,14 +67,32 @@ export function emptySessions(viewMode: ViewMode = 'tab'): SessionsState {
 
 /**
  * The STABLE WIRE id sent to the server as `terminal.start` `sessionId`, driving
- * its park/reattach. It folds the session's `id` and `epoch` together so that:
+ * its park/reattach (and, with tmux, the `adk_*` session name). It folds the
+ * session's `id` and `epoch` together so that:
  *   - a plain browser refresh keeps the same key → the server REATTACHES (same shell),
  *   - a Restart (which bumps `epoch`) yields a NEW key → the server spawns a FRESH
  *     shell and the old parked one is reaped after its grace window.
+ * A RECOVERED session sends its `wire` id verbatim at epoch 0 (so the key maps
+ * back to the SAME `adk_*` tmux name); a Restart suffixes the epoch as usual,
+ * which honestly becomes a new session name (a fresh shell).
  */
-export function sessionKey(session: Pick<TerminalSession, 'id' | 'epoch'>): string {
+export function sessionKey(session: Pick<TerminalSession, 'id' | 'epoch' | 'wire'>): string {
+  if (session.wire) return session.epoch > 0 ? `${session.wire}:${session.epoch}` : session.wire
   return `${session.id}:${session.epoch}`
 }
+
+/**
+ * The deck-owned tmux session name a wire key maps to on the server — a client
+ * mirror of the server's deckSessionName (`adk_` + everything outside
+ * [A-Za-z0-9_-] replaced by `-`, bounded to 100 chars). Used to reconcile the
+ * server's session list against localStorage.
+ */
+export function deckTmuxName(wireKey: string): string {
+  return `adk_${wireKey.replace(/[^A-Za-z0-9_-]/g, '-')}`.slice(0, 100)
+}
+
+/** The `adk_` ownership prefix marking a tmux session as deck-created. */
+export const DECK_TMUX_PREFIX = 'adk_'
 
 /** localStorage key remembering the tab ⇄ grid layout across reloads. */
 export const TERMINAL_VIEW_MODE_KEY = 'agent-deck:terminal-view-mode'
@@ -110,7 +141,9 @@ function isSession(value: unknown): value is TerminalSession {
     typeof s.id === 'string' &&
     typeof s.cli === 'string' &&
     typeof s.title === 'string' &&
-    typeof s.epoch === 'number'
+    typeof s.epoch === 'number' &&
+    (s.attach === undefined || typeof s.attach === 'string') &&
+    (s.wire === undefined || typeof s.wire === 'string')
   )
 }
 
@@ -209,6 +242,123 @@ export function openSession(state: SessionsState, cli: CliId): SessionsState {
     activeId: id,
     seq,
   }
+}
+
+/**
+ * Open a tab ATTACHED to a foreign tmux session (one the user created in their
+ * own tmux), making it active. The tab is titled with the session's name (its
+ * honest identity on the tmux server) and carries `attach`, so the view joins
+ * the existing shell instead of creating one. Cap-honest like {@link openSession}.
+ */
+export function openAttachSession(state: SessionsState, name: string): SessionsState {
+  if (isAtCap(state)) return state
+  // One tab per foreign session: attaching again just refocuses the open tab.
+  const existing = state.sessions.find((s) => s.attach === name)
+  if (existing) return setActive(state, existing.id)
+  const seq = state.seq + 1
+  const session: TerminalSession = {
+    id: `term-${seq}-${randomToken()}`,
+    cli: 'shell',
+    title: name,
+    epoch: 0,
+    attach: name,
+  }
+  return {
+    ...state,
+    sessions: [...state.sessions, session],
+    activeId: session.id,
+    seq,
+  }
+}
+
+/**
+ * Open a RECOVERED tab for a deck-owned tmux session (`adk_*`) the server still
+ * holds but this browser's storage forgot (e.g. after browser data loss). The
+ * recovered `wire` id reproduces the same tmux name, so mounting the tab
+ * reattaches the SAME shell. Titled with the wire id (the only identity left).
+ */
+export function openRecoveredSession(state: SessionsState, serverName: string): SessionsState {
+  if (isAtCap(state)) return state
+  if (!serverName.startsWith(DECK_TMUX_PREFIX)) return state
+  const wire = serverName.slice(DECK_TMUX_PREFIX.length)
+  if (!wire) return state
+  const seq = state.seq + 1
+  const session: TerminalSession = {
+    id: `term-${seq}-${randomToken()}`,
+    cli: 'shell',
+    title: wire,
+    epoch: 0,
+    wire,
+  }
+  return {
+    ...state,
+    sessions: [...state.sessions, session],
+    activeId: session.id,
+    seq,
+  }
+}
+
+/** The tmux session name a local entry maps to on the server (attach entries
+ * name a foreign session; everything else rides a deck-owned `adk_*` name). */
+export function expectedTmuxName(session: TerminalSession): string {
+  return session.attach ?? deckTmuxName(sessionKey(session))
+}
+
+/** The slice of the server's `GET /terminal/sessions` payload reconcile needs. */
+export interface ServerTmuxSnapshot {
+  tmuxAvailable: boolean
+  sessions: { name: string; deckOwned: boolean }[]
+}
+
+/**
+ * Reconcile the restored localStorage sessions against the SERVER's tmux list —
+ * the source of truth for what is actually running:
+ *   - entries whose tmux session no longer exists are CLEANED (the shell is
+ *     gone; remounting would silently create a fresh one that masquerades as
+ *     the old),
+ *   - deck-owned (`adk_*`) server sessions no local entry maps to are RECOVERED
+ *     as tabs (so shells survive browser data loss),
+ *   - without tmux on the host nothing changes (volatile sessions keep the
+ *     in-process park/reattach behavior).
+ * Pure; returns the SAME reference when nothing changed.
+ */
+export function reconcileSessions(state: SessionsState, server: ServerTmuxSnapshot): SessionsState {
+  if (!server.tmuxAvailable) return state
+  const serverNames = new Set(server.sessions.map((s) => s.name))
+  const kept = state.sessions.filter((s) => serverNames.has(expectedTmuxName(s)))
+  let next: SessionsState = state
+  if (kept.length !== state.sessions.length) {
+    const ids = new Set(kept.map((s) => s.id))
+    next = {
+      ...state,
+      sessions: kept,
+      activeId: state.activeId && ids.has(state.activeId) ? state.activeId : (kept[0]?.id ?? null),
+    }
+  }
+  const known = new Set(kept.map((s) => expectedTmuxName(s)))
+  for (const srv of server.sessions) {
+    if (!srv.deckOwned || known.has(srv.name)) continue
+    next = openRecoveredSession(next, srv.name)
+  }
+  // Recovered tabs should not steal focus from a surviving active session.
+  if (next !== state && state.activeId && next.sessions.some((s) => s.id === state.activeId)) {
+    next = { ...next, activeId: state.activeId }
+  }
+  return next
+}
+
+/**
+ * A compact relative age for epoch SECONDS (the tmux created/activity stamps):
+ * "just now", "3m ago", "2h ago", "5d ago". Honest floor rounding.
+ */
+export function formatEpochAge(epochSeconds: number, nowMs: number = Date.now()): string {
+  const seconds = Math.max(0, Math.floor(nowMs / 1000) - epochSeconds)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 /**

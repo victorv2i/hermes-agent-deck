@@ -6,6 +6,7 @@ import { SurfaceHeader } from '@/components/ui/surface-header'
 import { useVisualViewportInset } from '@/lib/useVisualViewportInset'
 import { useTerminalStatus, type TerminalStatusState } from './useTerminalStatus'
 import { useTerminalClis, type CliId } from './useTerminalClis'
+import { useTerminalTmuxSessions } from './useTerminalTmuxSessions'
 import { useTerminalAcknowledged, type AckStorage } from './useTerminalAcknowledged'
 import { TerminalStatusIndicator } from './terminalStatus'
 import { TerminalLauncher } from './TerminalLauncher'
@@ -55,6 +56,13 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
   // is always called (hooks rule) but its data is only consumed below the gates.
   const clisState = useTerminalClis(fetchImpl ?? fetch)
 
+  // The server's tmux session list — the SOURCE OF TRUTH for which shells
+  // actually exist. The multi-view waits for it to SETTLE (ready or failed)
+  // before mounting, so restored localStorage sessions are reconciled against
+  // reality (dead entries cleaned, forgotten deck shells recovered) instead of
+  // silently respawning fresh shells under old names.
+  const tmuxState = useTerminalTmuxSessions(fetchImpl ?? fetch)
+
   // Active-session state lifted up from the multi-view so the ONE SurfaceHeader
   // can own the connection status + controls (T1.8 + T2.3), bound to whichever
   // terminal is active. `clear`/`restart` are handles for the ACTIVE session (null
@@ -71,6 +79,11 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
   const [launchCli, setLaunchCli] = useState<CliId | null>(
     () => readPersistedSessions()?.sessions[0]?.cli ?? null,
   )
+  // A foreign tmux session chosen at the launcher to attach to (opens its tab).
+  const [attachTarget, setAttachTarget] = useState<string | null>(null)
+  // Entered via the launcher's "Reattach" (recover the running deck shells
+  // without opening a fresh one).
+  const [recoverOnly, setRecoverOnly] = useState(false)
   const [liveStatus, setLiveStatus] = useState<TerminalStatus | null>(null)
   const [clear, setClear] = useState<(() => void) | null>(null)
   const [restartActive, setRestartActive] = useState<(() => void) | null>(null)
@@ -93,6 +106,23 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
     setClear(null)
     setLiveStatus('connecting')
     setLaunchCli(id)
+  }, [])
+
+  // Attach to a FOREIGN tmux session from the launcher (the seed cli is only
+  // the multi-view's fallback; the attach tab itself sends `attach`).
+  const attach = useCallback((name: string) => {
+    setClear(null)
+    setLiveStatus('connecting')
+    setAttachTarget(name)
+    setLaunchCli((cli) => cli ?? 'shell')
+  }, [])
+
+  // Reattach the deck shells the server still holds (no fresh shell opened).
+  const resume = useCallback(() => {
+    setClear(null)
+    setLiveStatus('connecting')
+    setRecoverOnly(true)
+    setLaunchCli((cli) => cli ?? 'shell')
   }, [])
 
   // iOS never resizes the layout viewport for the on-screen keyboard, so without
@@ -161,24 +191,38 @@ export function TerminalRoute({ fetchImpl, viewComponent, ackStorage }: Terminal
           failed={clisState.phase === 'failed'}
           onRetry={clisState.phase !== 'loading' ? clisState.refetch : undefined}
           onLaunch={launch}
+          tmux={tmuxState.phase === 'ready' ? tmuxState.data : undefined}
+          onAttach={attach}
+          onResume={resume}
         />
       )}
 
-      {available && acknowledged && sessionLive && launchCli != null && (
-        <Suspense fallback={<CenteredNote>Loading terminal…</CenteredNote>}>
-          <TerminalMultiView
-            initialCli={launchCli}
-            clis={clisState.phase === 'ready' ? clisState.clis : undefined}
-            viewComponent={View}
-            // The active session's status/clear/restart flow into the single header.
-            // useState setters that store a function need the updater form so the
-            // handle isn't called as a reducer.
-            onActiveStatusChange={(s) => setLiveStatus(s)}
-            onActiveClearReady={(fn) => setClear(() => fn)}
-            onActiveRestartReady={(fn) => setRestartActive(() => fn)}
-          />
-        </Suspense>
-      )}
+      {/* The multi-view waits for the tmux list to SETTLE (ready or failed) so
+          restored sessions reconcile against the server's reality up front. */}
+      {available &&
+        acknowledged &&
+        sessionLive &&
+        launchCli != null &&
+        (tmuxState.phase === 'loading' ? (
+          <CenteredNote>Loading terminal…</CenteredNote>
+        ) : (
+          <Suspense fallback={<CenteredNote>Loading terminal…</CenteredNote>}>
+            <TerminalMultiView
+              initialCli={launchCli}
+              initialAttach={attachTarget ?? undefined}
+              recoverOnly={recoverOnly}
+              serverSessions={tmuxState.phase === 'ready' ? tmuxState.data : undefined}
+              clis={clisState.phase === 'ready' ? clisState.clis : undefined}
+              viewComponent={View}
+              // The active session's status/clear/restart flow into the single header.
+              // useState setters that store a function need the updater form so the
+              // handle isn't called as a reducer.
+              onActiveStatusChange={(s) => setLiveStatus(s)}
+              onActiveClearReady={(fn) => setClear(() => fn)}
+              onActiveRestartReady={(fn) => setRestartActive(() => fn)}
+            />
+          </Suspense>
+        ))}
     </div>
   )
 }

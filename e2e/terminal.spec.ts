@@ -88,6 +88,15 @@ test('Terminal: opens the xterm surface, console-clean', async ({ page }) => {
       body: JSON.stringify({ clis: [{ id: 'shell', label: 'Raw shell', available: true }] }),
     }),
   )
+  // The persistence probe: this host has no tmux, so the launcher must say
+  // honestly that shells will not survive disconnects.
+  await page.route('**/api/agent-deck/terminal/sessions', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ tmuxAvailable: false, sessions: [] }),
+    }),
+  )
 
   await page.goto('/terminal')
 
@@ -98,9 +107,13 @@ test('Terminal: opens the xterm surface, console-clean', async ({ page }) => {
   await expect(page.getByText(/This is a real shell on the host/i)).toBeVisible()
   await expect(page.getByTestId('terminal-host')).toHaveCount(0)
 
-  // Acknowledge → the "Launch an agent" launcher appears (choose a CLI).
+  // Acknowledge → the "Launch an agent" launcher appears (choose a CLI), with
+  // the honest no-tmux persistence line.
   await page.getByRole('button', { name: /open the terminal/i }).click()
   await expect(page.getByText(/Launch an agent/i)).toBeVisible()
+  await expect(
+    page.getByText('Shells on this host are not persistent (tmux not installed).'),
+  ).toBeVisible()
 
   // Pick the raw shell → the lazily-mounted xterm host appears.
   await page.getByRole('button', { name: /Launch the Raw shell/i }).click()

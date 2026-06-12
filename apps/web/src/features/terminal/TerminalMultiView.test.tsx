@@ -2,7 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { useEffect } from 'react'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { TerminalMultiView } from './TerminalMultiView'
-import { TERMINAL_VIEW_MODE_KEY } from './terminalSessions'
+import {
+  TERMINAL_VIEW_MODE_KEY,
+  emptySessions,
+  expectedTmuxName,
+  openSession,
+  writeSessions,
+} from './terminalSessions'
 import type { DetectedCli } from './useTerminalClis'
 import type { TerminalViewProps } from './TerminalView'
 
@@ -213,5 +219,162 @@ describe('TerminalMultiView', () => {
     fireEvent.change(input, { target: { value: 'logs' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('tab', { name: /logs/i })).toBeInTheDocument()
+  })
+})
+
+/* ── Persistence badges, honest close affordances, and server reconcile ──────── */
+
+describe('TerminalMultiView persistence', () => {
+  /** What each mounted view's explicit end-session handle was called with. */
+  const closeCalls: string[] = []
+
+  /** A stub view that reports a fixed persistence + records terminal.close. */
+  function persistenceStub(persistent: boolean) {
+    return function Stub({
+      cli,
+      sessionId,
+      attach,
+      onStatusChange,
+      onPersistentChange,
+      onCloseSessionReady,
+    }: TerminalViewProps) {
+      useEffect(() => {
+        onStatusChange?.('connected')
+        onPersistentChange?.(persistent)
+        onCloseSessionReady?.(() => closeCalls.push(attach ?? sessionId ?? '?'))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [])
+      return <div data-testid="terminal-view">{attach ?? cli}</div>
+    }
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    closeCalls.length = 0
+  })
+
+  it('shows a persistent badge when the shell is tmux-backed', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
+    expect(screen.getByText('persistent')).toBeInTheDocument()
+    expect(screen.queryByText('volatile')).toBeNull()
+  })
+
+  it('shows a volatile badge when the shell is not tmux-backed', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(false)} />)
+    expect(screen.getByText('volatile')).toBeInTheDocument()
+  })
+
+  it('closing a PERSISTENT shell asks first, then ends it for real', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    fireEvent.click(within(tab).getByRole('button', { name: /close/i }))
+    // The confirm dialog is up; nothing has been closed yet. (The dialog
+    // aria-hides the page behind it, so the tab query opts into hidden nodes.)
+    expect(screen.getByText(/ends the persistent shell/i)).toBeInTheDocument()
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByRole('tab', { hidden: true })).toHaveLength(1)
+    // Confirm: terminal.close fires (kills the tmux session) and the tab goes.
+    fireEvent.click(screen.getByRole('button', { name: /^close terminal$/i }))
+    expect(closeCalls).toHaveLength(1)
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+  })
+
+  it('Cancel keeps the persistent shell (no close sent)', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    fireEvent.click(within(tab).getByRole('button', { name: /close/i }))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByRole('tab')).toHaveLength(1)
+  })
+
+  it('closing a VOLATILE shell needs no confirm (current behavior)', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(false)} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    fireEvent.click(within(tab).getByRole('button', { name: /close/i }))
+    expect(screen.queryByText(/ends the persistent shell/i)).toBeNull()
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+    // No explicit terminal.close: the socket teardown ends a volatile shell.
+    expect(closeCalls).toHaveLength(0)
+  })
+
+  it('a FOREIGN attach tab detaches (never a kill confirm), labeled honestly', () => {
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        initialAttach="victors_own"
+        viewComponent={persistenceStub(true)}
+      />,
+    )
+    // The tab carries the tmux session's name and a Detach affordance.
+    const tab = screen.getByRole('tab', { name: /victors_own/i })
+    const detach = within(tab).getByRole('button', { name: /detach victors_own/i })
+    fireEvent.click(detach)
+    // No confirm dialog: a detach is safe (the user's session keeps running).
+    expect(screen.queryByText(/ends the persistent shell/i)).toBeNull()
+    // terminal.close was sent (the server detaches a foreign session).
+    expect(closeCalls).toEqual(['victors_own'])
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+  })
+
+  it('reconciles restored sessions against the server list (clean + recover)', () => {
+    // Two sessions persisted from a previous load...
+    let prior = openSession(emptySessions(), 'shell')
+    prior = openSession(prior, 'hermes')
+    writeSessions(prior)
+    const survivor = prior.sessions[1]!
+    // ...but the server only still holds the second one, plus a deck session
+    // this browser forgot entirely.
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        viewComponent={persistenceStub(true)}
+        serverSessions={{
+          tmuxAvailable: true,
+          sessions: [
+            { name: expectedTmuxName(survivor), deckOwned: true },
+            { name: 'adk_forgotten-7', deckOwned: true },
+            { name: 'victors_own', deckOwned: false },
+          ],
+        }}
+      />,
+    )
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(2)
+    // The dead entry is gone; the survivor + the recovered tab remain. The
+    // foreign session is NOT auto-opened (attach is a launcher choice).
+    expect(screen.getByRole('tab', { name: /forgotten-7/i })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /victors_own/i })).toBeNull()
+  })
+
+  it('without tmux the restored sessions are untouched (volatile behavior)', () => {
+    let prior = openSession(emptySessions(), 'shell')
+    prior = openSession(prior, 'hermes')
+    writeSessions(prior)
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        viewComponent={persistenceStub(false)}
+        serverSessions={{ tmuxAvailable: false, sessions: [] }}
+      />,
+    )
+    expect(screen.getAllByRole('tab')).toHaveLength(2)
+  })
+
+  it('recoverOnly mounts only the server-recovered sessions (no fresh shell)', () => {
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        recoverOnly
+        viewComponent={persistenceStub(true)}
+        serverSessions={{
+          tmuxAvailable: true,
+          sessions: [{ name: 'adk_lost-1', deckOwned: true }],
+        }}
+      />,
+    )
+    const tabs = screen.getAllByRole('tab')
+    expect(tabs).toHaveLength(1)
+    expect(screen.getByRole('tab', { name: /lost-1/i })).toBeInTheDocument()
   })
 })

@@ -110,6 +110,25 @@ export interface TerminalViewProps {
    */
   sessionId?: string
   /**
+   * A FOREIGN tmux session name to attach to (one the user created in their
+   * own tmux). Sent as `attach` INSTEAD of `sessionId`; the server joins the
+   * existing session and never creates or kills it.
+   */
+  attach?: string
+  /**
+   * Report whether the live session is tmux-backed (persistent: survives deck
+   * restarts and disconnects), from `terminal.ready`'s `persistent` flag. The
+   * host shows an honest persistent/volatile badge per tab.
+   */
+  onPersistentChange?: (persistent: boolean) => void
+  /**
+   * Report a handle that explicitly ENDS the session on the server
+   * (`terminal.close`: deck tmux session killed, foreign detached, plain shell
+   * killed), and `null` on teardown. The host wires it to the tab's close
+   * affordance (with a confirm for persistent shells).
+   */
+  onCloseSessionReady?: (close: (() => void) | null) => void
+  /**
    * Report the live socket/shell status up so the single SurfaceHeader (owned by
    * the route) can show it — there is no inner header bar anymore (T1.8).
    */
@@ -134,8 +153,11 @@ export function TerminalView({
   url,
   cli,
   sessionId,
+  attach,
   onStatusChange,
   onClearReady,
+  onPersistentChange,
+  onCloseSessionReady,
   onRestart,
 }: TerminalViewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -180,15 +202,22 @@ export function TerminalView({
   // an effect, not during render (refs must not be mutated while rendering).
   const onStatusChangeRef = useRef(onStatusChange)
   const onClearReadyRef = useRef(onClearReady)
-  // `cli` + `sessionId` are read once on mount (the route remounts to switch
-  // presets). Refs keep them out of the mount-once effect's deps without going stale.
+  const onPersistentChangeRef = useRef(onPersistentChange)
+  const onCloseSessionReadyRef = useRef(onCloseSessionReady)
+  // `cli` + `sessionId` + `attach` are read once on mount (the route remounts to
+  // switch presets). Refs keep them out of the mount-once effect's deps without
+  // going stale.
   const cliRef = useRef(cli)
   const sessionIdRef = useRef(sessionId)
+  const attachRef = useRef(attach)
   useEffect(() => {
     onStatusChangeRef.current = onStatusChange
     onClearReadyRef.current = onClearReady
+    onPersistentChangeRef.current = onPersistentChange
+    onCloseSessionReadyRef.current = onCloseSessionReady
     cliRef.current = cli
     sessionIdRef.current = sessionId
+    attachRef.current = attach
   })
 
   useEffect(() => {
@@ -208,6 +237,9 @@ export function TerminalView({
     const term = new TerminalSocket(
       {
         onData: (data) => engine?.write(data),
+        // Honest persistence badge: tmux-backed (survives restarts/disconnects)
+        // vs volatile, straight from the server's ready frame.
+        onReady: ({ persistent }) => onPersistentChangeRef.current?.(persistent),
         onExit: ({ exitCode: code }) => setExitCode(code),
         onError: ({ message }) => setErrorMessage(message),
         onStatusChange: reportStatus,
@@ -246,6 +278,8 @@ export function TerminalView({
       inputRef.current = (data) => term.input(data)
       // Expose Clear to the header now that the engine is live.
       onClearReadyRef.current?.(() => engine?.clear())
+      // Expose the explicit end-session handle (terminal.close) to the host.
+      onCloseSessionReadyRef.current?.(() => term.close())
 
       term.connect()
 
@@ -262,11 +296,17 @@ export function TerminalView({
         // `cli` (a launcher preset) is forwarded only when set; absent = raw shell.
         // It is captured from the mount-time prop (stable per view instance — the
         // route remounts via a key to switch presets).
+        // A foreign attach target replaces the stable sessionId (mutually
+        // exclusive on the wire: join the user's session, never create one).
         term.start({
           cols: geo.cols,
           rows: geo.rows,
-          ...(cliRef.current ? { cli: cliRef.current } : {}),
-          ...(sessionIdRef.current ? { sessionId: sessionIdRef.current } : {}),
+          ...(cliRef.current && !attachRef.current ? { cli: cliRef.current } : {}),
+          ...(attachRef.current
+            ? { attach: attachRef.current }
+            : sessionIdRef.current
+              ? { sessionId: sessionIdRef.current }
+              : {}),
         })
 
         // Keep the pty geometry in sync with the container from here on.
@@ -294,6 +334,7 @@ export function TerminalView({
         cancelAnimationFrame(initialFitFrame)
       }
       onClearReadyRef.current?.(null)
+      onCloseSessionReadyRef.current?.(null)
       inputRef.current = null
       resizeObserver?.disconnect()
       term.dispose()

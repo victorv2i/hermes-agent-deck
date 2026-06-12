@@ -34,6 +34,26 @@ The open session list is persisted to `localStorage` (`TERMINAL_SESSIONS_KEY`), 
 browser refresh remounts the SAME sessions (same ids) and each reattaches to its
 parked shell, the "refresh resumes the same shell" behavior.
 
+## tmux persistence (the strong layer)
+
+With tmux on the host, the server backs every stable-id session with a deck-owned
+tmux session (`adk_<sessionKey>`), so shells survive BFF restarts, long
+disconnects, and devices. The web layer rides that:
+
+- each tab shows an honest `persistent`/`volatile` badge (from
+  `terminal.ready.persistent`); without tmux the launcher says shells are not
+  persistent,
+- on route load the server's `GET /terminal/sessions` list is the SOURCE OF
+  TRUTH: restored localStorage entries whose tmux session is gone are cleaned,
+  and forgotten deck sessions are recovered as tabs
+  (`reconcileSessions`/`openRecoveredSession` in `terminalSessions.ts`),
+- the launcher lists the user's own (foreign) tmux sessions with Attach (the tab
+  sends `attach`, close = Detach, never a kill); a deck-owned persistent tab's
+  Close asks first, then sends `terminal.close` (a real kill),
+- `TerminalSocket` redials immediately on `visibilitychange`/`pageshow` while
+  disconnected, so a phone returning from the background reattaches its shells
+  without waiting out socket.io backoff.
+
 Session state is the pure reducer in `terminalSessions.ts` (open/close/rename/
 restart/activate + the tab⇄grid view mode + the 12 cap). The route surfaces the
 ACTIVE session's status/clear/restart up to the single SurfaceHeader.

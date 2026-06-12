@@ -7,8 +7,10 @@
  * module never touches the DOM, so it is unit-testable with a fake transport.
  *
  * Wire protocol (mirrors apps/server/src/terminal/terminalNamespace.ts):
- *   up:   'terminal.start' {cols,rows,cwd?} · 'terminal.input' string · 'terminal.resize' {cols,rows}
- *   down: 'terminal.ready' {pid} · 'terminal.data' string · 'terminal.exit' {exitCode} · 'terminal.error' {message}
+ *   up:   'terminal.start' {cols,rows,cwd?,sessionId?,attach?} · 'terminal.input' string ·
+ *         'terminal.resize' {cols,rows} · 'terminal.close'
+ *   down: 'terminal.ready' {pid,resumed?,persistent?} · 'terminal.data' string ·
+ *         'terminal.exit' {exitCode,detached?} · 'terminal.error' {message}
  */
 import { io, type Socket } from 'socket.io-client'
 import { socketAuth } from '@/lib/authToken'
@@ -37,8 +39,9 @@ export type TerminalStatus =
 export interface TerminalSocketCallbacks {
   /** Shell output (stdout+stderr) — write straight to xterm. */
   onData: (data: string) => void
-  /** Shell spawned; carries the child pid. */
-  onReady?: (info: { pid: number }) => void
+  /** Shell spawned; carries the child pid and whether the session is
+   * tmux-backed (persistent: it survives deck restarts and disconnects). */
+  onReady?: (info: { pid: number; persistent: boolean }) => void
   /** Shell exited; carries the exit code. */
   onExit?: (info: { exitCode: number }) => void
   /** Could not start / backend unavailable — show calmly, do not retry-loop. */
@@ -91,6 +94,12 @@ interface StartArgs {
    * resumes the SAME shell instead of silently swapping in a fresh one.
    */
   sessionId?: string
+  /**
+   * A FOREIGN tmux session name to attach to (one the user created in their own
+   * tmux). Attach-only: the server never creates or kills it. Mutually
+   * exclusive with `sessionId`.
+   */
+  attach?: string
 }
 
 /**
@@ -112,25 +121,47 @@ export class TerminalSocket {
   /** True once the transport has connected at least once (so a later 'connect'
    * is a RECONNECT — the old pty was force-killed and the shell is lost). */
   private everConnected = false
+  /** The visibility/pageshow reconnect handler, kept for removal on dispose. */
+  private readonly onVisible = (): void => {
+    // VISIBILITY-DRIVEN RECONNECT: a phone returning from hours in the
+    // background should not wait out socket.io's backoff — the moment the page
+    // is visible again, dial immediately. Only after a first successful connect
+    // (a never-connected socket is still doing its own initial dial), and only
+    // while actually disconnected. The 'connect' handler below then re-starts
+    // any reattachable session (stable id or foreign attach), so shells
+    // reattach within a couple of seconds of coming back.
+    if (this.disposed || !this.everConnected || this.socket.connected) return
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+    this.callbacks.onStatusChange?.('connecting')
+    this.socket.connect?.()
+  }
 
   constructor(callbacks: TerminalSocketCallbacks, options: TerminalSocketOptions = {}) {
     this.callbacks = callbacks
     this.socket = options.socket ?? defaultSocket(options.url)
     this.wire()
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.onVisible)
+    }
+    if (typeof window !== 'undefined') {
+      // pageshow also fires on bfcache restores, where no visibilitychange does.
+      window.addEventListener('pageshow', this.onVisible)
+    }
   }
 
   private wire(): void {
     this.socket.on('connect', () => {
       // A RECONNECT (we'd connected before). Two honest outcomes:
-      //  - With a stable `sessionId`, the server PARKED the pty on disconnect, so
-      //    we re-`start` with the same id to REATTACH — the same shell resumes and
-      //    its buffered scrollback replays. (`terminal.ready {resumed:true}` →
-      //    onResumed, no 'dropped' overlay.)
+      //  - With a stable `sessionId` (or a foreign `attach` target), the shell
+      //    outlived the drop on the server side, so we re-`start` with the same
+      //    id/name to REATTACH — the same shell resumes and its scrollback
+      //    replays. (`terminal.ready {resumed:true}` → onResumed, no 'dropped'
+      //    overlay.)
       //  - Without one, the server force-killed the pty, so the prior shell is
       //    gone. We do NOT silently swap in a brand-new shell that masquerades as
       //    the same session — surface 'dropped' for an explicit restart instead.
       if (this.everConnected) {
-        if (this.pendingStart?.sessionId) {
+        if (this.pendingStart?.sessionId || this.pendingStart?.attach) {
           this.callbacks.onStatusChange?.('connecting')
           this.startSent = false
           this.flushStart()
@@ -157,7 +188,9 @@ export class TerminalSocket {
     })
     this.socket.on('terminal.ready', (payload: unknown) => {
       const pid = readNumber(payload, 'pid')
-      if (pid !== null) this.callbacks.onReady?.({ pid })
+      if (pid !== null) {
+        this.callbacks.onReady?.({ pid, persistent: readBool(payload, 'persistent') })
+      }
       // A reattach to the parked shell: the same session resumed (buffered
       // scrollback already replayed). Mark connected + notify, so no "dropped"
       // overlay is shown for an honest resume.
@@ -216,10 +249,26 @@ export class TerminalSocket {
     this.socket.emit('terminal.resize', { cols, rows })
   }
 
+  /**
+   * Explicitly END the session on the server ('terminal.close'): a deck-owned
+   * tmux session is killed for real, a foreign one is merely detached, a plain
+   * shell is killed. The caller still disposes this socket afterwards.
+   */
+  close(): void {
+    if (this.disposed) return
+    this.socket.emit('terminal.close')
+  }
+
   /** Tear down: stop emitting and close the transport (the BFF kills the pty). */
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.onVisible)
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pageshow', this.onVisible)
+    }
     this.socket.disconnect()
   }
 }

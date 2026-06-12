@@ -425,4 +425,89 @@ describe('TerminalRoute', () => {
       ).not.toBeInTheDocument()
     })
   })
+
+  describe('tmux persistence wiring', () => {
+    /** A fetch answering status, clis, AND the tmux sessions list. */
+    function tmuxFetch(sessions: unknown) {
+      return vi.fn(async (url: string) => {
+        if (typeof url === 'string' && url.includes('/clis')) return jsonResponse(CLIS_OK)
+        if (typeof url === 'string' && url.includes('/sessions')) return jsonResponse(sessions)
+        return jsonResponse({ available: true })
+      }) as unknown as typeof fetch
+    }
+
+    it('the launcher says when shells cannot persist (no tmux on the host)', async () => {
+      renderRoute(
+        <TerminalRoute
+          fetchImpl={tmuxFetch({ tmuxAvailable: false, sessions: [] })}
+          viewComponent={StubView}
+          ackStorage={ackedStorage()}
+        />,
+      )
+      expect(
+        await screen.findByText('Shells on this host are not persistent (tmux not installed).'),
+      ).toBeInTheDocument()
+    })
+
+    it('recovers running deck shells from the launcher after browser data loss', async () => {
+      // localStorage is empty (cleared in beforeEach) but the server still
+      // holds a deck-owned session: the launcher offers Reattach, and choosing
+      // it mounts the multi-view with the recovered tab (no fresh shell).
+      renderRoute(
+        <TerminalRoute
+          fetchImpl={tmuxFetch({
+            tmuxAvailable: true,
+            sessions: [
+              {
+                name: 'adk_lost-1',
+                deckOwned: true,
+                attachedCount: 0,
+                createdEpoch: 1765000000,
+                lastActivityEpoch: 1765000100,
+                persistent: true,
+              },
+            ],
+          })}
+          viewComponent={StubView}
+          ackStorage={ackedStorage()}
+        />,
+      )
+      fireEvent.click(await screen.findByRole('button', { name: /reattach/i }))
+      expect(await screen.findByRole('tab', { name: /lost-1/i })).toBeInTheDocument()
+      expect(screen.getAllByTestId('terminal-view')).toHaveLength(1)
+    })
+
+    it('attaches to a foreign tmux session from the launcher', async () => {
+      const seenAttach: string[] = []
+      function CapturingView({ attach }: TerminalViewProps) {
+        useEffect(() => {
+          if (attach) seenAttach.push(attach)
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
+        return <div data-testid="terminal-view">live</div>
+      }
+      renderRoute(
+        <TerminalRoute
+          fetchImpl={tmuxFetch({
+            tmuxAvailable: true,
+            sessions: [
+              {
+                name: 'victors_own',
+                deckOwned: false,
+                attachedCount: 1,
+                createdEpoch: 1765000000,
+                lastActivityEpoch: 1765000100,
+                persistent: true,
+              },
+            ],
+          })}
+          viewComponent={CapturingView}
+          ackStorage={ackedStorage()}
+        />,
+      )
+      fireEvent.click(await screen.findByRole('button', { name: /attach to victors_own/i }))
+      await screen.findByTestId('terminal-view')
+      expect(seenAttach).toContain('victors_own')
+    })
+  })
 })

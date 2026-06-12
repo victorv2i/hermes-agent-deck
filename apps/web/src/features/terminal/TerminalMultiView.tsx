@@ -10,6 +10,13 @@ import {
 import { Columns2, Plus, RotateCcw, Square, X } from 'lucide-react'
 import { Popover } from 'radix-ui'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { CliBrandMark } from './cliBrandIcons'
 import { TerminalStatusIndicator } from './terminalStatus'
 import type { DetectedCli } from './useTerminalClis'
@@ -18,9 +25,11 @@ import {
   closeSession,
   emptySessions,
   isAtCap,
+  openAttachSession,
   openSession,
   readPersistedSessions,
   readViewMode,
+  reconcileSessions,
   renameSession,
   restartSession,
   sessionKey,
@@ -28,6 +37,7 @@ import {
   setViewMode,
   writeSessions,
   writeViewMode,
+  type ServerTmuxSnapshot,
   type SessionsState,
   type TerminalSession,
   type ViewMode,
@@ -55,6 +65,24 @@ import type { TerminalStatus } from './terminalSocket'
 export interface TerminalMultiViewProps {
   /** The preset chosen at the launcher for the FIRST terminal. */
   initialCli: CliId
+  /**
+   * A FOREIGN tmux session name chosen at the launcher: open an attach tab for
+   * it (alongside any restored sessions) instead of a fresh preset shell.
+   */
+  initialAttach?: string
+  /**
+   * Enter WITHOUT opening a fresh shell: only restored + server-recovered
+   * sessions mount (the launcher's "resume the running shells" path).
+   */
+  recoverOnly?: boolean
+  /**
+   * The server's tmux session list (the source of truth), fetched by the route
+   * BEFORE this mounts. Restored localStorage sessions are reconciled against
+   * it: entries whose tmux session is gone are cleaned, and deck-owned (`adk_*`)
+   * sessions this browser forgot are recovered as tabs. Undefined (no tmux, or
+   * the probe failed) = no reconcile, today's behavior.
+   */
+  serverSessions?: ServerTmuxSnapshot
   /**
    * The detected CLIs (same list the launcher uses), so the "+" preset menu only
    * offers what's actually installed. Undefined while loading → the menu falls
@@ -100,37 +128,69 @@ function reducer(state: SessionsState, action: Action): SessionsState {
   }
 }
 
+/** The init arguments folded into one object (useReducer takes one init arg). */
+interface InitArgs {
+  initialCli: CliId
+  initialAttach?: string
+  recoverOnly?: boolean
+  serverSessions?: ServerTmuxSnapshot
+}
+
 /**
  * Seed the reducer. A browser refresh RESTORES the previously-open sessions (same
- * stable ids) so the server can REATTACH each to its parked shell — the same
- * shells resume. On a first open (nothing persisted) it opens one session for the
- * launcher's chosen preset, honoring the persisted tab/grid layout.
+ * stable ids) so the server can REATTACH each — and when the server's tmux list
+ * is known, it is the SOURCE OF TRUTH: dead entries are cleaned and forgotten
+ * deck sessions are recovered as tabs ({@link reconcileSessions}). Then the
+ * launcher's intent applies: an attach target opens its tab, recover-only adds
+ * nothing, and otherwise a fresh session opens for the chosen preset when none
+ * survived.
  */
-function init(initialCli: CliId): SessionsState {
-  const restored = readPersistedSessions()
-  if (restored) return restored
-  return openSession(emptySessions(readViewMode()), initialCli)
+function init({ initialCli, initialAttach, recoverOnly, serverSessions }: InitArgs): SessionsState {
+  let state = readPersistedSessions() ?? emptySessions(readViewMode())
+  if (serverSessions) state = reconcileSessions(state, serverSessions)
+  if (initialAttach) return openAttachSession(state, initialAttach)
+  if (recoverOnly || state.sessions.length > 0) return state
+  return openSession(state, initialCli)
 }
 
 export function TerminalMultiView({
   initialCli,
+  initialAttach,
+  recoverOnly,
+  serverSessions,
   clis,
   viewComponent: View,
   onActiveStatusChange,
   onActiveClearReady,
   onActiveRestartReady,
 }: TerminalMultiViewProps) {
-  const [state, dispatch] = useReducer(reducer, initialCli, init)
+  const [state, dispatch] = useReducer(
+    reducer,
+    { initialCli, initialAttach, recoverOnly, serverSessions },
+    init,
+  )
   // Per-session live status, so each tab/cell shows its own honest connection dot.
   const [statuses, setStatuses] = useState<Record<string, TerminalStatus>>({})
+  // Per-session persistence (tmux-backed vs volatile), from terminal.ready.
+  const [persistence, setPersistence] = useState<Record<string, boolean>>({})
   // Per-session engine `clear` handles, so the header's Clear acts on the ACTIVE one.
   const clearHandles = useRef<Record<string, (() => void) | null>>({})
+  // Per-session explicit end-session handles (terminal.close on the wire).
+  const closeHandles = useRef<Record<string, (() => void) | null>>({})
+  // A deck-owned PERSISTENT session awaiting the close confirm (dialog open).
+  const [pendingClose, setPendingClose] = useState<string | null>(null)
 
   const setStatus = useCallback((id: string, status: TerminalStatus) => {
     setStatuses((prev) => (prev[id] === status ? prev : { ...prev, [id]: status }))
   }, [])
+  const setPersistent = useCallback((id: string, persistent: boolean) => {
+    setPersistence((prev) => (prev[id] === persistent ? prev : { ...prev, [id]: persistent }))
+  }, [])
   const setClearHandle = useCallback((id: string, clear: (() => void) | null) => {
     clearHandles.current[id] = clear
+  }, [])
+  const setCloseHandle = useCallback((id: string, close: (() => void) | null) => {
+    closeHandles.current[id] = close
   }, [])
 
   const atCap = isAtCap(state)
@@ -149,6 +209,33 @@ export function TerminalMultiView({
 
   // The "+" opens a new terminal for the chosen preset (defaults to raw shell).
   const openNew = useCallback((cli: CliId) => dispatch({ type: 'open', cli }), [])
+
+  // Closing a tab is HONEST about what it ends:
+  //  - a FOREIGN attach tab DETACHES (terminal.close on the wire detaches; the
+  //    user's session keeps running in their own tmux),
+  //  - a deck-owned PERSISTENT shell asks first (its whole point is surviving
+  //    disconnects; an explicit close kills it in the tmux server for real),
+  //  - a volatile shell closes as before (the socket teardown ends it).
+  const requestClose = (id: string) => {
+    const session = state.sessions.find((s) => s.id === id)
+    if (!session) return
+    if (session.attach) {
+      closeHandles.current[id]?.()
+      dispatch({ type: 'close', id })
+      return
+    }
+    if (persistence[id]) {
+      setPendingClose(id)
+      return
+    }
+    dispatch({ type: 'close', id })
+  }
+  const confirmClose = () => {
+    if (!pendingClose) return
+    closeHandles.current[pendingClose]?.()
+    dispatch({ type: 'close', id: pendingClose })
+    setPendingClose(null)
+  }
 
   // Surface the ACTIVE session's status/clear/restart up to the route header. Kept
   // in refs+effect so the callbacks (fresh closures from the route) never need to
@@ -174,10 +261,11 @@ export function TerminalMultiView({
         state={state}
         atCap={atCap}
         statuses={statuses}
+        persistence={persistence}
         clis={clis}
         onOpen={openNew}
         onActivate={(id) => dispatch({ type: 'activate', id })}
-        onClose={(id) => dispatch({ type: 'close', id })}
+        onClose={requestClose}
         onRename={(id, title) => dispatch({ type: 'rename', id, title })}
         onSetView={(mode) => dispatch({ type: 'viewMode', mode })}
       />
@@ -195,7 +283,9 @@ export function TerminalMultiView({
           state={state}
           View={View}
           onStatus={setStatus}
+          onPersistent={setPersistent}
           onClearReady={setClearHandle}
+          onCloseReady={setCloseHandle}
           onRestart={(id) => dispatch({ type: 'restart', id })}
         />
       ) : (
@@ -203,13 +293,68 @@ export function TerminalMultiView({
           state={state}
           View={View}
           statuses={statuses}
+          persistence={persistence}
           onStatus={setStatus}
+          onPersistent={setPersistent}
           onClearReady={setClearHandle}
+          onCloseReady={setCloseHandle}
           onActivate={(id) => dispatch({ type: 'activate', id })}
           onRestart={(id) => dispatch({ type: 'restart', id })}
         />
       )}
+
+      <ClosePersistentDialog
+        title={state.sessions.find((s) => s.id === pendingClose)?.title ?? null}
+        open={pendingClose !== null}
+        onConfirm={confirmClose}
+        onCancel={() => setPendingClose(null)}
+      />
     </div>
+  )
+}
+
+/**
+ * The close confirm for a deck-owned PERSISTENT shell: its whole point is
+ * surviving disconnects, so an explicit close (which kills it in the tmux
+ * server) deserves one honest question. Cancel is the default-focused action.
+ */
+function ClosePersistentDialog({
+  title,
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  title: string | null
+  open: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onCancel()
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Close this terminal?</DialogTitle>
+          <DialogDescription>
+            This ends the persistent shell{title ? <> &ldquo;{title}&rdquo;</> : null}. Anything
+            still running in it stops, and it will no longer be there to reattach from another
+            device.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" onClick={onCancel} autoFocus>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            Close terminal
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -219,6 +364,7 @@ function SessionBar({
   state,
   atCap,
   statuses,
+  persistence,
   clis,
   onOpen,
   onActivate,
@@ -229,6 +375,7 @@ function SessionBar({
   state: SessionsState
   atCap: boolean
   statuses: Record<string, TerminalStatus>
+  persistence: Record<string, boolean>
   clis: DetectedCli[] | undefined
   onOpen: (cli: CliId) => void
   onActivate: (id: string) => void
@@ -263,6 +410,7 @@ function SessionBar({
             session={session}
             active={session.id === state.activeId}
             status={statuses[session.id]}
+            persistent={persistence[session.id]}
             onActivate={() => onActivate(session.id)}
             onClose={() => onClose(session.id)}
             onRename={(title) => onRename(session.id, title)}
@@ -439,6 +587,7 @@ function Tab({
   session,
   active,
   status,
+  persistent,
   onActivate,
   onClose,
   onRename,
@@ -446,11 +595,16 @@ function Tab({
   session: TerminalSession
   active: boolean
   status: TerminalStatus | undefined
+  /** tmux-backed (true) vs volatile (false); undefined until the shell is ready. */
+  persistent: boolean | undefined
   onActivate: () => void
   onClose: () => void
   onRename: (title: string) => void
 }) {
   const [editing, setEditing] = useState(false)
+  // A foreign attach tab never kills the user's session: its close affordance
+  // is honestly a DETACH (the session keeps running in their own tmux).
+  const foreign = session.attach !== undefined
 
   return (
     <div
@@ -488,19 +642,51 @@ function Tab({
       ) : (
         <span className="min-w-0 max-w-40 truncate">{session.title}</span>
       )}
+      <PersistenceBadge persistent={persistent} foreign={foreign} />
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           onClose()
         }}
-        aria-label={`Close ${session.title}`}
-        title="Close terminal"
+        aria-label={foreign ? `Detach ${session.title}` : `Close ${session.title}`}
+        title={foreign ? 'Detach (the session keeps running in your tmux)' : 'Close terminal'}
         className="flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-tertiary opacity-70 transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring group-hover/tab:opacity-100 md:size-7"
       >
         <X className="size-3.5" />
       </button>
     </div>
+  )
+}
+
+/**
+ * The honest persistence chip: `persistent` for a tmux-backed shell (survives
+ * deck restarts and disconnects; a foreign one is the user's own session) vs
+ * `volatile` for a plain shell. Hidden until the server's ready frame says which.
+ */
+function PersistenceBadge({
+  persistent,
+  foreign,
+}: {
+  persistent: boolean | undefined
+  foreign: boolean
+}) {
+  if (persistent === undefined) return null
+  return (
+    <span
+      title={
+        persistent
+          ? foreign
+            ? 'Attached to your own tmux session; it keeps running when you detach.'
+            : 'Backed by tmux: this shell survives restarts and disconnects, from any device.'
+          : 'Not tmux-backed: this shell ends when its connection does.'
+      }
+      className={`shrink-0 rounded-sm px-1 py-px text-[10px] leading-4 ${
+        persistent ? 'bg-success/10 text-success' : 'bg-muted text-foreground-tertiary'
+      }`}
+    >
+      {persistent ? 'persistent' : 'volatile'}
+    </span>
   )
 }
 
@@ -566,13 +752,17 @@ function TabPanels({
   state,
   View,
   onStatus,
+  onPersistent,
   onClearReady,
+  onCloseReady,
   onRestart,
 }: {
   state: SessionsState
   View: ComponentType<TerminalViewProps>
   onStatus: (id: string, status: TerminalStatus) => void
+  onPersistent: (id: string, persistent: boolean) => void
   onClearReady: (id: string, clear: (() => void) | null) => void
+  onCloseReady: (id: string, close: (() => void) | null) => void
   onRestart: (id: string) => void
 }) {
   return (
@@ -595,8 +785,12 @@ function TabPanels({
               // in the epoch so a Restart (epoch bump) becomes a NEW server session
               // (fresh shell), while a plain refresh keeps the same key → reattach.
               sessionId={sessionKey(session)}
+              // A foreign tab joins the user's own tmux session instead.
+              attach={session.attach}
               onStatusChange={(s) => onStatus(session.id, s)}
+              onPersistentChange={(p) => onPersistent(session.id, p)}
               onClearReady={(clear) => onClearReady(session.id, clear)}
+              onCloseSessionReady={(close) => onCloseReady(session.id, close)}
               onRestart={() => onRestart(session.id)}
             />
           </div>
@@ -621,16 +815,22 @@ function GridPanels({
   state,
   View,
   statuses,
+  persistence,
   onStatus,
+  onPersistent,
   onClearReady,
+  onCloseReady,
   onActivate,
   onRestart,
 }: {
   state: SessionsState
   View: ComponentType<TerminalViewProps>
   statuses: Record<string, TerminalStatus>
+  persistence: Record<string, boolean>
   onStatus: (id: string, status: TerminalStatus) => void
+  onPersistent: (id: string, persistent: boolean) => void
   onClearReady: (id: string, clear: (() => void) | null) => void
+  onCloseReady: (id: string, close: (() => void) | null) => void
   onActivate: (id: string) => void
   onRestart: (id: string) => void
 }) {
@@ -668,6 +868,10 @@ function GridPanels({
               <span className="min-w-0 flex-1 truncate text-xs text-foreground-tertiary">
                 {session.title}
               </span>
+              <PersistenceBadge
+                persistent={persistence[session.id]}
+                foreign={session.attach !== undefined}
+              />
               {status ? <TerminalStatusIndicator status={status} /> : null}
               <button
                 type="button"
@@ -688,8 +892,11 @@ function GridPanels({
                 cli={session.cli}
                 // Stable wire id (id+epoch): refresh → reattach; Restart → fresh shell.
                 sessionId={sessionKey(session)}
+                attach={session.attach}
                 onStatusChange={(s) => onStatus(session.id, s)}
+                onPersistentChange={(p) => onPersistent(session.id, p)}
                 onClearReady={(clear) => onClearReady(session.id, clear)}
+                onCloseSessionReady={(close) => onCloseReady(session.id, close)}
                 onRestart={() => onRestart(session.id)}
               />
             </div>

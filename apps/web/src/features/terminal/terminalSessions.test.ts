@@ -15,6 +15,13 @@ import {
   writeViewMode,
   readPersistedSessions,
   writeSessions,
+  sessionKey,
+  deckTmuxName,
+  expectedTmuxName,
+  openAttachSession,
+  openRecoveredSession,
+  reconcileSessions,
+  formatEpochAge,
   type SessionsState,
 } from './terminalSessions'
 
@@ -211,5 +218,137 @@ describe('session persistence (refresh resumes the SAME shells)', () => {
     expect(localStorage.getItem(TERMINAL_SESSIONS_KEY)).not.toBeNull()
     writeSessions(emptySessions())
     expect(localStorage.getItem(TERMINAL_SESSIONS_KEY)).toBeNull()
+  })
+})
+
+describe('foreign attach sessions', () => {
+  it('opens an attach tab titled with the tmux session name', () => {
+    const s = openAttachSession(emptySessions(), 'victors_own')
+    expect(s.sessions).toHaveLength(1)
+    const tab = s.sessions[0]!
+    expect(tab.attach).toBe('victors_own')
+    expect(tab.title).toBe('victors_own')
+    expect(s.activeId).toBe(tab.id)
+  })
+
+  it('attaching the same session twice only refocuses the existing tab', () => {
+    let s = openAttachSession(emptySessions(), 'victors_own')
+    s = openSession(s, 'shell')
+    const before = s.sessions.length
+    s = openAttachSession(s, 'victors_own')
+    expect(s.sessions).toHaveLength(before)
+    expect(s.activeId).toBe(s.sessions.find((x) => x.attach === 'victors_own')!.id)
+  })
+
+  it('attach tabs round-trip through persistence', () => {
+    const s = openAttachSession(emptySessions(), 'victors_own')
+    writeSessions(s)
+    const restored = readPersistedSessions()
+    expect(restored!.sessions[0]!.attach).toBe('victors_own')
+  })
+})
+
+describe('recovered deck sessions + wire keys', () => {
+  it('deckTmuxName mirrors the server mapping (sanitize + adk_ prefix + bound)', () => {
+    expect(deckTmuxName('term-3-ab12cd:0')).toBe('adk_term-3-ab12cd-0')
+    expect(deckTmuxName('a.b:c d/e')).toBe('adk_a-b-c-d-e')
+    expect(deckTmuxName('x'.repeat(500)).length).toBeLessThanOrEqual(100)
+  })
+
+  it('a recovered session maps back to the SAME tmux name at epoch 0', () => {
+    const s = openRecoveredSession(emptySessions(), 'adk_term-1-ab12cd34-0')
+    const tab = s.sessions[0]!
+    expect(tab.wire).toBe('term-1-ab12cd34-0')
+    expect(sessionKey(tab)).toBe('term-1-ab12cd34-0')
+    expect(deckTmuxName(sessionKey(tab))).toBe('adk_term-1-ab12cd34-0')
+  })
+
+  it('a Restart of a recovered session yields a NEW key (fresh shell, honestly)', () => {
+    let s = openRecoveredSession(emptySessions(), 'adk_term-1-ab12cd34-0')
+    s = restartSession(s, s.sessions[0]!.id)
+    expect(sessionKey(s.sessions[0]!)).toBe('term-1-ab12cd34-0:1')
+  })
+
+  it('refuses to recover a non-deck name', () => {
+    const empty = emptySessions()
+    expect(openRecoveredSession(empty, 'victors_own')).toBe(empty)
+    expect(openRecoveredSession(empty, 'adk_')).toBe(empty)
+  })
+
+  it('expectedTmuxName covers deck, recovered, and attach entries', () => {
+    const deck = openSession(emptySessions(), 'shell').sessions[0]!
+    expect(expectedTmuxName(deck)).toBe(deckTmuxName(sessionKey(deck)))
+    const rec = openRecoveredSession(emptySessions(), 'adk_w1').sessions[0]!
+    expect(expectedTmuxName(rec)).toBe('adk_w1')
+    const att = openAttachSession(emptySessions(), 'victors_own').sessions[0]!
+    expect(expectedTmuxName(att)).toBe('victors_own')
+  })
+})
+
+describe('reconcileSessions (server list is the source of truth)', () => {
+  const srv = (names: string[], tmuxAvailable = true) => ({
+    tmuxAvailable,
+    sessions: names.map((name) => ({ name, deckOwned: name.startsWith('adk_') })),
+  })
+
+  it('is a no-op (same reference) when tmux is unavailable (volatile behavior)', () => {
+    const s = openSession(emptySessions(), 'shell')
+    expect(reconcileSessions(s, srv([], false))).toBe(s)
+  })
+
+  it('is a no-op (same reference) when everything matches', () => {
+    const s = openSession(emptySessions(), 'shell')
+    expect(reconcileSessions(s, srv([expectedTmuxName(s.sessions[0]!)]))).toBe(s)
+  })
+
+  it('cleans entries whose tmux session no longer exists', () => {
+    let s = openSession(emptySessions(), 'shell')
+    s = openSession(s, 'hermes')
+    const survivor = s.sessions[1]!
+    const next = reconcileSessions(s, srv([expectedTmuxName(survivor)]))
+    expect(next.sessions.map((x) => x.id)).toEqual([survivor.id])
+    expect(next.activeId).toBe(survivor.id)
+  })
+
+  it('cleans an attach entry whose foreign session is gone', () => {
+    const s = openAttachSession(emptySessions(), 'victors_own')
+    const next = reconcileSessions(s, srv([]))
+    expect(next.sessions).toHaveLength(0)
+    expect(next.activeId).toBeNull()
+  })
+
+  it('recovers deck-owned server sessions this browser forgot', () => {
+    const s = openSession(emptySessions(), 'shell')
+    const mine = expectedTmuxName(s.sessions[0]!)
+    const next = reconcileSessions(s, srv([mine, 'adk_forgotten-1', 'victors_own']))
+    // The forgotten deck session appears; the foreign one is NOT auto-opened.
+    expect(next.sessions).toHaveLength(2)
+    const recovered = next.sessions.find((x) => x.wire === 'forgotten-1')!
+    expect(recovered.title).toBe('forgotten-1')
+    // The surviving active session keeps focus (recovery never steals it).
+    expect(next.activeId).toBe(s.activeId)
+  })
+
+  it('recovers into an empty state (browser data loss)', () => {
+    const next = reconcileSessions(emptySessions(), srv(['adk_lost-1', 'adk_lost-2']))
+    expect(next.sessions.map((x) => x.wire).sort()).toEqual(['lost-1', 'lost-2'])
+  })
+
+  it('does not duplicate a deck session a local entry already maps to', () => {
+    const s = openRecoveredSession(emptySessions(), 'adk_w7')
+    expect(reconcileSessions(s, srv(['adk_w7']))).toBe(s)
+  })
+})
+
+describe('formatEpochAge', () => {
+  const now = 1_765_000_000_000 // ms
+  it('formats compact relative ages', () => {
+    expect(formatEpochAge(1_765_000_000 - 30, now)).toBe('just now')
+    expect(formatEpochAge(1_765_000_000 - 5 * 60, now)).toBe('5m ago')
+    expect(formatEpochAge(1_765_000_000 - 3 * 3600, now)).toBe('3h ago')
+    expect(formatEpochAge(1_765_000_000 - 2 * 86400, now)).toBe('2d ago')
+  })
+  it('never goes negative on clock skew', () => {
+    expect(formatEpochAge(1_765_000_000 + 999, now)).toBe('just now')
   })
 })
