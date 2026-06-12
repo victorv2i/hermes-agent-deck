@@ -123,13 +123,19 @@ test('a local fork survives navigating off Chat and back; the run signal stays t
   // Run to completion so we have settled messages, then fork from the first turn.
   await sendMessage(page, 'Say hi and clean the build')
   await expect(
-    page.getByText('Hello, from the mock agent.').and(page.locator(':visible')).first(),
+    page
+      .getByText('Taking a look at the build folder first.')
+      .and(page.locator(':visible'))
+      .first(),
   ).toBeVisible()
   const approval = page.getByTestId('approval-card')
   await expect(approval).toBeVisible()
   await approval.getByRole('button', { name: /allow once/i }).click()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
 
   await page.getByText('Say hi and clean the build').hover()
@@ -139,7 +145,10 @@ test('a local fork survives navigating off Chat and back; the run signal stays t
   await expect(banner).toContainText(/forked locally/i)
   // The fork projected the ancestor path — the original reply is out of view.
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toHaveCount(0)
 
   // Navigate OFF Chat (real SPA route change via ⌘K) and BACK. The branch UI
@@ -161,14 +170,20 @@ test('a local fork survives navigating off Chat and back; the run signal stays t
   // the run signal (composer back to Send — no run in flight) is unchanged.
   await expect(page.getByTestId('fork-banner')).toBeVisible()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toHaveCount(0)
   await expect(page.getByTestId('composer-send')).toBeVisible()
 
   // The original is still reachable.
   await page.getByTestId('fork-return').click()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
 
   expect(errors).toEqual([])
@@ -191,7 +206,10 @@ test('the in-flight run — its inline tool calls + pending approval — survive
   // the actual on-screen message bubble — robust whether it renders via the real
   // markdown chunk or the lazy fallback.
   await expect(
-    page.getByText('Hello, from the mock agent.').and(page.locator(':visible')).first(),
+    page
+      .getByText('Taking a look at the build folder first.')
+      .and(page.locator(':visible'))
+      .first(),
   ).toBeVisible()
 
   // The run signal renders INLINE in the transcript: the bash tool call (a

@@ -241,7 +241,7 @@ test('mobile-release: sending a message renders the mock reply', async ({ page }
   // distinct strings mean the reply text can only be the streamed assistant delta.
   const transcript = page.getByTestId('message-list')
   await expect(transcript.getByText('Hello from mobile release')).toBeVisible()
-  await expect(transcript.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(transcript.getByText('Taking a look at the build folder first.')).toBeVisible()
 
   expect(errors).toEqual([])
 })

@@ -90,18 +90,24 @@ test('reload mid-stream AFTER a fork keeps the run alive, does not duplicate eve
 
   // Run to completion so there is a SETTLED message to fork from.
   await sendMessage(page, 'Say hi and clean the build')
-  await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.')).toBeVisible()
   const approval = page.getByTestId('approval-card')
   await expect(approval).toBeVisible()
   await approval.getByRole('button', { name: /allow once/i }).click()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
 
   // Fork from the FINAL assistant reply (the live head) — a head-fork. Scope to
   // the VISIBLE message bubble (the sr-only live region carries the same text).
   await page
-    .getByText('Hello, from the mock agent. All done. Anything else?', { exact: true })
+    .getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    )
     .and(page.locator(':visible'))
     .first()
     .hover()
@@ -149,7 +155,10 @@ test('reload mid-stream AFTER a fork keeps the run alive, does not duplicate eve
   // The full reply is present exactly once (no duplicated frames) and the run is
   // finished (composer back to Send).
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toHaveCount(1)
   await expect(page.getByTestId('composer-send')).toBeVisible()
   await expect(page.getByTestId('composer-stop')).toHaveCount(0)
@@ -169,7 +178,7 @@ test('a full page reload mid-stream keeps the run alive; it completes after relo
 
   // Wait until the run is actually streaming (the first tokens have arrived) so
   // the reload genuinely happens MID-stream, not before the run started.
-  await expect(page.getByText(/Hello,/)).toBeVisible()
+  await expect(page.getByText(/Taking a look/)).toBeVisible()
 
   // Full page reload — the socket that issued the run is destroyed. If the run
   // were socket-owned, the BFF would abort the pump here and the run would die.
@@ -191,7 +200,10 @@ test('a full page reload mid-stream keeps the run alive; it completes after relo
   // after reload) plus the post-approval closing — and the run is finished
   // (composer is back to Send, not Stop).
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
   await expect(page.getByTestId('composer-send')).toBeVisible()
   await expect(page.getByTestId('composer-stop')).toHaveCount(0)

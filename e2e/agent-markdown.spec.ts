@@ -20,7 +20,7 @@ const HEALTH = {
  * The mock has an ADDITIVE rich-content path: when the user's input carries a
  * trigger phrase the agent streams a single rich-markdown reply (then finishes —
  * no tool chip, no approval), while EVERY OTHER input still streams the default
- * "Hello, from the mock agent." run unchanged. This spec exercises:
+ * "Taking a look at the build folder first." run unchanged. This spec exercises:
  *   - "demo:table" → a GFM table that renders SORTABLE (column header buttons
  *     with aria-sort cycling ascending → descending; rows reorder type-aware).
  *   - "demo:image" → a markdown image that renders inline as a real <img>

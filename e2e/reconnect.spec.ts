@@ -168,7 +168,10 @@ test('a socket drop while a tool is still running auto-reconnects in place: the 
   //    plus the post-approval closing) and the run is finished — composer back to
   //    Send.
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
   await expect(page.getByTestId('composer-send')).toBeVisible()
   await expect(page.getByTestId('composer-stop')).toHaveCount(0)

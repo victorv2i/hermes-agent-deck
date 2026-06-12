@@ -158,7 +158,7 @@ test('release-readiness: shell → chat → theme → sessions → side-panel ex
   await page.getByTestId('composer-send').click()
   // The user's turn is echoed and the mock streams its fixed reply.
   await expect(page.getByText('Say hi')).toBeVisible()
-  await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.')).toBeVisible()
   // The scripted run always pauses at its approval gate; settle it
   // DETERMINISTICALLY so the journey continues from an idle composer. The old
   // conditional Stop click raced the run state on a loaded machine: when the

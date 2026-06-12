@@ -6,10 +6,11 @@
  * gateway.
  *
  * The scripted run (per the M1b plan / gateway contract vocabulary):
- *   1. message.delta × 3   — streamed assistant text ("Hello, " / "from the " / "mock agent.")
+ *   1. message.delta × 3   — streamed text ("Taking a look " / "at the build " / "folder first.")
  *   2. tool.started/completed (bash) — an expandable tool chip
  *   3. approval.request    — then the stream PAUSES until respondApproval()/stopRun()
- *   4. (on allow) approval.responded → message.delta × 2 → run.completed
+ *   4. (on allow) approval.responded → tool.started/completed (the approved
+ *      command runs) → message.delta × 2 → run.completed
  *      (on deny)  approval.responded → message.delta → run.completed
  *      (on stop)  run.cancelled (faithful: the real gateway sends it after a stop)
  *
@@ -254,7 +255,7 @@ export class MockGatewayClient implements GatewayClientLike {
         event: 'run.completed',
         run_id: runId,
         timestamp: t + 40,
-        output: 'Hello, from the mock agent. Understood, I will not run that.',
+        output: 'Taking a look at the build folder first. Understood, I will not run that.',
         usage: { input_tokens: 12, output_tokens: 9, total_tokens: 21 },
       }
       return

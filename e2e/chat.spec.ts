@@ -20,10 +20,11 @@ const NOW = Math.floor(Date.now() / 1000)
  * gateway is involved, so this is part of the `pnpm verify` gate.
  *
  * The mock streams a scripted run:
- *   "Hello, " + "from the " + "mock agent."   (streamed deltas)
+ *   "Taking a look " + "at the build " + "folder first."   (streamed deltas)
  *   → bash tool chip (started/completed)
  *   → approval.request (pauses until resolved or stopped)
- *   → on Allow: " All done." + " Anything else?" → run.completed
+ *   → on Allow: a second bash tool step, then " Build folder cleared." +
+ *     " The repo is tidy and ready to ship." → run.completed
  *   → on Stop:  run.cancelled
  */
 
@@ -93,7 +94,7 @@ test('streams a reply, renders an expandable tool chip, resolves an approval, an
   await expect(page.getByText('Say hi and clean the build')).toBeVisible()
 
   // Streamed assistant text appears (token-by-token from the mock).
-  await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.')).toBeVisible()
 
   // A quiet, collapsed tool chip — expandable, never auto-expanded. In calm mode
   // a known tool reads as a plain-language action ("Run command"), not the raw
@@ -124,7 +125,10 @@ test('streams a reply, renders an expandable tool chip, resolves an approval, an
   // visible prose, not the polite a11y live region (which prefixes "Assistant
   // replied: …" and would otherwise also substring-match this text).
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
 
   // Run finished → composer is back to Send (not Stop).
@@ -211,12 +215,15 @@ test('fork from a settled message creates a local branch; the original stays rea
 
   // Run a full chat to completion so we have SETTLED messages to fork from.
   await sendMessage(page, 'Say hi and clean the build')
-  await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.')).toBeVisible()
   const approval = page.getByTestId('approval-card')
   await expect(approval).toBeVisible()
   await approval.getByRole('button', { name: /allow once/i }).click()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
   await expect(page.getByTestId('composer-send')).toBeVisible()
 
@@ -235,13 +242,16 @@ test('fork from a settled message creates a local branch; the original stays rea
 
   // The ancestor path is projected: the original reply is no longer in view.
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toHaveCount(0)
 
   // Send ON the fork — a fresh run streams its reply onto the fork branch.
   await sendMessage(page, 'Take a different path')
   await expect(page.getByText('Take a different path')).toBeVisible()
-  await expect(page.getByText('Hello, from the mock agent.').first()).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.').first()).toBeVisible()
   // Stop this second run so the test ends deterministically (it would otherwise
   // pause at an approval).
   const stop = page.getByTestId('composer-stop')
@@ -251,7 +261,10 @@ test('fork from a settled message creates a local branch; the original stays rea
   // The ORIGINAL continuation is still reachable: return to it.
   await page.getByTestId('fork-return').click()
   await expect(
-    page.getByText('Hello, from the mock agent. All done. Anything else?', { exact: true }),
+    page.getByText(
+      'Taking a look at the build folder first. Build folder cleared. The repo is tidy and ready to ship.',
+      { exact: true },
+    ),
   ).toBeVisible()
   // The divergent prompt is NOT on the original path.
   await expect(page.getByText('Take a different path')).toHaveCount(0)
@@ -271,7 +284,7 @@ test('Stop aborts an in-flight run', async ({ page }) => {
   await expect(stop).toBeVisible()
 
   // Wait for streaming to actually start before aborting.
-  await expect(page.getByText(/Hello,/)).toBeVisible()
+  await expect(page.getByText(/Taking a look/)).toBeVisible()
 
   await stop.click()
 

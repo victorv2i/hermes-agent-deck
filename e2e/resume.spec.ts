@@ -161,7 +161,7 @@ test('Continue this session: seeds the prior transcript and resumes the run in-p
 
   // The new user turn + the scripted streamed reply appear …
   await expect(page.getByText('keep going')).toBeVisible()
-  await expect(page.getByText('Hello, from the mock agent.')).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.')).toBeVisible()
 
   // … and the prior transcript is STILL present (the run landed in-session, not
   // a fresh conversation).
@@ -231,7 +231,7 @@ test('forking a HISTORICAL message of a resumed session does NOT reuse the origi
   await composer.fill('diverge from history')
   await page.getByTestId('composer-send').click()
   await expect(page.getByText('diverge from history')).toBeVisible()
-  await expect(page.getByText('Hello, from the mock agent.').first()).toBeVisible()
+  await expect(page.getByText('Taking a look at the build folder first.').first()).toBeVisible()
 
   // Stop the run so the test ends deterministically.
   const stop = page.getByTestId('composer-stop')
