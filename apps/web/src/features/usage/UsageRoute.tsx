@@ -26,6 +26,17 @@ function resolvePeriod(raw: string | null): UsagePeriod {
   return (USAGE_PERIODS as readonly number[]).includes(n) ? (n as UsagePeriod) : 7
 }
 
+/**
+ * How many most-recently-active sessions the drill-down fetches. The dashboard
+ * applies the value directly as the SQL LIMIT (no upstream cap), and the read is
+ * a local sqlite query: measured against a real 1,800+ session DB, limit=2000
+ * returns in ~0.6s. Busy installs can have over a thousand sessions active in a
+ * 30-day window, so a small fetch would rank a recency sample while claiming to
+ * rank the window; 2000 keeps the claim true for any realistic window, and when
+ * the fetch DOES come back full, SessionBreakdown scopes its caption honestly.
+ */
+const SESSION_FETCH_LIMIT = 2000
+
 export function UsageRoute() {
   const [params, setParams] = useSearchParams()
   const period = resolvePeriod(params.get('period'))
@@ -49,7 +60,7 @@ export function UsageRoute() {
   // Ordered by recent activity so the selected window's sessions come first;
   // SessionBreakdown filters to the window and ranks by tokens. Best-effort —
   // the rest of the Usage page renders even if this fails.
-  const sessionsQuery = useSessions({ limit: 100, order: 'recent' })
+  const sessionsQuery = useSessions({ limit: SESSION_FETCH_LIMIT, order: 'recent' })
   // The active provider is the authoritative billing signal: a subscription/OAuth
   // seat (e.g. openai-codex) reports $0 cost even when busy, so the Usage surface
   // needs it to label cost honestly. Best-effort — usage still renders if it fails.
@@ -72,6 +83,7 @@ export function UsageRoute() {
       providerLabel={provider?.label}
       onStartChat={() => navigate(CHAT_PATH)}
       sessions={sessionsQuery.data?.sessions}
+      sessionsFetchLimit={SESSION_FETCH_LIMIT}
       sessionsLoading={sessionsQuery.isLoading}
       sessionsError={sessionsQuery.error instanceof Error ? sessionsQuery.error : null}
     />

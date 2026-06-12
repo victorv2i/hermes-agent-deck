@@ -115,9 +115,17 @@ export function ChatRoute() {
   // The period billing mode for the per-run receipt lines (the Usage summary's
   // server-derived `billingMode`). days=1 shares the header burn-rate pill's
   // already-polled query key, so this adds ZERO extra requests. Best-effort —
-  // when unavailable the receipts honestly render tokens only.
+  // when unavailable the receipts honestly render tokens only. Gated on the
+  // window carrying real evidence: a quiet day has zero tokens, so its derived
+  // mode degrades to "local" (no cost signal) and would mislabel a fresh run
+  // "no billed cost". With no tokens there is no billing evidence either way;
+  // pass nothing and the receipt renders tokens only.
   const usageSummary = useUsage(1)
-  const receiptBillingMode = usageSummary.data?.billingMode
+  const summaryTotals = usageSummary.data?.totals
+  const receiptBillingMode =
+    summaryTotals && summaryTotals.inputTokens + summaryTotals.outputTokens > 0
+      ? usageSummary.data?.billingMode
+      : undefined
 
   // The gateway's model list (same source as the Models surface). Drives the
   // composer picker; the picker's chosen model rides on every run (T1.2).

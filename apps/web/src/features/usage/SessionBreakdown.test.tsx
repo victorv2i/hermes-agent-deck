@@ -119,9 +119,28 @@ describe('SessionBreakdown', () => {
     const many = Array.from({ length: 15 }, (_, i) =>
       session({ id: `s${i}`, title: `S${i}`, total_tokens: 1_000 - i }),
     )
-    renderBreakdown({ sessions: many })
+    // Under the fetch limit: the fetched rows ARE the whole window, so the
+    // plain ranking claim holds and the hidden rows really are smaller.
+    renderBreakdown({ sessions: many, fetchLimit: 100 })
     expect(screen.getAllByTestId('session-usage-row')).toHaveLength(12)
     expect(screen.getByText(/whole-session totals/i)).toBeInTheDocument()
+    expect(screen.getByText(/ranked by total tokens\./i)).toBeInTheDocument()
+    expect(screen.queryByText(/most recently active sessions/i)).toBeNull()
     expect(screen.getByText(/3 smaller sessions are not shown/i)).toBeInTheDocument()
+  })
+
+  it('scopes the ranking claim when the fetch came back full (window may be cut off)', () => {
+    const many = Array.from({ length: 15 }, (_, i) =>
+      session({ id: `s${i}`, title: `S${i}`, total_tokens: 1_000 - i }),
+    )
+    renderBreakdown({ sessions: many, fetchLimit: 15 })
+    // The claim is scoped to the fetched recency slice, not the whole window…
+    expect(
+      screen.getByText(/ranked by total tokens among your 15 most recently active sessions/i),
+    ).toBeInTheDocument()
+    // …and the overflow line cannot call hidden rows "smaller": an unfetched
+    // in-window session could be the biggest of all.
+    expect(screen.getByText(/3 more sessions are not shown/i)).toBeInTheDocument()
+    expect(screen.queryByText(/smaller/i)).toBeNull()
   })
 })

@@ -52,6 +52,10 @@ export interface UsagePageProps {
    * Omitted/failed → the drill-down shows its own honest empty/error state
    * without affecting the rest of the page. */
   sessions?: SessionSummary[]
+  /** The limit the route fetched `sessions` with. When the returned rows fill
+   * it, the drill-down scopes its ranking claim to the fetched set (older
+   * in-window sessions may exist beyond the fetch). */
+  sessionsFetchLimit?: number
   sessionsLoading?: boolean
   sessionsError?: Error | null
 }
@@ -68,6 +72,7 @@ export function UsagePage({
   providerLabel,
   onStartChat,
   sessions,
+  sessionsFetchLimit,
   sessionsLoading = false,
   sessionsError = null,
 }: UsagePageProps) {
@@ -268,6 +273,7 @@ export function UsagePage({
           <SessionBreakdown
             periodDays={period}
             sessions={sessions}
+            fetchLimit={sessionsFetchLimit}
             isLoading={sessionsLoading}
             error={sessionsError}
             billingMode={mode}

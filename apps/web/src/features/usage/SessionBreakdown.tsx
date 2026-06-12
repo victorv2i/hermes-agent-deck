@@ -10,9 +10,13 @@
  *  - a session's token/cost figures are WHOLE-SESSION totals; a session that
  *    started before the window carries tokens from before it (the dashboard has
  *    no per-window slice per session), so the caption says so;
- *  - the list covers the most recently active sessions the API returns — when
- *    more exist in the window than we fetched, a quiet count says so instead of
- *    pretending the table is complete.
+ *  - the route fetches a deep recency slice (see UsageRoute's fetch limit), but
+ *    a fetch that comes back FULL means older in-window sessions may exist
+ *    beyond it, possibly bigger than anything fetched. In that state the
+ *    caption scopes the ranking claim to "your N most recently active sessions"
+ *    and the overflow line stops calling hidden rows "smaller" (we cannot know
+ *    that). Under the limit, the fetched set is the whole window and the plain
+ *    "ranked by total tokens" claim is fully true.
  * Cost cells show real dollars when recorded; under a flat subscription they
  * say "included" (never a fake $0), and an unresolved billing signal shows
  * "not recorded" rather than implying free.
@@ -32,6 +36,10 @@ export interface SessionBreakdownProps {
   periodDays: number
   /** Session rows from the sessions BFF (most recently active first). */
   sessions?: SessionSummary[]
+  /** The limit `sessions` was fetched with. A full fetch (rows >= limit) means
+   * the window may extend beyond what was fetched, so the caption scopes its
+   * ranking claim honestly. Omitted → the rows are treated as complete. */
+  fetchLimit?: number
   isLoading?: boolean
   error?: Error | null
   /** The period's server-derived billing mode (drives the honest cost cell). */
@@ -61,6 +69,7 @@ function sessionLabel(s: SessionSummary): string {
 export function SessionBreakdown({
   periodDays,
   sessions,
+  fetchLimit,
   isLoading = false,
   error = null,
   billingMode,
@@ -82,6 +91,12 @@ export function SessionBreakdown({
 
   const rows = inWindow.slice(0, MAX_ROWS)
   const overflow = inWindow.length - rows.length
+  // A fetch that came back full may have cut the window off: older in-window
+  // sessions can exist beyond the fetched recency slice, and any of them could
+  // out-token everything fetched. In that state the caption scopes the ranking
+  // claim to the fetched set and the overflow line drops "smaller".
+  const truncated =
+    typeof fetchLimit === 'number' && Array.isArray(sessions) && sessions.length >= fetchLimit
 
   return (
     <Card>
@@ -166,10 +181,16 @@ export function SessionBreakdown({
               </table>
             </div>
             <p className="mt-3 text-[11px] leading-relaxed text-foreground-tertiary">
-              Sessions active in the last {periodDays} days, ranked by total tokens. Figures are
-              whole-session totals from your agent&rsquo;s records, so a session that started before
-              this window includes its earlier tokens.
-              {overflow > 0 ? ` ${overflow} smaller sessions are not shown.` : ''}
+              {truncated
+                ? `Sessions active in the last ${periodDays} days, ranked by total tokens among your ${fetchLimit} most recently active sessions.`
+                : `Sessions active in the last ${periodDays} days, ranked by total tokens.`}{' '}
+              Figures are whole-session totals from your agent&rsquo;s records, so a session that
+              started before this window includes its earlier tokens.
+              {overflow > 0
+                ? truncated
+                  ? ` ${overflow} more sessions are not shown.`
+                  : ` ${overflow} smaller sessions are not shown.`
+                : ''}
             </p>
           </>
         )}
