@@ -39,9 +39,12 @@ export type TerminalStatus =
 export interface TerminalSocketCallbacks {
   /** Shell output (stdout+stderr) — write straight to xterm. */
   onData: (data: string) => void
-  /** Shell spawned; carries the child pid and whether the session is
-   * tmux-backed (persistent: it survives deck restarts and disconnects). */
-  onReady?: (info: { pid: number; persistent: boolean }) => void
+  /** Shell spawned; carries the child pid, whether the session is tmux-backed
+   * (persistent: it survives deck restarts and disconnects), and whether this
+   * ready REATTACHED an existing shell (`resumed`). A session the client
+   * expected to resume that comes back `resumed:false` got a quietly-created
+   * fresh shell (the old one ended), which the UI should say honestly. */
+  onReady?: (info: { pid: number; persistent: boolean; resumed: boolean }) => void
   /** Shell exited; carries the exit code. */
   onExit?: (info: { exitCode: number }) => void
   /** Could not start / backend unavailable — show calmly, do not retry-loop. */
@@ -189,7 +192,11 @@ export class TerminalSocket {
     this.socket.on('terminal.ready', (payload: unknown) => {
       const pid = readNumber(payload, 'pid')
       if (pid !== null) {
-        this.callbacks.onReady?.({ pid, persistent: readBool(payload, 'persistent') })
+        this.callbacks.onReady?.({
+          pid,
+          persistent: readBool(payload, 'persistent'),
+          resumed: readBool(payload, 'resumed'),
+        })
       }
       // A reattach to the parked shell: the same session resumed (buffered
       // scrollback already replayed). Mark connected + notify, so no "dropped"

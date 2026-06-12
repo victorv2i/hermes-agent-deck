@@ -22,6 +22,8 @@ import {
   openRecoveredSession,
   reconcileSessions,
   formatEpochAge,
+  markRestored,
+  expectsResume,
   type SessionsState,
 } from './terminalSessions'
 
@@ -337,6 +339,55 @@ describe('reconcileSessions (server list is the source of truth)', () => {
   it('does not duplicate a deck session a local entry already maps to', () => {
     const s = openRecoveredSession(emptySessions(), 'adk_w7')
     expect(reconcileSessions(s, srv(['adk_w7']))).toBe(s)
+  })
+})
+
+describe('markRestored + expectsResume (the fresh-shell honesty signal)', () => {
+  it('marks every restored session as expecting a resume', () => {
+    let s = openSession(emptySessions(), 'shell')
+    s = openSession(s, 'hermes')
+    const marked = markRestored(s)
+    expect(marked.sessions.every((sess) => sess.restored === true)).toBe(true)
+    expect(marked.sessions.every(expectsResume)).toBe(true)
+    // Pure: the original state is untouched.
+    expect(s.sessions.every((sess) => sess.restored === undefined)).toBe(true)
+  })
+
+  it('is a no-op (same reference) on an empty state', () => {
+    const s = emptySessions()
+    expect(markRestored(s)).toBe(s)
+  })
+
+  it('a brand-new open never expects a resume', () => {
+    const s = openSession(emptySessions(), 'shell')
+    expect(expectsResume(s.sessions[0]!)).toBe(false)
+  })
+
+  it('a recovered deck session (wire id at epoch 0) expects a resume', () => {
+    const s = openRecoveredSession(emptySessions(), 'adk_lost-9')
+    expect(expectsResume(s.sessions[0]!)).toBe(true)
+  })
+
+  it('a Restart clears the expectation (a fresh shell was asked for on purpose)', () => {
+    // Restored session, then restarted: the epoch bump is a deliberate fresh
+    // shell, so the fresh-shell notice must NOT fire for it.
+    let s = markRestored(openSession(emptySessions(), 'shell'))
+    expect(expectsResume(s.sessions[0]!)).toBe(true)
+    s = restartSession(s, s.sessions[0]!.id)
+    expect(s.sessions[0]!.restored).toBeUndefined()
+    expect(expectsResume(s.sessions[0]!)).toBe(false)
+    // Same for a recovered session: its wire id at a bumped epoch is a new name.
+    let r = openRecoveredSession(emptySessions(), 'adk_lost-9')
+    r = restartSession(r, r.sessions[0]!.id)
+    expect(expectsResume(r.sessions[0]!)).toBe(false)
+  })
+
+  it('the restored marker survives a storage round-trip and re-marking', () => {
+    const s = markRestored(openSession(emptySessions(), 'shell'))
+    writeSessions(s)
+    const back = readPersistedSessions()
+    expect(back).not.toBeNull()
+    expect(markRestored(back!).sessions[0]!.restored).toBe(true)
   })
 })
 

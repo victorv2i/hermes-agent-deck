@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TerminalView, type TerminalEngine } from './TerminalView'
 import type { TerminalSocketLike } from './terminalSocket'
 
@@ -300,5 +300,161 @@ describe('TerminalView', () => {
     )
     expect(await screen.findByText('Terminal unavailable')).toBeInTheDocument()
     expect(screen.getByText(/failed to load the terminal/i)).toBeInTheDocument()
+  })
+})
+
+/* ── The touch key bar (JS-gated) + the honest fresh-shell notice ───────────── */
+
+const FRESH_NOTICE = /the previous shell ended; this is a fresh one\./i
+
+describe('TerminalView touch key bar', () => {
+  /** Pretend this device takes touch input (a hybrid laptop / phone). */
+  function enableTouch() {
+    Object.defineProperty(navigator, 'maxTouchPoints', { value: 2, configurable: true })
+  }
+  afterEach(() => {
+    delete (navigator as unknown as Record<string, unknown>).maxTouchPoints
+  })
+
+  it('does NOT render the bar without touch input (fine pointer, no touch points)', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    expect(screen.queryByRole('toolbar', { name: /terminal touch keys/i })).toBeNull()
+  })
+
+  it('renders the bar on touch input, and a key press reaches the wire', async () => {
+    enableTouch()
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    expect(screen.getByRole('toolbar', { name: /terminal touch keys/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Arrow up' }))
+    const inputs = socket.emitsFor('terminal.input')
+    expect(inputs.at(-1)?.args[0]).toBe('\x1b[A')
+  })
+
+  it('appears when touch input arrives later (re-checked on resize)', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    expect(screen.queryByRole('toolbar', { name: /terminal touch keys/i })).toBeNull()
+    enableTouch()
+    act(() => {
+      window.dispatchEvent(new Event('resize'))
+    })
+    expect(screen.getByRole('toolbar', { name: /terminal touch keys/i })).toBeInTheDocument()
+  })
+
+  it('sticky Ctrl then a typed "c" sends ^C on the wire, then disarms', async () => {
+    enableTouch()
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    const ctrl = screen.getByRole('button', { name: /control modifier/i })
+    fireEvent.click(ctrl)
+    expect(ctrl).toHaveAttribute('aria-pressed', 'true')
+    act(() => {
+      engine.type('c')
+    })
+    expect(socket.emitsFor('terminal.input').at(-1)?.args[0]).toBe('\x03')
+    expect(ctrl).toHaveAttribute('aria-pressed', 'false')
+    act(() => {
+      engine.type('c') // disarmed: the next character is plain again
+    })
+    expect(socket.emitsFor('terminal.input').at(-1)?.args[0]).toBe('c')
+  })
+
+  it('Paste sends the clipboard text to the wire verbatim', async () => {
+    enableTouch()
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { readText: async () => 'echo pasted' },
+      configurable: true,
+    })
+    try {
+      const engine = new FakeEngine()
+      const socket = new FakeSocket()
+      renderView(engine, socket)
+      await waitFor(() => expect(engine.opened).toBe(true))
+      fireEvent.click(screen.getByRole('button', { name: 'Paste' }))
+      await waitFor(() =>
+        expect(socket.emitsFor('terminal.input').at(-1)?.args[0]).toBe('echo pasted'),
+      )
+    } finally {
+      delete (navigator as unknown as Record<string, unknown>).clipboard
+    }
+  })
+})
+
+describe('TerminalView fresh-shell notice (honest non-resume)', () => {
+  it('shows the notice when an expected resume comes back as a fresh shell', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    render(<TerminalView engineFactory={async () => engine} socket={socket} expectResume />)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    // The tmux session died between snapshot and mount: new-session -A quietly
+    // made a fresh shell, so ready arrives WITHOUT resumed:true.
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true })
+    })
+    expect(screen.getByText(FRESH_NOTICE)).toBeInTheDocument()
+  })
+
+  it('shows NO notice when the expected resume actually resumed', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    render(<TerminalView engineFactory={async () => engine} socket={socket} expectResume />)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true, resumed: true })
+    })
+    expect(screen.queryByText(FRESH_NOTICE)).toBeNull()
+  })
+
+  it('shows NO notice for a brand-new launch (no resume expected)', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true })
+    })
+    expect(screen.queryByText(FRESH_NOTICE)).toBeNull()
+  })
+
+  it('a known-persistent session that later readies without resumed shows the notice', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    // First ready: a brand-new persistent shell — no notice.
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true })
+    })
+    expect(screen.queryByText(FRESH_NOTICE)).toBeNull()
+    // A reconnect re-start readies WITHOUT resumed: that shell died in between.
+    act(() => {
+      socket.fire('terminal.ready', { pid: 12, persistent: true })
+    })
+    expect(screen.getByText(FRESH_NOTICE)).toBeInTheDocument()
+  })
+
+  it('clears the notice once a later ready actually resumes', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    render(<TerminalView engineFactory={async () => engine} socket={socket} expectResume />)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true })
+    })
+    expect(screen.getByText(FRESH_NOTICE)).toBeInTheDocument()
+    act(() => {
+      socket.fire('terminal.ready', { pid: 11, persistent: true, resumed: true })
+    })
+    expect(screen.queryByText(FRESH_NOTICE)).toBeNull()
   })
 })

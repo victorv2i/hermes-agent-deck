@@ -42,6 +42,14 @@ export interface TerminalSession {
    * reattach maps back to the SAME tmux session name.
    */
   wire?: string
+  /**
+   * Marked at load time on every session RESTORED from localStorage (see
+   * {@link markRestored}): the UI expects the server to REATTACH an existing
+   * shell, so a ready frame WITHOUT `resumed` means the old shell quietly ended
+   * and a fresh one took its place (worth saying honestly). Cleared by
+   * {@link restartSession} because a Restart asks for a fresh shell on purpose.
+   */
+  restored?: boolean
 }
 
 export interface SessionsState {
@@ -298,6 +306,28 @@ export function openRecoveredSession(state: SessionsState, serverName: string): 
   }
 }
 
+/**
+ * Mark every session in a freshly-RESTORED state as `restored` (the UI expects
+ * each to reattach its previous shell). Called once on the state read back from
+ * localStorage, before any reconcile or fresh opens. Pure.
+ */
+export function markRestored(state: SessionsState): SessionsState {
+  if (state.sessions.length === 0) return state
+  return { ...state, sessions: state.sessions.map((s) => ({ ...s, restored: true })) }
+}
+
+/**
+ * Whether the UI expects this session's NEXT ready frame to be a reattach
+ * (`resumed:true`): it was restored from storage, or recovered from the
+ * server's tmux list (a `wire` id at its original epoch 0). A ready WITHOUT
+ * `resumed` on such a session means the old shell ended and `new-session -A`
+ * quietly created a fresh one. A brand-new open (and any Restart, which bumps
+ * the epoch and clears `restored`) expects a fresh shell, so never matches.
+ */
+export function expectsResume(session: TerminalSession): boolean {
+  return session.restored === true || (session.wire !== undefined && session.epoch === 0)
+}
+
 /** The tmux session name a local entry maps to on the server (attach entries
  * name a foreign session; everything else rides a deck-owned `adk_*` name). */
 export function expectedTmuxName(session: TerminalSession): string {
@@ -396,13 +426,16 @@ export function renameSession(state: SessionsState, id: string, title: string): 
 /**
  * In-place restart: bump the session's epoch so the host view remounts a fresh
  * socket + shell (deterministic, no navigate). Id + title + cli are preserved.
+ * Drops the `restored` marker: a restart asks for a FRESH shell on purpose, so
+ * the fresh-shell notice must not fire for it ({@link expectsResume}).
  */
 export function restartSession(state: SessionsState, id: string): SessionsState {
   let changed = false
   const sessions = state.sessions.map((s) => {
     if (s.id !== id) return s
     changed = true
-    return { ...s, epoch: s.epoch + 1 }
+    const { restored: _dropped, ...rest } = s
+    return { ...rest, epoch: s.epoch + 1 }
   })
   if (!changed) return state
   return { ...state, sessions }

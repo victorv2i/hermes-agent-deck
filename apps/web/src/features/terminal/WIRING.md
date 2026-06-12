@@ -49,10 +49,30 @@ disconnects, and devices. The web layer rides that:
   (`reconcileSessions`/`openRecoveredSession` in `terminalSessions.ts`),
 - the launcher lists the user's own (foreign) tmux sessions with Attach (the tab
   sends `attach`, close = Detach, never a kill); a deck-owned persistent tab's
-  Close asks first, then sends `terminal.close` (a real kill),
+  Close asks first, then sends `terminal.close` (a real kill); a tab whose
+  persistence is still UNKNOWN (no ready frame yet) also asks first, so a
+  close-before-ready never silently orphans an `adk_*` session,
+- a restored/recovered session EXPECTS its ready frame to carry `resumed:true`;
+  when it does not (the tmux session died between snapshot and mount, so
+  `new-session -A` quietly made a fresh shell), the view shows a one-line dim
+  notice ("The previous shell ended; this is a fresh one.") instead of letting
+  the fresh shell masquerade as the old one (`markRestored`/`expectsResume` in
+  `terminalSessions.ts` → `expectResume` on `TerminalView`),
 - `TerminalSocket` redials immediately on `visibilitychange`/`pageshow` while
   disconnected, so a phone returning from the background reattaches its shells
   without waiting out socket.io backoff.
+
+## Touch key bar (phones, tablets, touch hybrids)
+
+`MobileKeyBar.tsx` renders below the xterm host on touch-input devices, decided
+in JS by `useTouchInput()` (`lib/useMediaQuery.ts`: coarse primary pointer OR
+`navigator.maxTouchPoints > 0`, re-checked on resize/orientation change). Keys:
+Esc, Tab, ⇧Tab, sticky Ctrl, arrows, ^C, Paste. Taps are focus-safe
+(`pointerdown` preventDefault) so the on-screen keyboard never drops. Arrows and
+Tab HOLD-REPEAT (350ms delay, then every 60ms; a single tap emits exactly once).
+Paste reads `navigator.clipboard.readText()` and writes the text to the shell
+input path verbatim (bypassing the sticky-Ctrl transform); a denied or missing
+clipboard shows a quiet inline "Clipboard unavailable" notice.
 
 Session state is the pure reducer in `terminalSessions.ts` (open/close/rename/
 restart/activate + the tab⇄grid view mode + the 12 cap). The route surfaces the

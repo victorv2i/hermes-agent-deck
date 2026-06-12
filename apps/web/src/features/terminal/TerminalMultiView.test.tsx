@@ -16,13 +16,16 @@ import type { TerminalViewProps } from './TerminalView'
  * A lightweight stand-in for the heavy xterm view. It records each mount with its
  * `cli` prop so we can assert how many live terminals exist and which preset they
  * carry, and reports a 'connected' status so the host's per-session affordances
- * light up.
+ * light up. Reports VOLATILE persistence (like a ready frame on a no-tmux host)
+ * so the legacy direct-close behavior applies; the persistence describe below
+ * covers the persistent/unknown close paths.
  */
 const mounts: Array<{ cli?: string }> = []
-function StubView({ cli, onStatusChange }: TerminalViewProps) {
+function StubView({ cli, onStatusChange, onPersistentChange }: TerminalViewProps) {
   useEffect(() => {
     mounts.push({ cli })
     onStatusChange?.('connected')
+    onPersistentChange?.(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return <div data-testid="terminal-view">{cli ?? 'shell'}</div>
@@ -298,6 +301,44 @@ describe('TerminalMultiView persistence', () => {
     expect(closeCalls).toHaveLength(0)
   })
 
+  /** A stub whose ready frame never arrives: persistence stays UNKNOWN. */
+  function UnknownPersistenceStub({
+    cli,
+    sessionId,
+    onStatusChange,
+    onCloseSessionReady,
+  }: TerminalViewProps) {
+    useEffect(() => {
+      onStatusChange?.('connecting')
+      onCloseSessionReady?.(() => closeCalls.push(sessionId ?? '?'))
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    return <div data-testid="terminal-view">{cli}</div>
+  }
+
+  it('closing a shell with UNKNOWN persistence (no ready yet) asks first, never a silent volatile close', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={UnknownPersistenceStub} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    fireEvent.click(within(tab).getByRole('button', { name: /close/i }))
+    // The confirm acknowledges the uncertainty instead of assuming volatile.
+    expect(screen.getByText(/has not connected yet, so it may be persistent/i)).toBeInTheDocument()
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByRole('tab', { hidden: true })).toHaveLength(1)
+    // Confirm: terminal.close fires for real (no orphaned adk_ tmux session).
+    fireEvent.click(screen.getByRole('button', { name: /^close terminal$/i }))
+    expect(closeCalls).toHaveLength(1)
+    expect(screen.queryAllByRole('tab')).toHaveLength(0)
+  })
+
+  it('Cancel keeps the unknown-persistence shell open', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={UnknownPersistenceStub} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    fireEvent.click(within(tab).getByRole('button', { name: /close/i }))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByRole('tab')).toHaveLength(1)
+  })
+
   it('a FOREIGN attach tab detaches (never a kill confirm), labeled honestly', () => {
     render(
       <TerminalMultiView
@@ -376,5 +417,47 @@ describe('TerminalMultiView persistence', () => {
     const tabs = screen.getAllByRole('tab')
     expect(tabs).toHaveLength(1)
     expect(screen.getByRole('tab', { name: /lost-1/i })).toBeInTheDocument()
+  })
+
+  /* ── expectResume plumbing (the fresh-shell honesty signal) ────────────────── */
+
+  const resumeMounts: Array<{ cli?: string; expectResume?: boolean }> = []
+  function ResumeRecordingStub({ cli, expectResume, onStatusChange }: TerminalViewProps) {
+    useEffect(() => {
+      resumeMounts.push({ cli, expectResume })
+      onStatusChange?.('connected')
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+    return <div data-testid="terminal-view">{cli}</div>
+  }
+
+  it('a RESTORED session mounts expecting a resume; a fresh "+" open does not', () => {
+    resumeMounts.length = 0
+    writeSessions(openSession(emptySessions(), 'shell'))
+    render(<TerminalMultiView initialCli="shell" viewComponent={ResumeRecordingStub} />)
+    expect(resumeMounts).toHaveLength(1)
+    expect(resumeMounts[0]!.expectResume).toBe(true)
+    // A brand-new terminal opened now must NOT expect a resume (no false notice).
+    fireEvent.click(screen.getByRole('button', { name: /new terminal/i }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /raw shell/i }))
+    expect(resumeMounts).toHaveLength(2)
+    expect(resumeMounts[1]!.expectResume).toBe(false)
+  })
+
+  it('a server-RECOVERED session mounts expecting a resume', () => {
+    resumeMounts.length = 0
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        recoverOnly
+        viewComponent={ResumeRecordingStub}
+        serverSessions={{
+          tmuxAvailable: true,
+          sessions: [{ name: 'adk_lost-2', deckOwned: true }],
+        }}
+      />,
+    )
+    expect(resumeMounts).toHaveLength(1)
+    expect(resumeMounts[0]!.expectResume).toBe(true)
   })
 })

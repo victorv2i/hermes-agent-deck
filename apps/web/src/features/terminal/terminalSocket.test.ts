@@ -147,7 +147,7 @@ describe('TerminalSocket', () => {
     const fake = new FakeSocket()
     new TerminalSocket({ onData: vi.fn(), onStatusChange, onResumed, onReady }, { socket: fake })
     fake.fire('terminal.ready', { pid: 555, resumed: true })
-    expect(onReady).toHaveBeenCalledWith({ pid: 555, persistent: false })
+    expect(onReady).toHaveBeenCalledWith({ pid: 555, persistent: false, resumed: true })
     expect(onResumed).toHaveBeenCalledTimes(1)
     expect(onStatusChange).toHaveBeenCalledWith('connected')
   })
@@ -174,7 +174,7 @@ describe('TerminalSocket', () => {
     )
 
     fake.fire('terminal.ready', { pid: 4242 })
-    expect(onReady).toHaveBeenCalledWith({ pid: 4242, persistent: false })
+    expect(onReady).toHaveBeenCalledWith({ pid: 4242, persistent: false, resumed: false })
 
     fake.fire('terminal.exit', { exitCode: 0 })
     expect(onExit).toHaveBeenCalledWith({ exitCode: 0 })
@@ -247,7 +247,7 @@ describe('TerminalSocket', () => {
     const fake = new FakeSocket()
     new TerminalSocket({ onData: vi.fn(), onReady }, { socket: fake })
     fake.fire('terminal.ready', { pid: 7, persistent: true })
-    expect(onReady).toHaveBeenCalledWith({ pid: 7, persistent: true })
+    expect(onReady).toHaveBeenCalledWith({ pid: 7, persistent: true, resumed: false })
   })
 
   it('close() emits terminal.close (and nothing after dispose)', () => {

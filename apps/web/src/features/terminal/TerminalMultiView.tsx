@@ -24,7 +24,9 @@ import {
   MAX_TERMINALS,
   closeSession,
   emptySessions,
+  expectsResume,
   isAtCap,
+  markRestored,
   openAttachSession,
   openSession,
   readPersistedSessions,
@@ -146,7 +148,11 @@ interface InitArgs {
  * survived.
  */
 function init({ initialCli, initialAttach, recoverOnly, serverSessions }: InitArgs): SessionsState {
-  let state = readPersistedSessions() ?? emptySessions(readViewMode())
+  const persisted = readPersistedSessions()
+  // Restored sessions are EXPECTED to reattach their previous shells — mark
+  // them so a ready frame without `resumed` can say honestly that the old
+  // shell ended and this is a fresh one (a brand-new open never says that).
+  let state = persisted ? markRestored(persisted) : emptySessions(readViewMode())
   if (serverSessions) state = reconcileSessions(state, serverSessions)
   if (initialAttach) return openAttachSession(state, initialAttach)
   if (recoverOnly || state.sessions.length > 0) return state
@@ -215,7 +221,10 @@ export function TerminalMultiView({
   //    user's session keeps running in their own tmux),
   //  - a deck-owned PERSISTENT shell asks first (its whole point is surviving
   //    disconnects; an explicit close kills it in the tmux server for real),
-  //  - a volatile shell closes as before (the socket teardown ends it).
+  //  - a shell whose persistence is still UNKNOWN (no ready frame yet) also
+  //    asks first: silently treating it as volatile would skip terminal.close
+  //    and orphan an adk_ tmux session the user thought they closed,
+  //  - a known-VOLATILE shell closes as before (the socket teardown ends it).
   const requestClose = (id: string) => {
     const session = state.sessions.find((s) => s.id === id)
     if (!session) return
@@ -224,7 +233,7 @@ export function TerminalMultiView({
       dispatch({ type: 'close', id })
       return
     }
-    if (persistence[id]) {
+    if (persistence[id] !== false) {
       setPendingClose(id)
       return
     }
@@ -305,6 +314,7 @@ export function TerminalMultiView({
 
       <ClosePersistentDialog
         title={state.sessions.find((s) => s.id === pendingClose)?.title ?? null}
+        persistenceKnown={pendingClose !== null && persistence[pendingClose] !== undefined}
         open={pendingClose !== null}
         onConfirm={confirmClose}
         onCancel={() => setPendingClose(null)}
@@ -316,15 +326,21 @@ export function TerminalMultiView({
 /**
  * The close confirm for a deck-owned PERSISTENT shell: its whole point is
  * surviving disconnects, so an explicit close (which kills it in the tmux
- * server) deserves one honest question. Cancel is the default-focused action.
+ * server) deserves one honest question. Also shown while persistence is still
+ * UNKNOWN (no ready frame yet): the shell may be persistent, and confirming
+ * sends a real terminal.close so no tmux session is silently orphaned. Cancel
+ * is the default-focused action.
  */
 function ClosePersistentDialog({
   title,
+  persistenceKnown,
   open,
   onConfirm,
   onCancel,
 }: {
   title: string | null
+  /** False while the session has not reported persistent/volatile yet. */
+  persistenceKnown: boolean
   open: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -340,9 +356,18 @@ function ClosePersistentDialog({
         <DialogHeader>
           <DialogTitle>Close this terminal?</DialogTitle>
           <DialogDescription>
-            This ends the persistent shell{title ? <> &ldquo;{title}&rdquo;</> : null}. Anything
-            still running in it stops, and it will no longer be there to reattach from another
-            device.
+            {persistenceKnown ? (
+              <>
+                This ends the persistent shell{title ? <> &ldquo;{title}&rdquo;</> : null}. Anything
+                still running in it stops, and it will no longer be there to reattach from another
+                device.
+              </>
+            ) : (
+              <>
+                This shell{title ? <> &ldquo;{title}&rdquo;</> : null} has not connected yet, so it
+                may be persistent. Closing ends it for real; anything still running in it stops.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2 pt-1">
@@ -787,6 +812,9 @@ function TabPanels({
               sessionId={sessionKey(session)}
               // A foreign tab joins the user's own tmux session instead.
               attach={session.attach}
+              // A restored/recovered session expects a reattach; a ready frame
+              // without `resumed` then shows the honest fresh-shell notice.
+              expectResume={expectsResume(session)}
               onStatusChange={(s) => onStatus(session.id, s)}
               onPersistentChange={(p) => onPersistent(session.id, p)}
               onClearReady={(clear) => onClearReady(session.id, clear)}
@@ -893,6 +921,7 @@ function GridPanels({
                 // Stable wire id (id+epoch): refresh → reattach; Restart → fresh shell.
                 sessionId={sessionKey(session)}
                 attach={session.attach}
+                expectResume={expectsResume(session)}
                 onStatusChange={(s) => onStatus(session.id, s)}
                 onPersistentChange={(p) => onPersistent(session.id, p)}
                 onClearReady={(clear) => onClearReady(session.id, clear)}

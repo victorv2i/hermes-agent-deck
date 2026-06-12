@@ -5,6 +5,7 @@ import { MobileKeyBar } from './MobileKeyBar'
 import { TerminalSocket, type TerminalSocketLike, type TerminalStatus } from './terminalSocket'
 import { buildTerminalTheme } from './terminalTheme'
 import { handleTerminalLink } from '@/features/preview/terminalLinkHandler'
+import { useTouchInput } from '@/lib/useMediaQuery'
 
 /**
  * The interactive xterm.js terminal. Mounts an xterm instance, fits it to its
@@ -116,6 +117,16 @@ export interface TerminalViewProps {
    */
   attach?: string
   /**
+   * The host EXPECTS this session to REATTACH an existing shell (it was
+   * restored from storage or recovered from the server's tmux list). When the
+   * ready frame then arrives WITHOUT `resumed:true`, the old shell ended
+   * between snapshot and mount and `new-session -A` quietly created a fresh
+   * one — the view says so with a one-line dim notice instead of letting the
+   * fresh shell masquerade as the old session. A brand-new launch (this prop
+   * absent/false) never shows the notice.
+   */
+  expectResume?: boolean
+  /**
    * Report whether the live session is tmux-backed (persistent: survives deck
    * restarts and disconnects), from `terminal.ready`'s `persistent` flag. The
    * host shows an honest persistent/volatile badge per tab.
@@ -154,6 +165,7 @@ export function TerminalView({
   cli,
   sessionId,
   attach,
+  expectResume,
   onStatusChange,
   onClearReady,
   onPersistentChange,
@@ -164,6 +176,18 @@ export function TerminalView({
   const [status, setStatus] = useState<TerminalStatus>('connecting')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [exitCode, setExitCode] = useState<number | null>(null)
+  // The touch key bar renders on touch-input devices, decided in JS (coarse
+  // primary pointer OR touch points; re-checked on resize/orientation change)
+  // so touch-capable hybrid laptops get it too, not just coarse-pointer CSS.
+  const touchInput = useTouchInput()
+  // HONESTY: the session was expected to RESUME an existing shell but the
+  // ready frame said otherwise — the old shell ended and this is a fresh one.
+  const [freshShell, setFreshShell] = useState(false)
+  // True when a non-resumed ready must be called out: set from the mount-time
+  // expectation (restored/recovered session), and once any ready reports a
+  // PERSISTENT shell (from then on, a later ready without `resumed` means that
+  // shell died and was quietly replaced).
+  const expectResumeRef = useRef(expectResume === true)
   // Sticky Ctrl for the touch key bar: armed = the NEXT typed character is sent
   // as its control code (so Ctrl→C on a phone keyboard sends ^C). State drives
   // the key's pressed look; the ref lets the mount-once engine.onData closure
@@ -238,8 +262,18 @@ export function TerminalView({
       {
         onData: (data) => engine?.write(data),
         // Honest persistence badge: tmux-backed (survives restarts/disconnects)
-        // vs volatile, straight from the server's ready frame.
-        onReady: ({ persistent }) => onPersistentChangeRef.current?.(persistent),
+        // vs volatile, straight from the server's ready frame. The same frame
+        // drives the fresh-shell notice: a ready WITHOUT `resumed` on a session
+        // we expected to resume means the old shell ended and this is a quietly
+        // created fresh one — say so instead of letting it masquerade.
+        onReady: ({ persistent, resumed }) => {
+          onPersistentChangeRef.current?.(persistent)
+          if (resumed) setFreshShell(false)
+          else if (expectResumeRef.current) setFreshShell(true)
+          // Once a shell is known persistent, any LATER non-resumed ready (a
+          // reconnect re-start) means that shell died and was replaced.
+          if (persistent) expectResumeRef.current = true
+        },
         onExit: ({ exitCode: code }) => setExitCode(code),
         onError: ({ message }) => setErrorMessage(message),
         onStatusChange: reportStatus,
@@ -384,14 +418,26 @@ export function TerminalView({
         />
         {overlay}
       </div>
-      {/* Touch keys (Esc/Tab/Ctrl/arrows/^C) — only on coarse-pointer devices,
-          where the soft keyboard has none of them. Taps never steal xterm focus. */}
-      <MobileKeyBar
-        className="hidden pointer-coarse:flex"
-        ctrlArmed={ctrlArmed}
-        onCtrlToggle={() => armCtrl(!ctrlArmedRef.current)}
-        onKey={(data) => inputRef.current?.(applyCtrl(data))}
-      />
+      {freshShell ? (
+        // One honest dim line: the restored tab did NOT get its old shell back.
+        <p
+          role="status"
+          className="border-t border-border px-3 py-1 text-xs text-foreground-tertiary"
+        >
+          The previous shell ended; this is a fresh one.
+        </p>
+      ) : null}
+      {/* Touch keys (Esc/Tab/Ctrl/arrows/^C/Paste) — on touch-input devices,
+          where the soft keyboard has none of them. Taps never steal xterm focus.
+          Paste bypasses the sticky-Ctrl transform (it is raw text, not a key). */}
+      {touchInput ? (
+        <MobileKeyBar
+          ctrlArmed={ctrlArmed}
+          onCtrlToggle={() => armCtrl(!ctrlArmedRef.current)}
+          onKey={(data) => inputRef.current?.(applyCtrl(data))}
+          onPaste={(text) => inputRef.current?.(text)}
+        />
+      ) : null}
     </div>
   )
 }
