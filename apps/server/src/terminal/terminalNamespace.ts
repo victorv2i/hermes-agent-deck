@@ -74,6 +74,7 @@ import {
   killDeckSession,
   enableAggressiveResize,
   sendKeys,
+  capturePane,
 } from './tmux'
 
 export const TERMINAL_NAMESPACE = '/agent-deck-terminal'
@@ -81,6 +82,13 @@ export const TERMINAL_NAMESPACE = '/agent-deck-terminal'
 /** Hard cap on concurrent live ptys. Matches the web MAX_TERMINALS so the client
  * never lets you exceed what the server allows. */
 const DEFAULT_MAX_SESSIONS = 12
+
+/** How many scrollback lines are captured and replayed on a tmux reattach. */
+const BACKFILL_LINES = 200
+
+/** The dim delimiter line sent between the backfilled history and the live
+ * screen the tmux attach repaints. Honest, minimal, and unambiguous in tests. */
+const BACKFILL_MARKER = '\x1b[2m· reattached, recent history above ·\x1b[0m\r\n'
 
 /** How long a parked (disconnected) pty stays alive awaiting a reattach before it
  * is reaped. Bounds how long an orphaned shell can linger after a closed tab. */
@@ -440,12 +448,30 @@ export function registerTerminalHandlers(
           return
         }
         tmuxSpec = { mode: 'foreign', sessionName: attach }
+        // A foreign attach always joins a PRE-EXISTING shell (the existence
+        // check above), so it is honestly a resume too — the client gets the
+        // same `resumed` signal (and the scrollback backfill below).
+        tmuxResumed = true
       } else if (sessionId && (await canTmux())) {
         const name = deckSessionName(sessionId)
         // Known BEFORE the spawn so the client can be told this is a resume (-A
         // makes create-vs-attach one path, including across a BFF restart).
         tmuxResumed = await hasTmuxSession(name, tmuxSocketArgs)
         tmuxSpec = { mode: 'deck', sessionName: name }
+      }
+
+      // SCROLLBACK BACKFILL (resume only): capture the pane's recent history
+      // BEFORE the tmux client spawns, so the capture can never race the live
+      // attach redraw. It is replayed to the client first, then the dim marker
+      // line, and only then does the attach repaint the live screen — history
+      // first, delimiter, live screen. (The redraw repaints the CURRENT
+      // screenful, which is also the tail of the capture; that overlap is the
+      // honest cost of letting tmux own the live repaint.)
+      let backfill: string | null = null
+      if (tmuxSpec && tmuxResumed) {
+        backfill = await capturePane(tmuxSpec.sessionName, BACKFILL_LINES, tmuxSocketArgs).catch(
+          () => null,
+        )
       }
 
       let spawned: Awaited<ReturnType<typeof spawnTerminal>>
@@ -481,6 +507,18 @@ export function registerTerminalHandlers(
           // ignore
         }
         return
+      }
+
+      // Replay the captured history NOW, before the pty's onData is wired below
+      // (same synchronous block), so the client always sees: history, marker
+      // line, then the live screen tmux repaints. capture-pane emits bare \n
+      // line endings; xterm needs \r\n.
+      if (backfill !== null) {
+        const history = backfill.replace(/\r?\n/g, '\r\n')
+        socket.emit(
+          'terminal.data',
+          history + (history.endsWith('\r\n') ? '' : '\r\n') + BACKFILL_MARKER,
+        )
       }
 
       // A stable id makes the session reattachable; an anonymous shell gets a
@@ -589,6 +627,15 @@ export function registerTerminalHandlers(
       // SEE it run, and an alias/function/version-shim resolves exactly as typed).
       // Fixed internal command string → no injection surface. NEVER into a
       // resumed tmux session (it already ran on creation) or a foreign one.
+      //
+      // KNOWN RACE (accepted): two devices FIRST-starting the same stable id at
+      // the same time can both observe tmuxResumed=false (both checked before
+      // either `-A` created the session) and both seed, running the preset
+      // command twice. There is no creator signal from `new-session -A` to
+      // re-check against, and deck ids carry a per-page-load random token, so
+      // two devices sharing a brand-new id requires deliberate effort. The
+      // window is one spawn (~100ms); the worst case is a visible duplicated
+      // command in the same shell, never a wrong shell.
       if (seedCommand && !tmuxResumed && tmuxSpec?.mode !== 'foreign') {
         if (tmuxSpec) {
           // Writing to the tmux client this early can be EATEN by its pty line

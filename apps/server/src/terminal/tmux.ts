@@ -34,6 +34,8 @@ export interface TmuxSessionInfo {
   name: string
   /** Session creation time, in epoch SECONDS (tmux's #{session_created}). */
   createdEpoch: number
+  /** Last pane activity, in epoch SECONDS (tmux's #{session_activity}). */
+  lastActivityEpoch: number
   /** How many clients are currently attached. */
   attachedCount: number
   /** True when the name carries the deck's `adk_` ownership prefix. */
@@ -92,7 +94,7 @@ export async function listTmuxSessions(socketArgs: string[] = []): Promise<TmuxS
       ...socketArgs,
       'list-sessions',
       '-F',
-      '#{session_name}\t#{session_created}\t#{session_attached}',
+      '#{session_name}\t#{session_created}\t#{session_attached}\t#{session_activity}',
     ])
     stdout = result.stdout
   } catch {
@@ -103,11 +105,12 @@ export async function listTmuxSessions(socketArgs: string[] = []): Promise<TmuxS
   const sessions: TmuxSessionInfo[] = []
   for (const line of stdout.split('\n')) {
     if (!line.trim()) continue
-    const [name, created, attached] = line.split('\t')
+    const [name, created, attached, activity] = line.split('\t')
     if (!name) continue
     sessions.push({
       name,
       createdEpoch: Number.parseInt(created ?? '', 10) || 0,
+      lastActivityEpoch: Number.parseInt(activity ?? '', 10) || 0,
       attachedCount: Number.parseInt(attached ?? '', 10) || 0,
       deckOwned: name.startsWith(DECK_SESSION_PREFIX),
     })

@@ -123,8 +123,20 @@ describe('terminalRoutes GET /sessions', () => {
 
   it('lists deck-owned + foreign tmux sessions (all persistent) when tmux is available', async () => {
     const listed: TmuxSessionInfo[] = [
-      { name: 'adk_term-1-ab', createdEpoch: 1765000000, attachedCount: 1, deckOwned: true },
-      { name: 'victors_own', createdEpoch: 1764000000, attachedCount: 0, deckOwned: false },
+      {
+        name: 'adk_term-1-ab',
+        createdEpoch: 1765000000,
+        lastActivityEpoch: 1765000050,
+        attachedCount: 1,
+        deckOwned: true,
+      },
+      {
+        name: 'victors_own',
+        createdEpoch: 1764000000,
+        lastActivityEpoch: 1764999999,
+        attachedCount: 0,
+        deckOwned: false,
+      },
     ]
     const a = await build(
       async () => stub,
@@ -144,6 +156,7 @@ describe('terminalRoutes GET /sessions', () => {
         deckOwned: true,
         attachedCount: 1,
         createdEpoch: 1765000000,
+        lastActivityEpoch: 1765000050,
         persistent: true,
       },
       {
@@ -151,6 +164,7 @@ describe('terminalRoutes GET /sessions', () => {
         deckOwned: false,
         attachedCount: 0,
         createdEpoch: 1764000000,
+        lastActivityEpoch: 1764999999,
         persistent: true,
       },
     ])

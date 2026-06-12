@@ -116,6 +116,7 @@ export async function terminalRoutes(
       deckOwned: s.deckOwned,
       attachedCount: s.attachedCount,
       createdEpoch: s.createdEpoch,
+      lastActivityEpoch: s.lastActivityEpoch,
       // Every tmux-backed session outlives deck restarts and disconnects.
       persistent: true,
     }))

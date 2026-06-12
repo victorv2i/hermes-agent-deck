@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { rmSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   tmuxAvailable,
   __resetTmuxAvailableCache,
@@ -25,7 +27,8 @@ const hostHasTmux = await run('tmux', ['-V']).then(
  * suite creates/kills sessions on its own server and NEVER touches the user's
  * default tmux server.
  */
-const SOCKET = ['-L', `adk_test_${process.pid}`]
+const SOCKET_NAME = `adk_test_${process.pid}`
+const SOCKET = ['-L', SOCKET_NAME]
 
 /** Run a raw tmux command against the throwaway server (test setup only). */
 async function tmuxRaw(args: string[]): Promise<string> {
@@ -38,6 +41,12 @@ async function killTestServer(): Promise<void> {
     await run('tmux', [...SOCKET, 'kill-server'])
   } catch {
     // no server running on the throwaway socket — already clean
+  }
+  // Remove the throwaway socket file too (tmux leaves it behind in
+  // $TMUX_TMPDIR/tmux-$UID, defaulting to /tmp/tmux-$UID).
+  const uid = typeof process.getuid === 'function' ? process.getuid() : null
+  if (uid !== null) {
+    rmSync(join(process.env.TMUX_TMPDIR ?? '/tmp', `tmux-${uid}`, SOCKET_NAME), { force: true })
   }
 }
 
@@ -98,7 +107,7 @@ describe.skipIf(!hostHasTmux)('tmux helpers (throwaway tmux server)', () => {
     await expect(listTmuxSessions(SOCKET)).resolves.toEqual([])
   })
 
-  it('lists sessions with name, createdEpoch, attachedCount, deckOwned', async () => {
+  it('lists sessions with name, createdEpoch, lastActivityEpoch, attachedCount, deckOwned', async () => {
     await tmuxRaw(['new-session', '-d', '-s', 'adk_alpha'])
     await tmuxRaw(['new-session', '-d', '-s', 'user_beta'])
     const sessions = await listTmuxSessions(SOCKET)
@@ -110,6 +119,8 @@ describe.skipIf(!hostHasTmux)('tmux helpers (throwaway tmux server)', () => {
     expect(beta.deckOwned).toBe(false)
     expect(alpha.attachedCount).toBe(0) // created detached
     expect(alpha.createdEpoch).toBeGreaterThan(1_600_000_000)
+    // Activity is at least the creation moment (cruft-age signal for the UI).
+    expect(alpha.lastActivityEpoch).toBeGreaterThanOrEqual(alpha.createdEpoch)
   })
 
   it('hasTmuxSession answers exactly (no tmux prefix-matching surprises)', async () => {

@@ -17,6 +17,9 @@ export const TerminalTmuxSession = z.object({
   attachedCount: z.number().int().min(0),
   /** Session creation time in epoch SECONDS (tmux's #{session_created}). */
   createdEpoch: z.number().int().min(0),
+  /** Last pane activity in epoch SECONDS (tmux's #{session_activity}) — lets
+   * the UI show how stale a detached session is. */
+  lastActivityEpoch: z.number().int().min(0),
   persistent: z.boolean(),
 })
 export type TerminalTmuxSession = z.infer<typeof TerminalTmuxSession>

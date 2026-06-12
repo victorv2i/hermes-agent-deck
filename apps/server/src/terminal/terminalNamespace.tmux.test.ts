@@ -34,13 +34,20 @@ const hostHasTmux = await run('tmux', ['-V']).then(
 const hostHasPty = !!(await loadNodePty())
 
 /** Private throwaway tmux server for this suite (never the user's default). */
-const SOCKET = ['-L', `adk_test_ns_${process.pid}`]
+const SOCKET_NAME = `adk_test_ns_${process.pid}`
+const SOCKET = ['-L', SOCKET_NAME]
 
 async function killTestServer(): Promise<void> {
   try {
     await run('tmux', [...SOCKET, 'kill-server'])
   } catch {
     // no server running — already clean
+  }
+  // Remove the throwaway socket file too (tmux leaves it behind in
+  // $TMUX_TMPDIR/tmux-$UID, defaulting to /tmp/tmux-$UID).
+  const uid = typeof process.getuid === 'function' ? process.getuid() : null
+  if (uid !== null) {
+    rmSync(join(process.env.TMUX_TMPDIR ?? '/tmp', `tmux-${uid}`, SOCKET_NAME), { force: true })
   }
 }
 
@@ -218,6 +225,42 @@ describe.skipIf(!hostHasTmux || !hostHasPty)('tmux-backed terminal (real shell)'
     expect(pane.split('SEEDED__2').length - 1).toBe(1)
   }, 20000)
 
+  it('backfills recent scrollback, then a delimiter marker, on a deck reattach', async () => {
+    const url = await boot()
+    const c1 = connect(url)
+    await waitFor(c1, 'connect')
+    c1.emit('terminal.start', { sessionId: 'backfill-1' })
+    const r1 = await waitFor<{ resumed?: boolean }>(c1, 'terminal.ready')
+    expect(r1.resumed).toBeFalsy()
+    await awaitAttached('adk_backfill-1')
+    c1.emit('terminal.input', 'echo HISTORY_b1\r')
+    await waitForOutput(c1, 'HISTORY_b1')
+    c1.disconnect()
+    await new Promise((r) => setTimeout(r, 150))
+
+    // Reattach on a fresh socket. The server emits the captured history + the
+    // marker BEFORE terminal.ready, so by the time ready arrives the backfill
+    // is already in the buffer — and it precedes any live attach redraw.
+    const c2 = connect(url)
+    let buf = ''
+    c2.on('terminal.data', (d: string) => {
+      buf += d
+    })
+    await waitFor(c2, 'connect')
+    c2.emit('terminal.start', { sessionId: 'backfill-1' })
+    const r2 = await waitFor<{ resumed?: boolean }>(c2, 'terminal.ready')
+    expect(r2.resumed).toBe(true)
+    const marker = 'reattached, recent history above'
+    expect(buf).toContain(marker)
+    expect(buf).toContain('HISTORY_b1')
+    // The history precedes the marker (history first, then the delimiter).
+    expect(buf.indexOf('HISTORY_b1')).toBeLessThan(buf.indexOf(marker))
+    // The marker is server-injected (never typed into the pane), so the live
+    // redraw cannot repeat it: EXACTLY once. (The history's last screenful CAN
+    // legitimately appear again when tmux repaints the live screen.)
+    expect(buf.split(marker).length - 1).toBe(1)
+  }, 20000)
+
   it('reports a DETACH honestly (exit event with detached:true, session survives)', async () => {
     const url = await boot()
     const c = connect(url)
@@ -281,6 +324,9 @@ describe.skipIf(!hostHasTmux || !hostHasPty)('tmux-backed terminal (real shell)'
     c.emit('terminal.start', { attach: 'victors_own' })
     const r = await waitFor<{ persistent?: boolean; resumed?: boolean }>(c, 'terminal.ready')
     expect(r.persistent).toBe(true)
+    // A foreign attach always joins a pre-existing shell: honestly a resume
+    // (which also drives the scrollback backfill on the client).
+    expect(r.resumed).toBe(true)
     await awaitAttached('victors_own')
     c.emit('terminal.input', 'echo FOREIGN_ok\r')
     await waitForOutput(c, 'FOREIGN_ok')

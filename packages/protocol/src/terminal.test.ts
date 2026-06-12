@@ -8,6 +8,7 @@ describe('TerminalTmuxSession', () => {
       deckOwned: true,
       attachedCount: 1,
       createdEpoch: 1765000000,
+      lastActivityEpoch: 1765000100,
       persistent: true,
     })
     expect(s.name).toBe('adk_term-1-ab12')
@@ -20,10 +21,12 @@ describe('TerminalTmuxSession', () => {
       deckOwned: false,
       attachedCount: 0,
       createdEpoch: 0,
+      lastActivityEpoch: 0,
       persistent: true,
     }
     expect(() => TerminalTmuxSession.parse({ ...base, attachedCount: -1 })).toThrow()
     expect(() => TerminalTmuxSession.parse({ ...base, createdEpoch: 1.5 })).toThrow()
+    expect(() => TerminalTmuxSession.parse({ ...base, lastActivityEpoch: -5 })).toThrow()
   })
 })
 
@@ -43,6 +46,7 @@ describe('TerminalSessionsResponse', () => {
           deckOwned: true,
           attachedCount: 0,
           createdEpoch: 1765000001,
+          lastActivityEpoch: 1765000002,
           persistent: true,
         },
         {
@@ -50,6 +54,7 @@ describe('TerminalSessionsResponse', () => {
           deckOwned: false,
           attachedCount: 2,
           createdEpoch: 1764000000,
+          lastActivityEpoch: 1764500000,
           persistent: true,
         },
       ],
