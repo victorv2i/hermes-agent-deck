@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { UsageBillingMode, UsageSummary } from './usage'
+import { RunReceipt, RunReceiptSource, UsageBillingMode, UsageSummary } from './usage'
 
 describe('UsageSummary DTO', () => {
   it('parses a fully-populated metered usage payload', () => {
@@ -93,5 +93,36 @@ describe('UsageSummary DTO', () => {
         billingMode: 'unknown',
       }),
     ).toThrow()
+  })
+})
+
+describe('RunReceipt DTO', () => {
+  it('parses an exact run_event receipt with a null cost (no per-run prices exist)', () => {
+    const parsed = RunReceipt.parse({
+      inputTokens: 64321,
+      outputTokens: 1234,
+      estCostUsd: null,
+      billingMode: 'subscription',
+      source: 'run_event',
+      attribution: 'Measured for this run',
+    })
+    expect(parsed.estCostUsd).toBeNull()
+    expect(parsed.cacheReadTokens).toBeUndefined()
+  })
+
+  it('requires estCostUsd to be explicit (null), never silently absent', () => {
+    expect(() =>
+      RunReceipt.parse({
+        inputTokens: 1,
+        outputTokens: 1,
+        billingMode: 'metered',
+        source: 'run_event',
+      }),
+    ).toThrow()
+  })
+
+  it('constrains source to the two honest attribution modes', () => {
+    expect(RunReceiptSource.options).toEqual(['run_event', 'session_delta'])
+    expect(() => RunReceiptSource.parse('estimated')).toThrow()
   })
 })

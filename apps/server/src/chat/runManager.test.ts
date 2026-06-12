@@ -320,6 +320,46 @@ describe('RunManager max-concurrent-pumps cap', () => {
   })
 })
 
+describe('RunManager per-run usage relay (the receipt source)', () => {
+  // The gateway's run.completed usage is EXACT for the run: api_server creates a
+  // fresh agent per /v1/runs run whose token counters start at 0 and count only
+  // that run's own model calls. The pump must relay it VERBATIM into the durable
+  // store — the web's receipt line renders these numbers, so any coercion or
+  // default here would be a fabricated receipt.
+  it('relays run.completed usage verbatim into the replay log', async () => {
+    const gateway = new ScriptedGateway()
+    const store = new RunStore()
+    const manager = new RunManager(gateway, store)
+    manager.start('r1', 'sess-1')
+    gateway.stream('r1').push({
+      event: 'run.completed',
+      run_id: 'r1',
+      output: 'done',
+      usage: { input_tokens: 64321, output_tokens: 1234, total_tokens: 65555 },
+    })
+    await settle()
+    const terminal = store.snapshot('r1', 0).at(-1)
+    expect(terminal?.event).toBe('run.completed')
+    expect(terminal && 'usage' in terminal ? terminal.usage : undefined).toEqual({
+      input_tokens: 64321,
+      output_tokens: 1234,
+      total_tokens: 65555,
+    })
+  })
+
+  it('keeps usage ABSENT when the gateway omitted it — never fabricates zeros', async () => {
+    const gateway = new ScriptedGateway()
+    const store = new RunStore()
+    const manager = new RunManager(gateway, store)
+    manager.start('r1')
+    gateway.stream('r1').push({ event: 'run.completed', run_id: 'r1', output: 'done' })
+    await settle()
+    const terminal = store.snapshot('r1', 0).at(-1)
+    expect(terminal?.event).toBe('run.completed')
+    expect(terminal && 'usage' in terminal ? terminal.usage : undefined).toBeUndefined()
+  })
+})
+
 describe('mapGatewayEvent — unknown terminal event catch-all', () => {
   it('passes known protocol events through unchanged', () => {
     const ev = mapGatewayEvent(

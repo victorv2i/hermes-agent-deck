@@ -9,6 +9,7 @@ import { useChatStore } from '@/state/useChatStore'
 import { branchSendPolicy, FORK_COPY } from '@/state/chatStore'
 import { useHeaderSlot } from '@/state/headerStore'
 import { useModels, useSetModel } from '@/features/models/useModels'
+import { useUsage } from '@/features/usage/useUsage'
 import {
   ExpensiveModelConfirmDialog,
   type ExpensiveModelConfirm,
@@ -110,6 +111,13 @@ export function ChatRoute() {
       profiles[0]
     return resolveChatAgent(active)
   }, [profilesData])
+
+  // The period billing mode for the per-run receipt lines (the Usage summary's
+  // server-derived `billingMode`). days=1 shares the header burn-rate pill's
+  // already-polled query key, so this adds ZERO extra requests. Best-effort —
+  // when unavailable the receipts honestly render tokens only.
+  const usageSummary = useUsage(1)
+  const receiptBillingMode = usageSummary.data?.billingMode
 
   // The gateway's model list (same source as the Models surface). Drives the
   // composer picker; the picker's chosen model rides on every run (T1.2).
@@ -441,6 +449,7 @@ export function ChatRoute() {
         onReturnToOriginal={originalBranchId ? handleReturnToOriginal : undefined}
         onRespondApproval={respondApproval}
         onSendRefinement={handleSendRefinement}
+        receiptBillingMode={receiptBillingMode}
         // Composer slash-command handlers (mirror the ⌘K palette). `/model` is
         // self-contained (opens the picker); these wire the rest.
         onNewChat={newChat}

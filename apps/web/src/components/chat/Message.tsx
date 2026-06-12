@@ -10,6 +10,7 @@ import { useSpeechSynthesis, useVoicePrefs } from '@/features/voice'
 import { useReasoningVerbosity } from '@/features/reasoning/reasoningPrefs'
 import type { ChatAgentIdentity } from './chatIdentity'
 import { Markdown } from './Markdown'
+import { RunReceiptLine } from './RunReceiptLine'
 import { ToolCardGroup } from './ToolCardGroup'
 import { ReasoningBlock } from './ReasoningBlock'
 import { PlanCard } from './PlanCard'
@@ -56,6 +57,10 @@ type MessageProps = {
   highlightQuery?: string
   /** Whether THIS turn carries the active find match (its marks read as active). */
   highlightActive?: boolean
+  /** Server-derived period billing mode (the Usage summary's `billingMode`),
+   * threaded down for the per-run receipt line's billing segment. Absent /
+   * unresolved → the receipt renders tokens only (never implies "free"). */
+  receiptBillingMode?: string
 }
 
 function MessageImpl({
@@ -70,6 +75,7 @@ function MessageImpl({
   showRefinement = false,
   highlightQuery,
   highlightActive = false,
+  receiptBillingMode,
 }: MessageProps) {
   if (turn.role === 'user') {
     return (
@@ -95,6 +101,7 @@ function MessageImpl({
       showRefinement={showRefinement}
       highlightQuery={highlightQuery}
       highlightActive={highlightActive}
+      receiptBillingMode={receiptBillingMode}
     />
   )
 }
@@ -132,6 +139,7 @@ function areMessagePropsEqual(prev: MessageProps, next: MessageProps): boolean {
     prev.showRefinement === next.showRefinement &&
     prev.highlightQuery === next.highlightQuery &&
     prev.highlightActive === next.highlightActive &&
+    prev.receiptBillingMode === next.receiptBillingMode &&
     // Callback PRESENCE (not identity): a handler appearing/disappearing changes
     // which actions render, but a stable-purpose handler's changing identity must
     // not re-render the whole list.
@@ -471,6 +479,7 @@ function AssistantMessage({
   showRefinement,
   highlightQuery,
   highlightActive = false,
+  receiptBillingMode,
 }: {
   turn: Extract<Turn, { role: 'assistant' }>
   onRetry?: (assistantTurnId: string) => void
@@ -484,6 +493,8 @@ function AssistantMessage({
   highlightQuery?: string
   /** Whether THIS turn carries the active find match (marks read as accent). */
   highlightActive?: boolean
+  /** Period billing mode for the receipt line's billing segment. */
+  receiptBillingMode?: string
 }) {
   const hasText = turn.content.length > 0
   const { verbosity } = useReasoningVerbosity()
@@ -597,6 +608,13 @@ function AssistantMessage({
             {turn.streaming && <span className="ad-caret" data-testid="stream-caret" aria-hidden />}
           </div>
         )}
+
+        {/* The per-run receipt: what this completed run cost, honestly. Renders
+            only when the run's terminal frame carried usage (exact per-run
+            tokens from the gateway); a turn without usage — e.g. one seeded
+            from history, where hermes persists no per-run numbers — simply has
+            no receipt. Part of the turn footer, so no live region. */}
+        {!turn.streaming && <RunReceiptLine usage={turn.usage} billingMode={receiptBillingMode} />}
 
         {!turn.streaming && hasText && (
           <MetaRow createdAt={turn.createdAt}>

@@ -78,6 +78,49 @@ export const UsageModelBreakdown = z.object({
 })
 export type UsageModelBreakdown = z.infer<typeof UsageModelBreakdown>
 
+/**
+ * Where a per-run receipt's token numbers came from:
+ *   - `run_event`     — the gateway's `run.completed` usage payload. EXACT for the
+ *     run: the gateway creates a fresh agent per `/v1/runs` run, whose token
+ *     counters start at 0 and accumulate only that run's own model calls
+ *     (api_server.py `_run_and_close` + agent_init counters). Concurrent runs or
+ *     background forks sharing the session id can never leak into it.
+ *   - `session_delta` — a session-row before/after token delta bracketing the run.
+ *     NOT exact: anything else writing to the same session during the run (e.g. a
+ *     background fork) inflates it, so a UI must say "the session grew by N during
+ *     this run", never "this run cost exactly N". Reserved — the current deck only
+ *     ships `run_event`.
+ */
+export const RunReceiptSource = z.enum(['run_event', 'session_delta'])
+export type RunReceiptSource = z.infer<typeof RunReceiptSource>
+
+/**
+ * The per-run cost receipt rendered under a completed assistant turn. Built from
+ * the run's `run.completed` usage (exact tokens, see {@link RunReceiptSource})
+ * joined with the period billing mode the Usage surface already reconciles.
+ *
+ * HONESTY RULES (the receipt may never out-claim its sources):
+ *   - `estCostUsd` is null unless a REAL per-run dollar figure exists. Hermes's
+ *     run lifecycle carries tokens only (no cost field), so deriving dollars from
+ *     window aggregates would be fabrication — we don't.
+ *   - `cacheReadTokens` is absent when the source didn't report it (the gateway's
+ *     run usage omits cache reads even though session rows track them).
+ *   - `billingMode` 'unknown' means the billing signal was unavailable — the UI
+ *     drops the billing segment rather than implying "free".
+ */
+export const RunReceipt = z.object({
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  cacheReadTokens: z.number().optional(),
+  /** Real per-run dollars, or null when no per-run price exists (never derived). */
+  estCostUsd: z.number().nullable(),
+  billingMode: UsageBillingMode,
+  source: RunReceiptSource,
+  /** Human note on what the numbers measure (e.g. "Measured for this run"). */
+  attribution: z.string().optional(),
+})
+export type RunReceipt = z.infer<typeof RunReceipt>
+
 /** The BFF's normalized usage payload. */
 export const UsageSummary = z.object({
   /** The window actually applied (echoed from the dashboard). */

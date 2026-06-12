@@ -14,6 +14,7 @@
 import { useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useModels } from '@/features/models/useModels'
+import { useSessions } from '@/features/sessions/hooks'
 import { CHAT_PATH } from '@/app/navigation'
 import { useUsage } from './useUsage'
 import { UsagePage } from './UsagePage'
@@ -43,6 +44,12 @@ export function UsageRoute() {
     [setParams],
   )
   const query = useUsage(period)
+  // The per-session drill-down ("By session"): the most recently active sessions
+  // from the sessions BFF — the same state.db rows the analytics SUM over.
+  // Ordered by recent activity so the selected window's sessions come first;
+  // SessionBreakdown filters to the window and ranks by tokens. Best-effort —
+  // the rest of the Usage page renders even if this fails.
+  const sessionsQuery = useSessions({ limit: 100, order: 'recent' })
   // The active provider is the authoritative billing signal: a subscription/OAuth
   // seat (e.g. openai-codex) reports $0 cost even when busy, so the Usage surface
   // needs it to label cost honestly. Best-effort — usage still renders if it fails.
@@ -64,6 +71,9 @@ export function UsageRoute() {
       providerId={provider?.id}
       providerLabel={provider?.label}
       onStartChat={() => navigate(CHAT_PATH)}
+      sessions={sessionsQuery.data?.sessions}
+      sessionsLoading={sessionsQuery.isLoading}
+      sessionsError={sessionsQuery.error instanceof Error ? sessionsQuery.error : null}
     />
   )
 }

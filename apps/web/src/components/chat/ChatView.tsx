@@ -115,6 +115,10 @@ export interface ChatViewProps {
   onRespondApproval: (choice: ApprovalChoice) => void
   /** Send a follow-up prompt (used by the refinement row on the last assistant turn). */
   onSendRefinement?: (text: string) => void
+  /** Server-derived period billing mode (the Usage summary's `billingMode`),
+   * threaded to each turn's per-run receipt line. Absent → receipts render
+   * tokens only. */
+  receiptBillingMode?: string
   /** Composer slash-command handlers (mirror the ⌘K palette). Each command is
    * offered only when its handler is wired, so an unwired one is simply absent. */
   onNewChat?: () => void
@@ -149,6 +153,7 @@ export function ChatView({
   onReturnToOriginal,
   onRespondApproval,
   onSendRefinement,
+  receiptBillingMode,
   onNewChat,
   onClearChat,
   onToggleTheme,
@@ -411,6 +416,7 @@ export function ChatView({
               // match reads with the accent mark + the turn-level ring.
               highlightQuery={find.open ? find.query : undefined}
               highlightActive={find.open && find.activeTurnId === turn.id}
+              receiptBillingMode={receiptBillingMode}
               onRetry={onRetry}
               onEdit={onEditTurn}
               onFork={onFork}

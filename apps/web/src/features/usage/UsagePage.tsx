@@ -17,10 +17,12 @@ import { CacheHitTile } from './CacheHitTile'
 import { UsageTrend } from './UsageTrend'
 import { ModelBreakdown } from './ModelBreakdown'
 import { ProviderBreakdown } from './ProviderBreakdown'
+import { SessionBreakdown } from './SessionBreakdown'
 import { CostInsights } from './CostInsights'
 import { resolveBillingMode } from './billingMode'
 import { formatCost, formatTokens, formatTokensFull } from './format'
 import type { UsagePeriod, UsageSummary } from './types'
+import type { SessionSummary } from '@/features/sessions/types'
 
 export interface UsagePageProps {
   period: UsagePeriod
@@ -45,6 +47,13 @@ export interface UsagePageProps {
    * router push — never an `<a href="/">` hard reload. Omitted → no CTA.
    */
   onStartChat?: () => void
+  /** Session rows for the per-session drill-down (most recently active first),
+   * from the sessions BFF — the same state.db table the analytics SUM over.
+   * Omitted/failed → the drill-down shows its own honest empty/error state
+   * without affecting the rest of the page. */
+  sessions?: SessionSummary[]
+  sessionsLoading?: boolean
+  sessionsError?: Error | null
 }
 
 export function UsagePage({
@@ -58,6 +67,9 @@ export function UsagePage({
   providerId,
   providerLabel,
   onStartChat,
+  sessions,
+  sessionsLoading = false,
+  sessionsError = null,
 }: UsagePageProps) {
   // Which breakdown the bottom section shows. Per-model is the default (the
   // historical view); per-provider rolls those same rows up by their recorded
@@ -248,6 +260,18 @@ export function UsagePage({
               <ModelBreakdown byModel={data.byModel} />
             )}
           </section>
+
+          {/* Per-session drill-down: the window's sessions ranked by tokens,
+              each linking back to its conversation. Same state.db source the
+              rollups above SUM over; its caption owns the whole-session-totals
+              caveat honestly. */}
+          <SessionBreakdown
+            periodDays={period}
+            sessions={sessions}
+            isLoading={sessionsLoading}
+            error={sessionsError}
+            billingMode={mode}
+          />
         </>
       ) : null}
     </div>

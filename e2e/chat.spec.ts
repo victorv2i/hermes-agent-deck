@@ -15,6 +15,27 @@ const HEALTH = {
 const NOW = Math.floor(Date.now() / 1000)
 
 /**
+ * A well-formed subscription-mode usage summary for `GET /api/agent-deck/usage`,
+ * so the per-run receipt's billing segment is deterministic ("included
+ * (subscription)") regardless of whether a real dashboard is reachable.
+ */
+const USAGE_SUMMARY = {
+  periodDays: 1,
+  totals: {
+    inputTokens: 23,
+    outputTokens: 11,
+    cacheReadTokens: 0,
+    reasoningTokens: 0,
+    estimatedCost: 0,
+    actualCost: 0,
+    sessions: 1,
+  },
+  daily: [],
+  byModel: [],
+  billingMode: 'subscription',
+}
+
+/**
  * HERMETIC chat e2e — the BFF runs against an IN-PROCESS MOCK gateway
  * (scripts/serve-mock-gateway.mjs, AGENT_DECK_BFF_TARGET → :7899). No live
  * gateway is involved, so this is part of the `pnpm verify` gate.
@@ -65,6 +86,9 @@ async function stubDashboardRest(page: Page) {
     if (path.endsWith('/organization')) return fulfill({ projectId: null, tags: [] })
     if (path.includes('/search/sessions')) return fulfill({ results: [] })
     if (path.endsWith('/sessions')) return fulfill({ sessions: [] })
+    // The receipt's billing segment reads the same usage summary the Usage page
+    // does; stub it as a subscription so the receipt copy is deterministic.
+    if (path.endsWith('/usage')) return fulfill(USAGE_SUMMARY)
     // Any other dashboard-backed read: a harmless empty 200 so a load-time probe
     // never 502-noises the console when the dashboard is down.
     return fulfill({})
@@ -130,6 +154,15 @@ test('streams a reply, renders an expandable tool chip, resolves an approval, an
       { exact: true },
     ),
   ).toBeVisible()
+
+  // The per-run receipt: the completed turn shows what the run cost, honestly.
+  // The mock gateway's run.completed carried usage {input 12, output 11}, and the
+  // stubbed usage summary reports subscription billing — so the line reads exact
+  // tokens plus "included", never a fabricated $0. The tooltip names the source.
+  const receipt = page.getByTestId('run-receipt')
+  await expect(receipt).toBeVisible()
+  await expect(receipt).toHaveText('12 in / 11 out / included (subscription)')
+  await expect(receipt).toHaveAttribute('title', /Measured for this run/)
 
   // Run finished → composer is back to Send (not Stop).
   await expect(page.getByTestId('composer-send')).toBeVisible()

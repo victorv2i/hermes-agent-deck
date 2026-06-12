@@ -706,4 +706,48 @@ describe('Message', () => {
       expect(s.speak).not.toHaveBeenCalled()
     })
   })
+  describe('per-run receipt line', () => {
+    const usage = { input_tokens: 64321, output_tokens: 1234, total_tokens: 65555 }
+    const completedTurn: Turn = {
+      id: 'a1',
+      role: 'assistant',
+      content: 'All done.',
+      toolCalls: [],
+      reasoning: [],
+      streaming: false,
+      usage,
+    }
+
+    it('renders the muted receipt under a completed turn that carried usage', () => {
+      renderMessage(completedTurn, { receiptBillingMode: 'subscription' })
+      const receipt = screen.getByTestId('run-receipt')
+      expect(receipt).toHaveTextContent('64.3K in / 1.2K out / included (subscription)')
+    })
+
+    it('carries the exact numbers and the measurement note in the tooltip', () => {
+      renderMessage(completedTurn, { receiptBillingMode: 'subscription' })
+      const title = screen.getByTestId('run-receipt').getAttribute('title') ?? ''
+      expect(title).toContain('64,321 input tokens')
+      expect(title).toContain('1,234 output tokens')
+      expect(title).toContain('Measured for this run')
+    })
+
+    it('renders tokens only when the billing mode is unresolved (never implies free)', () => {
+      renderMessage(completedTurn)
+      expect(screen.getByTestId('run-receipt')).toHaveTextContent('64.3K in / 1.2K out')
+      expect(screen.getByTestId('run-receipt')).not.toHaveTextContent('included')
+    })
+
+    it('is ABSENT (not zeroed) on a turn without usage — e.g. one seeded from history', () => {
+      const { usage: _omit, ...turnWithoutUsage } = completedTurn
+      void _omit
+      renderMessage({ ...turnWithoutUsage, id: 'a2' })
+      expect(screen.queryByTestId('run-receipt')).toBeNull()
+    })
+
+    it('is absent while the turn is still streaming', () => {
+      renderMessage({ ...completedTurn, id: 'a3', streaming: true })
+      expect(screen.queryByTestId('run-receipt')).toBeNull()
+    })
+  })
 })

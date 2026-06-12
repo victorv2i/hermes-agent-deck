@@ -15,6 +15,9 @@ vi.mock('./useUsage', () => ({
 vi.mock('@/features/models/useModels', () => ({
   useModels: () => ({ data: undefined }),
 }))
+vi.mock('@/features/sessions/hooks', () => ({
+  useSessions: () => ({ data: undefined, isLoading: false, error: null }),
+}))
 vi.mock('@/app/navigation', () => ({ CHAT_PATH: '/chat' }))
 
 import { UsageRoute } from './UsageRoute'
