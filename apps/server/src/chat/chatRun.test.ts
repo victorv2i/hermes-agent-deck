@@ -490,6 +490,100 @@ describe('/chat-run socket namespace', () => {
     }
   })
 
+  it('re-surfaces a still-pending approval the resume cursor already skipped (reload-safe)', async () => {
+    // A page that received approval.request BEFORE reloading persists a resume
+    // cursor PAST it; the normal replay would skip the request and the reloaded
+    // page would never render the approval card. The subscribe path re-emits the
+    // unresolved request as a CURSOR-LESS transient frame.
+    const { store, client: c, close } = await bootStoreSocket()
+    try {
+      const runId = 'run_pending_approval'
+      store.append(runId, { event: 'run.started', run_id: runId, input: 'hi' }) // cursor 1
+      store.append(runId, {
+        event: 'approval.request',
+        run_id: runId,
+        approval_id: 'apr-1',
+        command: 'rm -rf ./build',
+        description: 'Delete the build folder',
+        choices: ['once', 'deny'],
+      }) // cursor 2
+
+      const resurfaced = new Promise<ChatServerEvent>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('pending approval was not re-surfaced')),
+          3000,
+        )
+        c.on('approval.request', (e: ChatServerEvent) => {
+          clearTimeout(timer)
+          resolve(e)
+        })
+      })
+      c.emit('resume', { run_id: runId, after_cursor: 2 }) // cursor already past the request
+      const frame = await resurfaced
+      expect(frame.event).toBe('approval.request')
+      expect(frame.cursor).toBeUndefined() // transient: passes the client's cursor de-dup
+      expect((frame as { approval_id?: string }).approval_id).toBe('apr-1')
+    } finally {
+      await close()
+    }
+  })
+
+  it('does NOT re-surface an approval that was already responded to', async () => {
+    const { store, client: c, close } = await bootStoreSocket()
+    try {
+      const runId = 'run_resolved_approval'
+      store.append(runId, { event: 'run.started', run_id: runId, input: 'hi' }) // 1
+      store.append(runId, {
+        event: 'approval.request',
+        run_id: runId,
+        approval_id: 'apr-2',
+        command: 'rm -rf ./build',
+        description: 'Delete the build folder',
+        choices: ['once', 'deny'],
+      }) // 2
+      store.append(runId, {
+        event: 'approval.responded',
+        run_id: runId,
+        approval_id: 'apr-2',
+        choice: 'once',
+      }) // 3
+
+      const stray = new Promise<ChatServerEvent | null>((resolve) => {
+        c.on('approval.request', (e: ChatServerEvent) => resolve(e))
+        c.emit('resume', { run_id: runId, after_cursor: 3 })
+        setTimeout(() => resolve(null), 100)
+      })
+      expect(await stray).toBeNull()
+    } finally {
+      await close()
+    }
+  })
+
+  it('does NOT double-send an approval the replay already carries', async () => {
+    const { store, client: c, close } = await bootStoreSocket()
+    try {
+      const runId = 'run_replayed_approval'
+      store.append(runId, { event: 'run.started', run_id: runId, input: 'hi' }) // 1
+      store.append(runId, {
+        event: 'approval.request',
+        run_id: runId,
+        approval_id: 'apr-3',
+        command: 'rm -rf ./build',
+        description: 'Delete the build folder',
+        choices: ['once', 'deny'],
+      }) // 2
+
+      const requests: ChatServerEvent[] = []
+      c.on('approval.request', (e: ChatServerEvent) => requests.push(e))
+      c.emit('resume', { run_id: runId, after_cursor: 0 }) // the replay carries cursor 2
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      expect(requests).toHaveLength(1)
+      expect(requests[0]!.cursor).toBe(2) // the replayed frame, not a transient copy
+    } finally {
+      await close()
+    }
+  })
+
   it('caps per-socket tails so arbitrary resume IDs cannot grow the map without bound', async () => {
     const { store, client: c, close } = await bootStoreSocket()
 

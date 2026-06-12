@@ -490,7 +490,7 @@ describe('reload-resume persistence', () => {
     expect(readPersistedRun(storage)).toBeNull()
   })
 
-  it('restores a persisted run on construction and auto-resumes on connect', () => {
+  it('restores a persisted run on construction and auto-resumes the WHOLE run on connect', () => {
     const storage = new FakeStorage()
     // Simulate a prior page-load mid-run that persisted run_1 @ cursor 5.
     writePersistedRun({ runId: 'run_1', lastCursor: 5 }, storage)
@@ -498,10 +498,12 @@ describe('reload-resume persistence', () => {
     // A fresh client (as if after a full page reload) adopts the persisted run.
     const client = new ChatSocket({ onEvent: () => {} }, { socket, storage })
     expect(client.runId).toBe('run_1')
-    expect(client.lastCursor).toBe(5)
-    // The socket layer connects; the connect handler resumes from cursor 5.
+    // The reload lost every in-memory frame, so the resume replays from 0 —
+    // resuming from the dead page's cursor (5) would rebuild an empty transcript
+    // and silently drop a still-pending approval received before the reload.
+    expect(client.lastCursor).toBe(0)
     socket.dispatch('connect')
-    expect(socket.lastEmit('resume')).toEqual([{ run_id: 'run_1', after_cursor: 5 }])
+    expect(socket.lastEmit('resume')).toEqual([{ run_id: 'run_1', after_cursor: 0 }])
   })
 
   it('does not adopt or resume when storage holds no run', () => {

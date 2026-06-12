@@ -178,6 +178,16 @@ function Key({
       intervalTimer.current = null
     }
   }
+  // A press that ends WITHOUT a click (a pointercancel, or a mouse dragged off
+  // the key and released elsewhere) must also clear the double-fire guard, or
+  // the NEXT keyboard activation would be swallowed by the stale flag. A touch
+  // lift fires pointerleave BEFORE its synthetic click, so on leave only a
+  // hover-capable (mouse) pointer may clear it — a touch tap still needs the
+  // flag alive to swallow that click.
+  const abortRepeat = (e: React.PointerEvent) => {
+    stopRepeat()
+    if (e.type === 'pointercancel' || e.pointerType === 'mouse') firedByPointer.current = false
+  }
   // Never leave a repeat ticking after unmount.
   useEffect(
     () => () => {
@@ -214,8 +224,8 @@ function Key({
       aria-label={aria}
       onPointerDown={pointerDown}
       onPointerUp={repeat ? stopRepeat : undefined}
-      onPointerLeave={repeat ? stopRepeat : undefined}
-      onPointerCancel={repeat ? stopRepeat : undefined}
+      onPointerLeave={repeat ? abortRepeat : undefined}
+      onPointerCancel={repeat ? abortRepeat : undefined}
       onClick={onClick}
       className="flex h-9 min-w-11 shrink-0 items-center justify-center rounded-md px-2 font-mono text-xs text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:ad-focus"
     >

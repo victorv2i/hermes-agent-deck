@@ -133,6 +133,44 @@ describe('MobileKeyBar', () => {
     expect(onKey).toHaveBeenCalledWith('\x1b')
   })
 
+  it('a cancelled press does not swallow the NEXT keyboard activation', () => {
+    vi.useFakeTimers()
+    const { onKey } = renderBar()
+    const up = screen.getByRole('button', { name: 'Arrow up' })
+    // A touch press that the browser takes over (scroll) — pointercancel, NO click.
+    fireEvent.pointerDown(up, { pointerType: 'touch' })
+    expect(onKey).toHaveBeenCalledTimes(1)
+    fireEvent.pointerCancel(up, { pointerType: 'touch' })
+    // A later keyboard activation (click without pointerdown) must still emit —
+    // the stale double-fire flag would otherwise swallow it.
+    fireEvent.click(up)
+    expect(onKey).toHaveBeenCalledTimes(2)
+  })
+
+  it('a mouse press dragged off the key does not swallow the NEXT keyboard activation', () => {
+    vi.useFakeTimers()
+    const { onKey } = renderBar()
+    const down = screen.getByRole('button', { name: 'Arrow down' })
+    fireEvent.pointerDown(down, { pointerType: 'mouse' })
+    expect(onKey).toHaveBeenCalledTimes(1)
+    // Dragged off and released elsewhere: pointerleave, never a click on the key.
+    fireEvent.pointerLeave(down, { pointerType: 'mouse' })
+    fireEvent.click(down) // keyboard activation later
+    expect(onKey).toHaveBeenCalledTimes(2)
+  })
+
+  it('a touch tap still emits exactly once even though pointerleave precedes its click', () => {
+    vi.useFakeTimers()
+    const { onKey } = renderBar()
+    const left = screen.getByRole('button', { name: 'Arrow left' })
+    // A real touch tap: down → up → leave (the touch pointer is gone) → click.
+    fireEvent.pointerDown(left, { pointerType: 'touch' })
+    fireEvent.pointerUp(left, { pointerType: 'touch' })
+    fireEvent.pointerLeave(left, { pointerType: 'touch' })
+    fireEvent.click(left)
+    expect(onKey).toHaveBeenCalledTimes(1)
+  })
+
   it('keyboard activation (click without a pointerdown) still emits a repeat key', () => {
     const { onKey } = renderBar()
     fireEvent.click(screen.getByRole('button', { name: 'Arrow right' }))

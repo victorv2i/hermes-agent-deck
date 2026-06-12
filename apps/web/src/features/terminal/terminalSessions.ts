@@ -79,7 +79,10 @@ export function emptySessions(viewMode: ViewMode = 'tab'): SessionsState {
  * session's `id` and `epoch` together so that:
  *   - a plain browser refresh keeps the same key → the server REATTACHES (same shell),
  *   - a Restart (which bumps `epoch`) yields a NEW key → the server spawns a FRESH
- *     shell and the old parked one is reaped after its grace window.
+ *     shell. The OLD shell's fate depends on its backing: a non-tmux parked pty is
+ *     reaped after its grace window, but a tmux-backed one would survive under its
+ *     old adk_ name — so the multi-view kills a known-persistent session
+ *     (terminal.close) before bumping the epoch.
  * A RECOVERED session sends its `wire` id verbatim at epoch 0 (so the key maps
  * back to the SAME `adk_*` tmux name); a Restart suffixes the epoch as usual,
  * which honestly becomes a new session name (a fresh shell).

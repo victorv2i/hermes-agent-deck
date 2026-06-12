@@ -109,11 +109,11 @@ interface StartArgs {
  * Drives one terminal session over the namespace. Lifecycle:
  *   const t = new TerminalSocket(cbs); t.connect(); t.start({cols,rows});
  *   t.input('ls\r'); t.resize(120, 40); … t.dispose()
- * `start` is sent ONCE, on the first connect. A later reconnect does NOT silently
- * re-open a fresh shell: the server force-kills the pty on disconnect, so the old
- * shell is gone — re-`start`ing would mislead the user into thinking the same
- * session resumed. Instead we surface a 'dropped' status so they can explicitly
- * restart (a deliberate fresh shell) — honesty over a silent swap.
+ * `start` is sent ONCE per live transport. On a reconnect, a session WITH a
+ * stable `sessionId` (or a foreign `attach` target) re-`start`s to REATTACH the
+ * surviving shell; one WITHOUT any reattach identity does NOT silently re-open a
+ * fresh shell — the server force-killed that pty on disconnect, so we surface a
+ * 'dropped' status for an explicit restart instead (honesty over a silent swap).
  */
 export class TerminalSocket {
   private readonly socket: TerminalSocketLike
@@ -198,11 +198,15 @@ export class TerminalSocket {
           resumed: readBool(payload, 'resumed'),
         })
       }
-      // A reattach to the parked shell: the same session resumed (buffered
-      // scrollback already replayed). Mark connected + notify, so no "dropped"
-      // overlay is shown for an honest resume.
+      // ANY ready frame means a live shell is attached on this transport, so the
+      // status dot returns to 'connected' — including a reconnect whose reattach
+      // came back NON-resumed (the old tmux shell died and a fresh one spawned):
+      // the shell works, so the dot must not stay stuck on 'connecting'. The
+      // resumed flag still gates onResumed (no "dropped" overlay on an honest
+      // resume); a non-resumed ready on an expected resume drives the view's
+      // fresh-shell notice instead.
+      this.callbacks.onStatusChange?.('connected')
       if (readBool(payload, 'resumed')) {
-        this.callbacks.onStatusChange?.('connected')
         this.callbacks.onResumed?.()
       }
     })

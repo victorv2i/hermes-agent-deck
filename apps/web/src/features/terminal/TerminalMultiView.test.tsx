@@ -358,6 +358,42 @@ describe('TerminalMultiView persistence', () => {
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
   })
 
+  it('restarting a PERSISTENT shell kills the old tmux session first (terminal.close), then remounts fresh', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
+    fireEvent.click(screen.getByRole('button', { name: /grid view/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    // The old persistent shell was ended for real — a bare epoch bump would have
+    // left it alive in the tmux server as recoverable cruft.
+    expect(closeCalls).toHaveLength(1)
+    expect(closeCalls[0]).toMatch(/:0$/) // the epoch-0 wire key (the OLD shell)
+    // The remounted view registered a NEW close handle under the bumped key.
+    fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    expect(closeCalls).toHaveLength(2)
+    expect(closeCalls[1]).toMatch(/:1$/)
+  })
+
+  it('restarting a VOLATILE shell stays a plain epoch bump (no terminal.close)', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(false)} />)
+    fireEvent.click(screen.getByRole('button', { name: /grid view/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    // The socket teardown ends a volatile shell; no explicit kill is sent.
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByTestId('terminal-view')).toHaveLength(1)
+  })
+
+  it("restarting a FOREIGN attach tab never kills the user's own session", () => {
+    render(
+      <TerminalMultiView
+        initialCli="shell"
+        initialAttach="victors_own"
+        viewComponent={persistenceStub(true)}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: /grid view/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    expect(closeCalls).toHaveLength(0)
+  })
+
   it('reconciles restored sessions against the server list (clean + recover)', () => {
     // Two sessions persisted from a previous load...
     let prior = openSession(emptySessions(), 'shell')

@@ -193,10 +193,28 @@ export function TerminalMultiView({
     setPersistence((prev) => (prev[id] === persistent ? prev : { ...prev, [id]: persistent }))
   }, [])
   const setClearHandle = useCallback((id: string, clear: (() => void) | null) => {
-    clearHandles.current[id] = clear
+    // A null report is the view's teardown: drop the entry instead of keeping a
+    // null forever for a session that may be gone.
+    if (clear) clearHandles.current[id] = clear
+    else delete clearHandles.current[id]
   }, [])
   const setCloseHandle = useCallback((id: string, close: (() => void) | null) => {
-    closeHandles.current[id] = close
+    if (close) closeHandles.current[id] = close
+    else delete closeHandles.current[id]
+  }, [])
+
+  // Forget a CLOSED session's per-session records (status, persistence, handles)
+  // so they do not accumulate as stale entries across many open/close cycles.
+  const forgetSession = useCallback((id: string) => {
+    const drop = <T,>(prev: Record<string, T>): Record<string, T> => {
+      if (!(id in prev)) return prev
+      const { [id]: _dropped, ...rest } = prev
+      return rest
+    }
+    setStatuses(drop)
+    setPersistence(drop)
+    delete clearHandles.current[id]
+    delete closeHandles.current[id]
   }, [])
 
   const atCap = isAtCap(state)
@@ -231,6 +249,7 @@ export function TerminalMultiView({
     if (session.attach) {
       closeHandles.current[id]?.()
       dispatch({ type: 'close', id })
+      forgetSession(id)
       return
     }
     if (persistence[id] !== false) {
@@ -238,13 +257,35 @@ export function TerminalMultiView({
       return
     }
     dispatch({ type: 'close', id })
+    forgetSession(id)
   }
   const confirmClose = () => {
     if (!pendingClose) return
     closeHandles.current[pendingClose]?.()
     dispatch({ type: 'close', id: pendingClose })
+    forgetSession(pendingClose)
     setPendingClose(null)
   }
+
+  // Restarting is honest about the shell it replaces. Bumping the epoch alone
+  // would leave a deck-owned PERSISTENT (tmux-backed) shell alive under its old
+  // adk_ name — recoverable cruft the user thought was replaced — so a session
+  // currently known persistent gets a real kill (terminal.close) FIRST, then the
+  // epoch bump remounts a fresh shell under the new key. Volatile shells (their
+  // socket teardown ends them) and foreign attach tabs (the deck never kills a
+  // user's own session) keep the plain epoch bump.
+  const requestRestart = (id: string) => {
+    const session = state.sessions.find((s) => s.id === id)
+    if (!session) return
+    if (!session.attach && persistence[id] === true) closeHandles.current[id]?.()
+    dispatch({ type: 'restart', id })
+  }
+  // The header's Restart handle is bound in an [activeId]-only effect below, so
+  // it reads the LATEST sessions/persistence through this ref.
+  const requestRestartRef = useRef(requestRestart)
+  useEffect(() => {
+    requestRestartRef.current = requestRestart
+  })
 
   // Surface the ACTIVE session's status/clear/restart up to the route header. Kept
   // in refs+effect so the callbacks (fresh closures from the route) never need to
@@ -261,7 +302,7 @@ export function TerminalMultiView({
   useEffect(() => {
     const r = reportRef.current
     r.onActiveClearReady?.(activeId ? () => clearHandles.current[activeId]?.() : null)
-    r.onActiveRestartReady?.(activeId ? () => dispatch({ type: 'restart', id: activeId }) : null)
+    r.onActiveRestartReady?.(activeId ? () => requestRestartRef.current(activeId) : null)
   }, [activeId])
 
   return (
@@ -295,7 +336,7 @@ export function TerminalMultiView({
           onPersistent={setPersistent}
           onClearReady={setClearHandle}
           onCloseReady={setCloseHandle}
-          onRestart={(id) => dispatch({ type: 'restart', id })}
+          onRestart={requestRestart}
         />
       ) : (
         <GridPanels
@@ -308,7 +349,7 @@ export function TerminalMultiView({
           onClearReady={setClearHandle}
           onCloseReady={setCloseHandle}
           onActivate={(id) => dispatch({ type: 'activate', id })}
-          onRestart={(id) => dispatch({ type: 'restart', id })}
+          onRestart={requestRestart}
         />
       )}
 

@@ -201,7 +201,8 @@ export interface ChatSocketOptions {
    * Storage for the in-flight run so a full page reload can resume it. Defaults
    * to sessionStorage in the browser. Pass `null` to disable persistence; pass a
    * fake to unit-test it. When a non-terminal run is found at construction time,
-   * the client adopts it so the first `connect` auto-resumes from its cursor.
+   * the client adopts it so the first `connect` auto-resumes it (a full replay
+   * from cursor 0 — the reload lost the in-memory transcript).
    */
   storage?: StorageLike | null
 }
@@ -234,12 +235,20 @@ export class ChatSocket {
     this.socket = options.socket ?? defaultSocket(options.url)
     this.storage = options.storage === undefined ? defaultStorage() : options.storage
     // Reload-resume: adopt a persisted in-flight run so the first `connect`
-    // auto-emits resume({ run_id, after_cursor }) and the run survives a full
-    // page reload. (Terminal runs are cleared from storage, so none is found.)
+    // auto-emits a resume and the run survives a full page reload. (Terminal
+    // runs are cleared from storage, so none is found.) Resume from cursor 0,
+    // NOT the persisted lastCursor: the reload threw away every in-memory frame
+    // (the streamed transcript, the run status, any pending approval), so that
+    // cursor marks what the DEAD page had seen, not what this page has. A
+    // partial replay would rebuild nothing before it — an empty transcript and,
+    // worse, a silently lost still-pending approval. The full replay rebuilds
+    // the whole live conversation; the BFF replay is cursor-tagged so it stays
+    // idempotent. (While the page is ALIVE, in-place transport reconnects still
+    // resume from the live `this.cursor`, as before.)
     const persisted = readPersistedRun(this.storage)
     if (persisted) {
       this.activeRunId = persisted.runId
-      this.cursor = persisted.lastCursor
+      this.cursor = 0
       this.activeRunDone = false
     }
     this.wire()

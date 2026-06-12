@@ -152,6 +152,39 @@ describe('TerminalSocket', () => {
     expect(onStatusChange).toHaveBeenCalledWith('connected')
   })
 
+  it('restores connected after a reconnect whose reattach RESUMED the shell', () => {
+    const onStatusChange = vi.fn()
+    const onResumed = vi.fn()
+    const fake = new FakeSocket()
+    const t = new TerminalSocket({ onData: vi.fn(), onStatusChange, onResumed }, { socket: fake })
+    t.start({ cols: 80, rows: 24, sessionId: 'term-3:0' })
+    t.connect()
+    fake.disconnect()
+    fake.connect() // re-start sent; status is 'connecting' until ready
+    onStatusChange.mockClear()
+    fake.fire('terminal.ready', { pid: 11, persistent: true, resumed: true })
+    expect(onStatusChange).toHaveBeenCalledWith('connected')
+    expect(onResumed).toHaveBeenCalledTimes(1)
+  })
+
+  it('restores connected after a reconnect whose ready is NON-resumed (fresh shell)', () => {
+    // The old tmux shell died between drop and reconnect, so `new-session -A`
+    // spawned a fresh one and ready comes back WITHOUT resumed. The shell works:
+    // the status dot must return to 'connected', not sit on 'connecting' forever.
+    const onStatusChange = vi.fn()
+    const onResumed = vi.fn()
+    const fake = new FakeSocket()
+    const t = new TerminalSocket({ onData: vi.fn(), onStatusChange, onResumed }, { socket: fake })
+    t.start({ cols: 80, rows: 24, sessionId: 'term-3:0' })
+    t.connect()
+    fake.disconnect()
+    fake.connect()
+    onStatusChange.mockClear()
+    fake.fire('terminal.ready', { pid: 12, persistent: true, resumed: false })
+    expect(onStatusChange).toHaveBeenCalledWith('connected')
+    expect(onResumed).not.toHaveBeenCalled() // an honest fresh shell is not a resume
+  })
+
   it('routes terminal.data to onData', () => {
     const onData = vi.fn()
     const fake = new FakeSocket()

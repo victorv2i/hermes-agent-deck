@@ -46,6 +46,32 @@ export const MAX_TAILS_PER_SOCKET = 128
 // thus the mapping) is owned by the RunManager now.
 export { mapGatewayEvent }
 
+/**
+ * The run's still-UNRESOLVED `approval.request` that a resume cursor has
+ * already skipped (its cursor is at or below `afterCursor`), stripped of its
+ * cursor so it rides the transient-frame path — or null when there is none,
+ * the latest request was already responded to, or the normal replay will carry
+ * it anyway (cursor above `afterCursor`). Scans the full log backward: in this
+ * protocol at most one approval gates a run at a time, so the latest
+ * approval.request is THE pending one unless an approval.responded follows it.
+ */
+export function pendingApprovalBefore(
+  events: readonly ChatServerEvent[],
+  afterCursor: number,
+): ChatServerEvent | null {
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i]!
+    if (event.event === 'approval.responded') return null
+    if (event.event === 'approval.request') {
+      if ((event.cursor ?? 0) > afterCursor) return null // the replay already carries it
+      const transient = { ...event }
+      delete transient.cursor
+      return transient
+    }
+  }
+  return null
+}
+
 export interface ChatRunDeps {
   gateway: GatewayClientLike
   store?: RunStore
@@ -112,6 +138,17 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
       // are transient broadcasts (run.heartbeat) — pure liveness signals outside
       // the replay log — and are always forwarded.
       if (!store.isDone(runId)) {
+        // RELOAD-SAFE PENDING APPROVAL: a page that already received the
+        // approval.request persists a resume cursor PAST it, so the replay
+        // above skips the request on its next subscribe — yet the gate is
+        // still unresolved. Without re-surfacing it, a reloaded page never
+        // re-renders the approval card and the paused run sits wedged until
+        // the idle reaper fails it. Re-emit the still-pending request as a
+        // CURSOR-LESS transient frame (like run.heartbeat): the client's
+        // cursor de-dup passes it through, and re-arming the same approval id
+        // is idempotent.
+        const skippedPending = pendingApprovalBefore(store.snapshot(runId, 0), afterCursor)
+        if (skippedPending) emit(skippedPending)
         const cb = (event: ChatServerEvent): void => {
           if (event.cursor === undefined || event.cursor > maxReplayedCursor) emit(event)
           if (TERMINAL_EVENTS.has(event.event)) {

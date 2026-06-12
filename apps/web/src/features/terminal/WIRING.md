@@ -27,8 +27,10 @@ socket.io connection → its own server pty. The client sends a STABLE wire id
 that id (live OR parked), so a refresh reattaches and the cap counts every managed
 session. Both caps are 12 (`MAX_TERMINALS` web / `DEFAULT_MAX_SESSIONS` server,
 `index.ts` also passes `maxSessions: 12`) so the client never lets you exceed what
-the server allows. A Restart bumps `epoch` → a new wire id → a fresh shell (the old
-parked one is reaped after its grace window).
+the server allows. A Restart bumps `epoch` → a new wire id → a fresh shell. The old
+shell: a non-tmux parked pty is reaped after its grace window; a tmux-backed
+(persistent) one is killed explicitly (`terminal.close`) before the epoch bump so
+no `adk_*` session is orphaned.
 
 The open session list is persisted to `localStorage` (`TERMINAL_SESSIONS_KEY`), so a
 browser refresh remounts the SAME sessions (same ids) and each reattaches to its
