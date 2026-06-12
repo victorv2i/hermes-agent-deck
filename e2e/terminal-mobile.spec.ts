@@ -27,10 +27,22 @@ const HEALTH = {
   version: '0.1.0',
 }
 
+/**
+ * Engine.io polling noise, filtered like auth-unlock's BENIGN_AUTH: under heavy
+ * CPU contention the socket.io polling-to-websocket upgrade can race, and a late
+ * polling GET with an already-closed sid gets a 400 the browser logs as "Failed
+ * to load resource". socket.io recovers on its own; it is transport noise, not a
+ * surface error. Filtered ONLY for /socket.io/ URLs so a real 400 from an API
+ * call still fails the console-clean assertion.
+ */
+const BENIGN_POLLING_400 = /Failed to load resource.*400/i
+
 function trackConsole(page: Page): string[] {
   const errors: string[] = []
   page.on('console', (m: ConsoleMessage) => {
-    if (m.type() === 'error') errors.push(m.text())
+    if (m.type() !== 'error') return
+    if (BENIGN_POLLING_400.test(m.text()) && m.location().url.includes('/socket.io/')) return
+    errors.push(m.text())
   })
   page.on('pageerror', (err) => errors.push(err.message))
   return errors

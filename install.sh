@@ -1115,9 +1115,8 @@ start_hermes_dashboard() {
 
 _write_systemd_unit() {
   # Write (or overwrite) the systemd user unit for Agent Deck.
-  local node_bin pnpm_bin
+  local node_bin
   node_bin="$(_node_bin)"
-  pnpm_bin="$(_pnpm_bin)"
 
   mkdir -p "$HOME/.config/systemd/user"
   cat > "$HOME/.config/systemd/user/agent-deck.service" <<EOF
@@ -1127,14 +1126,26 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=${AGENT_DECK_DIR}
+# Persistent terminals: the BFF backs deck terminals with a tmux server it may
+# itself spawn (first tmux call), which then lives in this unit's cgroup. The
+# default KillMode=control-group would kill that tmux server (and every shell
+# in it) on restart/stop, breaking the "shells survive deck restarts" promise.
+# KillMode=process signals only the BFF; tmux and its shells live on. The BFF's
+# own pty clients hang up when it exits, so nothing else lingers.
+#
+# KillMode=process signals ONLY the main process, so the main process must BE
+# the server. A pnpm wrapper here would swallow the stop signal (pnpm does not
+# forward SIGTERM), leaking the old server and crash-looping the next start on
+# EADDRINUSE. tsx is run directly: it forwards signals to its node child.
+KillMode=process
+WorkingDirectory=${AGENT_DECK_DIR}/apps/server
 Environment="PATH=${HOME}/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="AGENT_DECK_WEB_CLIENT_ROOT=${AGENT_DECK_DIR}/apps/web/dist"
 Environment="HERMES_GATEWAY_URL=http://127.0.0.1:${HERMES_GATEWAY_PORT}"
 Environment="HERMES_DASHBOARD_URL=http://127.0.0.1:${HERMES_DASHBOARD_PORT}"
 Environment="HERMES_DASHBOARD_HOST=127.0.0.1:${HERMES_DASHBOARD_PORT}"
 Environment="AGENT_DECK_PORT=${AGENT_DECK_PORT}"
-ExecStart=${node_bin} ${pnpm_bin} --filter @agent-deck/server exec tsx src/index.ts
+ExecStart=${node_bin} ${AGENT_DECK_DIR}/apps/server/node_modules/tsx/dist/cli.mjs src/index.ts
 Restart=on-failure
 RestartSec=5
 StandardOutput=append:${HOME}/.hermes/logs/agent-deck.log
