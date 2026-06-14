@@ -31,7 +31,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { EmptyState } from '@/components/ui/state'
+import { EmptyState, ErrorState } from '@/components/ui/state'
 import {
   Dialog,
   DialogContent,
@@ -469,10 +469,12 @@ export function WebhooksTab() {
       )}
 
       {isError && !unsupported && (
-        <div className="ad-surface mb-4 rounded-xl bg-card px-4 py-3 text-sm text-destructive">
-          Couldn&apos;t load webhooks. Your Hermes may be offline, or this build may not support
-          webhooks.
-        </div>
+        <ErrorState
+          icon={AlertCircle}
+          title="Couldn’t load webhooks"
+          description="Your Hermes may be offline, or this build may not support webhooks."
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* One-time secret reveal after create */}

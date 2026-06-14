@@ -14,6 +14,7 @@
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  AlertCircle,
   Check,
   Info,
   RefreshCw,
@@ -28,7 +29,7 @@ import type { PairingUser } from '@agent-deck/protocol'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { EmptyState } from '@/components/ui/state'
+import { EmptyState, ErrorState } from '@/components/ui/state'
 import {
   Dialog,
   DialogContent,
@@ -146,10 +147,12 @@ export function PairingTab() {
       )}
 
       {isError && !unsupported && (
-        <div className="ad-surface mb-4 rounded-xl bg-card px-4 py-3 text-sm text-destructive">
-          Couldn&apos;t load pairing. Your Hermes may be offline, or this build may not support
-          device pairing.
-        </div>
+        <ErrorState
+          icon={AlertCircle}
+          title="Couldn’t load pairing"
+          description="Your Hermes may be offline, or this build may not support device pairing."
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* Revoke confirm dialog */}
