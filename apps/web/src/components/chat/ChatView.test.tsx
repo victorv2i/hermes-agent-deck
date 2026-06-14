@@ -328,6 +328,39 @@ describe('ChatView', () => {
   })
 })
 
+// --- Inline recovery from a failed run ----------------------------------------
+// A failure is exactly when the user most needs a one-tap retry, so the error
+// block carries it instead of stranding them at a dead end (the only other
+// retry is a hover-revealed row, invisible on touch).
+describe('ChatView — failed run recovery', () => {
+  it('offers an inline Try again that re-runs the last user turn after a failure', async () => {
+    const onEditTurn = vi.fn()
+    renderView({
+      turns: [
+        { id: 'u1', role: 'user', content: 'first' },
+        { id: 'u2', role: 'user', content: 'do the thing' },
+      ],
+      error: 'The server is at its concurrent-run capacity; please retry.',
+      onEditTurn,
+    })
+    expect(screen.getByRole('alert')).toHaveTextContent(/concurrent-run capacity/i)
+    await userEvent.click(screen.getByRole('button', { name: /try again/i }))
+    // Re-runs the LAST user turn in place (edit-resend with its same text), which
+    // drops any failed/empty trailing assistant turn and streams fresh.
+    expect(onEditTurn).toHaveBeenCalledWith('u2', 'do the thing')
+  })
+
+  it('omits Try again when no re-run handler is wired', () => {
+    renderView({
+      turns: [{ id: 'u1', role: 'user', content: 'do the thing' }],
+      error: 'Your agent is unreachable.',
+      // onEditTurn intentionally omitted: nothing to wire the retry to.
+    })
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull()
+  })
+})
+
 // --- Honest history-cap truncation notice -------------------------------------
 // When the conversation outgrows the conversation_history payload caps, the
 // transcript shows a quiet divider above the OLDEST turn still sent, so older

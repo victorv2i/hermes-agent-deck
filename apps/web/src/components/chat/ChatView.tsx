@@ -15,6 +15,7 @@ import {
   CalendarRange,
   FileSearch,
   GitBranch,
+  RotateCcw,
   Sparkles,
   Unplug,
 } from 'lucide-react'
@@ -168,6 +169,11 @@ export function ChatView({
   const running = runStatus !== 'idle'
 
   const isEmpty = turns.length === 0
+
+  // The most recent user turn, for the failed-run "Try again" below. Re-running
+  // it in place (edit-resend) drops any failed/empty trailing assistant turn and
+  // streams fresh, which works whether or not the failure left an assistant turn.
+  const lastUserTurn = error ? [...turns].reverse().find((t) => t.role === 'user') : undefined
 
   // Honest send-gating: when the chat genuinely can't run (agent unreachable or no
   // model connected) the composer is disabled and a notice explains why — never a
@@ -443,9 +449,22 @@ export function ChatView({
             {error && (
               <div
                 role="alert"
-                className="my-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+                className="my-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive"
               >
-                {error}
+                <span>{error}</span>
+                {/* A failure is when a one-tap retry matters most. Re-running the
+                    last user turn here means the recovery is right at the error,
+                    not buried in a hover-revealed row (invisible on touch). */}
+                {onEditTurn && lastUserTurn && !running && (
+                  <button
+                    type="button"
+                    onClick={() => onEditTurn(lastUserTurn.id, lastUserTurn.content)}
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 self-start rounded-lg border border-destructive/30 bg-destructive/10 px-3 text-xs font-medium text-destructive transition-colors hover:bg-destructive/15 focus-visible:ad-focus sm:min-h-0 sm:py-1.5"
+                  >
+                    <RotateCcw className="size-3.5" aria-hidden />
+                    Try again
+                  </button>
+                )}
               </div>
             )}
           </>
