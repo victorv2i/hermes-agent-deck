@@ -185,6 +185,8 @@ export function TerminalMultiView({
   const closeHandles = useRef<Record<string, (() => void) | null>>({})
   // A deck-owned PERSISTENT session awaiting the close confirm (dialog open).
   const [pendingClose, setPendingClose] = useState<string | null>(null)
+  // A deck-owned PERSISTENT session awaiting the restart confirm (dialog open).
+  const [pendingRestart, setPendingRestart] = useState<string | null>(null)
 
   const setStatus = useCallback((id: string, status: TerminalStatus) => {
     setStatuses((prev) => (prev[id] === status ? prev : { ...prev, [id]: status }))
@@ -270,15 +272,26 @@ export function TerminalMultiView({
   // Restarting is honest about the shell it replaces. Bumping the epoch alone
   // would leave a deck-owned PERSISTENT (tmux-backed) shell alive under its old
   // adk_ name — recoverable cruft the user thought was replaced — so a session
-  // currently known persistent gets a real kill (terminal.close) FIRST, then the
-  // epoch bump remounts a fresh shell under the new key. Volatile shells (their
-  // socket teardown ends them) and foreign attach tabs (the deck never kills a
-  // user's own session) keep the plain epoch bump.
+  // currently known persistent ASKS FIRST (a restart ends it for real, like
+  // Close), then gets a real kill (terminal.close) before the epoch bump
+  // remounts a fresh shell under the new key. Volatile shells (their socket
+  // teardown ends them) and foreign attach tabs (the deck never kills a user's
+  // own session; their restart is just a detach + reattach) keep the plain,
+  // confirm-free epoch bump.
   const requestRestart = (id: string) => {
     const session = state.sessions.find((s) => s.id === id)
     if (!session) return
-    if (!session.attach && persistence[id] === true) closeHandles.current[id]?.()
+    if (!session.attach && persistence[id] === true) {
+      setPendingRestart(id)
+      return
+    }
     dispatch({ type: 'restart', id })
+  }
+  const confirmRestart = () => {
+    if (!pendingRestart) return
+    closeHandles.current[pendingRestart]?.()
+    dispatch({ type: 'restart', id: pendingRestart })
+    setPendingRestart(null)
   }
   // The header's Restart handle is bound in an [activeId]-only effect below, so
   // it reads the LATEST sessions/persistence through this ref.
@@ -360,7 +373,60 @@ export function TerminalMultiView({
         onConfirm={confirmClose}
         onCancel={() => setPendingClose(null)}
       />
+
+      <RestartPersistentDialog
+        title={state.sessions.find((s) => s.id === pendingRestart)?.title ?? null}
+        open={pendingRestart !== null}
+        onConfirm={confirmRestart}
+        onCancel={() => setPendingRestart(null)}
+      />
     </div>
+  )
+}
+
+/**
+ * The restart confirm for a deck-owned PERSISTENT shell: a restart KILLS the
+ * current shell in the tmux server (Close's twin, see {@link requestRestart})
+ * and starts a fresh one, so it deserves the same honest question Close asks.
+ * Cancel is the default-focused action.
+ */
+function RestartPersistentDialog({
+  title,
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  title: string | null
+  open: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onCancel()
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Restart this terminal?</DialogTitle>
+          <DialogDescription>
+            This restarts the persistent shell{title ? <> &ldquo;{title}&rdquo;</> : null}: the
+            current shell ends for real (anything still running in it stops) and a fresh one starts
+            in its place.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="ghost" onClick={onCancel} autoFocus>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            Restart terminal
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -907,7 +973,12 @@ function GridPanels({
     <div
       role="group"
       aria-label="Terminal grid"
-      className={`grid min-h-0 flex-1 auto-rows-fr gap-2 overflow-auto p-2 ${gridColsClass(
+      // Rows are minmax(0,1fr) and the container clips: an `auto-rows-fr` grid
+      // with `overflow-auto` let each cell's content set the row height, and the
+      // fit observer then refit the taller pane in a feedback loop (panes grew
+      // forever). Bounding the rows at the grid (like the tab view's
+      // `h-full min-h-0`) keeps every pane stable at its share of the surface.
+      className={`grid min-h-0 flex-1 auto-rows-[minmax(0,1fr)] gap-2 overflow-hidden p-2 ${gridColsClass(
         state.sessions.length,
       )}`}
     >
@@ -926,7 +997,7 @@ function GridPanels({
             // The focused/live cell gets the sanctioned amber active ring; others a
             // neutral hairline. (Persistent identity rings would use border-strong;
             // this ring marks the LIVE/focused terminal, which IS a sanctioned amber use.)
-            className={`flex min-h-48 min-w-0 flex-col rounded-lg outline-none transition-shadow duration-100 ${
+            className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg outline-none transition-shadow duration-100 ${
               focused
                 ? 'ring-2 ring-primary'
                 : 'ring-1 ring-border hover:ring-[var(--border-strong)] focus-visible:ring-2 focus-visible:ring-ring'

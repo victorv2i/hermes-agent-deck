@@ -186,25 +186,30 @@ export async function sendKeys(
 }
 
 /**
- * Best-effort `aggressive-resize on` for a deck session's window, so the pane
- * tracks the size of the most-recently-active client instead of shrinking to
- * the smallest attached one. Never throws — sizing is a nicety, not a gate.
+ * Best-effort per-session options for a DECK-OWNED session (never applied to a
+ * foreign one — those are the user's, options included):
+ *  - `aggressive-resize on` (window): the pane tracks the size of the
+ *    most-recently-active client instead of shrinking to the smallest one,
+ *  - `mouse on`: the wheel scrolls tmux's own history (tmux holds the
+ *    scrollback, so without this the deck's xterm has ~nothing to scroll),
+ *  - `status off`: no green status bar eating a row and exposing the internal
+ *    adk_ session name inside the deck's chrome.
+ * Each option is independently best-effort. Never throws — comfort, not a gate.
  */
-export async function enableAggressiveResize(
+export async function applyDeckSessionOptions(
   name: string,
   socketArgs: string[] = [],
 ): Promise<void> {
-  try {
-    await run('tmux', [
-      ...socketArgs,
-      'set-option',
-      '-w',
-      '-t',
-      `=${name}:`,
-      'aggressive-resize',
-      'on',
-    ])
-  } catch {
-    // best effort only
+  const options: { flags: string[]; option: string; value: string }[] = [
+    { flags: ['-w'], option: 'aggressive-resize', value: 'on' },
+    { flags: [], option: 'mouse', value: 'on' },
+    { flags: [], option: 'status', value: 'off' },
+  ]
+  for (const { flags, option, value } of options) {
+    try {
+      await run('tmux', [...socketArgs, 'set-option', ...flags, '-t', `=${name}:`, option, value])
+    } catch {
+      // best effort only
+    }
   }
 }

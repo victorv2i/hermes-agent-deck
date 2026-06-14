@@ -358,18 +358,33 @@ describe('TerminalMultiView persistence', () => {
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
   })
 
-  it('restarting a PERSISTENT shell kills the old tmux session first (terminal.close), then remounts fresh', () => {
+  it('restarting a PERSISTENT shell asks first, then kills the old tmux session (terminal.close) and remounts fresh', () => {
     render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
     fireEvent.click(screen.getByRole('button', { name: /grid view/i }))
     fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
-    // The old persistent shell was ended for real — a bare epoch bump would have
-    // left it alive in the tmux server as recoverable cruft.
+    // The confirm dialog is up; nothing has been killed yet (a restart ends the
+    // persistent shell for real, so it asks like Close does).
+    expect(screen.getByText(/the current shell ends for real/i)).toBeInTheDocument()
+    expect(closeCalls).toHaveLength(0)
+    // Confirm: the old persistent shell is ended for real — a bare epoch bump
+    // would have left it alive in the tmux server as recoverable cruft.
+    fireEvent.click(screen.getByRole('button', { name: /^restart terminal$/i }))
     expect(closeCalls).toHaveLength(1)
     expect(closeCalls[0]).toMatch(/:0$/) // the epoch-0 wire key (the OLD shell)
     // The remounted view registered a NEW close handle under the bumped key.
     fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^restart terminal$/i }))
     expect(closeCalls).toHaveLength(2)
     expect(closeCalls[1]).toMatch(/:1$/)
+  })
+
+  it('Cancel keeps the persistent shell running (no restart, no close sent)', () => {
+    render(<TerminalMultiView initialCli="shell" viewComponent={persistenceStub(true)} />)
+    fireEvent.click(screen.getByRole('button', { name: /grid view/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^restart/i }))
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(closeCalls).toHaveLength(0)
+    expect(screen.getAllByTestId('terminal-view')).toHaveLength(1)
   })
 
   it('restarting a VOLATILE shell stays a plain epoch bump (no terminal.close)', () => {

@@ -72,7 +72,7 @@ import {
   deckSessionName,
   hasTmuxSession,
   killDeckSession,
-  enableAggressiveResize,
+  applyDeckSessionOptions,
   sendKeys,
   capturePane,
 } from './tmux'
@@ -614,10 +614,26 @@ export function registerTerminalHandlers(
         sessions.delete(id)
         s.onClosed(exitCode)
       })
-      // Best effort: size the shared tmux session to the most-recently-active
-      // client instead of the smallest attached one (multi-device comfort).
+      // Best effort, DECK sessions only (a foreign session's options are the
+      // user's): size to the most-recently-active client (aggressive-resize),
+      // let the wheel scroll tmux's own history (mouse on), and drop the status
+      // bar (status off) so no row is lost to adk_ internals inside the deck.
+      // On a brand-new session `new-session -A` may not have created it yet, so
+      // wait for it to exist first (same pattern as the seed below).
       if (tmuxSpec?.mode === 'deck') {
-        void enableAggressiveResize(tmuxSpec.sessionName, tmuxSocketArgs)
+        const name = tmuxSpec.sessionName
+        void (async () => {
+          for (let i = 0; i < 100; i += 1) {
+            if (s.closed) return
+            if (await hasTmuxSession(name, tmuxSocketArgs)) {
+              await applyDeckSessionOptions(name, tmuxSocketArgs)
+              return
+            }
+            await new Promise((r) => setTimeout(r, 50))
+          }
+        })().catch(() => {
+          // best effort: missing comfort options never block the shell
+        })
       }
       const ready: { pid: number; resumed?: boolean; persistent?: boolean } = { pid: proc.pid }
       if (tmuxSpec) ready.persistent = true
