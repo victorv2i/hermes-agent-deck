@@ -334,7 +334,8 @@ describe('AgentMemoryTabs — editable Soul / Memory / User', () => {
     renderTabs({ isActive: false })
 
     await user.click(await screen.findByRole('tab', { name: 'Provider' }))
-    expect(await screen.findByRole('note')).toHaveTextContent(/active agent only/i)
+    // The note clarifies the shown status + controls are the active agent's.
+    expect(await screen.findByRole('note')).toHaveTextContent(/active agent/i)
 
     await user.click(screen.getByRole('button', { name: /provider.*available/i }))
     expect(screen.getByRole('button', { name: /mem0/i })).toBeDisabled()

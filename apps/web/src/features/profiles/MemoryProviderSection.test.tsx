@@ -38,6 +38,16 @@ describe('MemoryProviderSection', () => {
     expect(screen.getByText(/^Active:$/i)).toBeInTheDocument()
   })
 
+  it("on a non-active agent, says the shown provider AND file sizes are the active agent's", () => {
+    // The data shown is always the active agent's (the endpoint is active-scoped),
+    // so on another agent's hub the note must say so, or the provider + file-size
+    // figures read as if they belong to this (non-active) agent.
+    setup({ isActiveAgent: false })
+    const note = screen.getByRole('note')
+    expect(note).toHaveTextContent(/active agent/i)
+    expect(note.textContent).toMatch(/file sizes/i)
+  })
+
   it('shows "Built-in" when no external provider is active', () => {
     setup({ memoryStatus: BUILTIN_MEMORY_STATUS })
     // The "Built-in" label appears in the active provider display

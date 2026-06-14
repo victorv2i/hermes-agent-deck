@@ -80,8 +80,9 @@ export function MemoryProviderSection({
             role="note"
             className="mt-2 rounded-lg border border-border bg-surface-1 px-3 py-2 text-[12px] leading-relaxed text-foreground-tertiary"
           >
-            These controls act on the active agent only. Switch to this agent before changing
-            providers or resetting built-in memory.
+            The provider and file sizes shown are the active agent&rsquo;s, since Hermes tracks one
+            memory set at a time, not one per agent. Switch to this agent before changing or
+            resetting them.
           </p>
         )}
       </div>
