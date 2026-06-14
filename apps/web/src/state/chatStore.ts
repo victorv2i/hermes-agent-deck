@@ -582,7 +582,10 @@ function reduceEvent(state: ChatState, event: ChatServerEvent): ChatState {
     }
 
     case 'run.completed': {
-      const finalized = finalizeStreaming(advanced, event.output ?? undefined, event.usage)
+      // Treat an empty output like an absent one: a tool-only turn completes with
+      // `output: ''`, and `?? undefined` (null-only) would let that '' overwrite
+      // and BLANK whatever already streamed in. `|| undefined` keeps the stream.
+      const finalized = finalizeStreaming(advanced, event.output || undefined, event.usage)
       return {
         ...finalized,
         runStatus: 'idle',

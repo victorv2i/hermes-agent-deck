@@ -226,6 +226,18 @@ describe('chatStore reducer', () => {
     expect(lastAssistant(s).content).toBe('streamed only')
   })
 
+  it('run.completed keeps streamed content when output is an EMPTY string (tool-only completion)', () => {
+    const seq = [
+      { event: 'run.started', run_id: RUN, cursor: 1 },
+      { event: 'message.delta', run_id: RUN, delta: 'streamed only', cursor: 2 },
+      // An empty terminal output must not wipe what already streamed in (a
+      // tool-only turn can complete with output ''); absent and '' behave alike.
+      { event: 'run.completed', run_id: RUN, output: '', cursor: 3 },
+    ].map(ev)
+    const s = applyEvents(initialChatState, seq)
+    expect(lastAssistant(s).content).toBe('streamed only')
+  })
+
   // --- tool round-trip ------------------------------------------------------
   it('tool round-trip: started → completed upserts a single card (running → completed)', () => {
     const afterStart = applyEvents(
