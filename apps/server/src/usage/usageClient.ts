@@ -104,9 +104,28 @@ function num(value: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-function normalizeDaily(rows: RawDailyRow[] | null | undefined): UsageDailyPoint[] {
+/** Today as a UTC `YYYY-MM-DD` string, for the future-day guard below. */
+function utcTodayString(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/**
+ * Normalize the per-day rollup, keeping the series honest about the window:
+ *  - never emit a FUTURE day. The dashboard's range is inclusive and can
+ *    overshoot one bucket into tomorrow; a future bar would claim usage for a
+ *    day that has not happened (and renders as a "just now" session).
+ *  - keep only the most recent `periodDays` rows. The dashboard returns an
+ *    inclusive `periodDays + 1` range, so a "last 7 days" view would otherwise
+ *    draw 8 bars under a 7-day label.
+ * ISO date strings sort chronologically, so a lexical compare is the day order.
+ */
+function normalizeDaily(
+  rows: RawDailyRow[] | null | undefined,
+  periodDays: number,
+  today: string = utcTodayString(),
+): UsageDailyPoint[] {
   if (!Array.isArray(rows)) return []
-  return rows
+  const points = rows
     .filter((r): r is RawDailyRow => !!r && typeof r.day === 'string')
     .map((r) => ({
       day: r.day as string,
@@ -118,6 +137,9 @@ function normalizeDaily(rows: RawDailyRow[] | null | undefined): UsageDailyPoint
       actualCost: num(r.actual_cost),
       sessions: num(r.sessions),
     }))
+    .filter((p) => p.day <= today)
+    .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+  return periodDays > 0 && points.length > periodDays ? points.slice(-periodDays) : points
 }
 
 /**
@@ -196,15 +218,16 @@ export class UsageClient {
         .catch(() => null),
     ])
 
+    const periodDays = num(raw?.period_days) || days
     const byModel = normalizeByModel(raw?.by_model, providerMap(models))
-    const daily = normalizeDaily(raw?.daily)
+    const daily = normalizeDaily(raw?.daily, periodDays)
     const totals = normalizeTotals(raw?.totals)
     const billingMode: UsageBillingMode = deriveBillingMode({ daily, byModel, totals })
 
     // Validate against the protocol DTO so the wire shape can never silently
     // drift from the zod source of truth.
     return UsageSummarySchema.parse({
-      periodDays: num(raw?.period_days) || days,
+      periodDays,
       totals,
       daily,
       byModel,

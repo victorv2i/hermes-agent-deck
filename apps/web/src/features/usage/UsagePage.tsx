@@ -84,7 +84,13 @@ export function UsagePage({
   const totals = data?.totals
   const totalTokens = totals ? totals.inputTokens + totals.outputTokens : 0
   const estimatedCost = totals?.estimatedCost ?? 0
-  const hasSpend = estimatedCost > 0
+  const actualCost = totals?.actualCost ?? 0
+  // The "Est. cost" headline prefers the rate-card estimate, but falls back to a
+  // real billed actual_cost when there's no estimate, so a provider that reports
+  // actuals-without-estimates is never hidden behind "—" / "No billed cost". A
+  // cost of EITHER kind counts as spend.
+  const headlineCost = estimatedCost > 0 ? estimatedCost : actualCost
+  const hasSpend = headlineCost > 0
   // A loaded period with zero sessions AND zero tokens is a true "nothing yet"
   // (a fresh install, or a quiet window) — show a warm invitation, not a wall of
   // zeros or a blank screen. Missing data (no error, not loading) lands here too.
@@ -168,7 +174,7 @@ export function UsagePage({
               ) : hasSpend ? (
                 <>
                   <span className="font-medium text-foreground">
-                    {formatCost(estimatedCost)} estimated cost
+                    {formatCost(headlineCost)} {estimatedCost > 0 ? 'estimated cost' : 'billed'}
                   </span>{' '}
                   in the last {period} days.
                 </>
@@ -179,7 +185,7 @@ export function UsagePage({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard
                 label="Est. cost"
-                value={(hasSpend && formatCost(estimatedCost)) || '—'}
+                value={(hasSpend && formatCost(headlineCost)) || '—'}
                 sub={
                   isSubscription && !hasSpend ? (
                     <span
@@ -199,10 +205,12 @@ export function UsagePage({
                     </span>
                   ) : !hasSpend ? (
                     <span className="text-muted-foreground/70">No spend yet</span>
-                  ) : totals && totals.actualCost > 0 ? (
+                  ) : estimatedCost > 0 && totals && totals.actualCost > 0 ? (
                     `${formatCost(totals.actualCost) ?? '—'} actual`
-                  ) : (
+                  ) : estimatedCost > 0 ? (
                     'estimated'
+                  ) : (
+                    'billed, no estimate'
                   )
                 }
                 icon={<DollarSign className="size-3.5" />}

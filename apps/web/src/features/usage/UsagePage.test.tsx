@@ -391,6 +391,30 @@ describe('UsagePage', () => {
     expect(screen.queryByText('$0.00')).not.toBeInTheDocument()
   })
 
+  it('shows a real actual_cost even with no estimate (never "No billed cost" while money was billed)', () => {
+    // A metered provider can report a real actual_cost with no rate-card
+    // estimate. That is billed money: the tile must not read "No billed cost" or
+    // leave a bare "—" while a positive actual sits in the same window.
+    const actualOnly: UsageSummary = {
+      ...SUMMARY,
+      totals: { ...SUMMARY.totals, estimatedCost: 0, actualCost: 4.2 },
+      billingMode: 'metered',
+    }
+    render(
+      <UsagePage
+        period={7}
+        onPeriodChange={noop}
+        data={actualOnly}
+        isLoading={false}
+        isFetching={false}
+      />,
+    )
+    expect(screen.queryByText(/no billed cost on this provider/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/no spend yet/i)).not.toBeInTheDocument()
+    // The lead answers the cost question with the REAL figure, no contradiction.
+    expect(screen.getByTestId('cost-lead')).toHaveTextContent('$4.20 billed in the last 7 days.')
+  })
+
   it('labels a busy subscription window honestly from the SERVER billing mode', () => {
     // The live ChatGPT/Codex case: real tokens, $0 cost pair, OAuth seat. The
     // BFF already resolved the authoritative mode from the recorded

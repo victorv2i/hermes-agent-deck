@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { DashboardClient } from '../hermes/dashboardClient'
 import { startMockDashboard, type MockDashboardHandle } from '../hermes/mockDashboard.test-support'
 import { UsageClient } from './usageClient'
@@ -7,6 +7,9 @@ let dashboard: MockDashboardHandle | undefined
 afterEach(async () => {
   await dashboard?.close()
   dashboard = undefined
+  // Restore the real clock for the few tests that pin "today" (Date-only fake, so
+  // the mock dashboard's own timers/transport are never touched).
+  vi.useRealTimers()
 })
 
 /** A realistic dashboard `/api/analytics/usage` payload (days=7). */
@@ -336,5 +339,75 @@ describe('UsageClient', () => {
     expect(summary.daily[0]?.day).toBe('2026-05-23')
     expect(summary.byModel).toHaveLength(1)
     expect(summary.byModel[0]?.model).toBe('m1')
+  })
+
+  it('drops a future-dated day the dashboard overshoots into (no bar for a day that has not happened)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-06-13T12:00:00Z'))
+    // The dashboard returns an inclusive range that can overshoot one day into
+    // the future (8 rows for a 7-day ask, the last dated tomorrow).
+    const overshoot = {
+      daily: [
+        '2026-06-07',
+        '2026-06-08',
+        '2026-06-09',
+        '2026-06-10',
+        '2026-06-11',
+        '2026-06-12',
+        '2026-06-13',
+        '2026-06-14', // tomorrow, relative to the pinned today
+      ].map((day) => ({ day, input_tokens: 1, output_tokens: 0, sessions: 1 })),
+      by_model: [],
+      totals: {},
+      period_days: 7,
+    }
+    dashboard = await startMockDashboard({ routes: { '/api/analytics/usage': overshoot } })
+    const client = new UsageClient(
+      new DashboardClient({
+        hermesDashboardUrl: dashboard.url,
+        hermesDashboardHost: dashboard.host,
+      }),
+    )
+
+    const summary = await client.getUsage(7)
+
+    const days = summary.daily.map((d) => d.day)
+    expect(days).not.toContain('2026-06-14') // the future bar is gone
+    expect(days).toHaveLength(7)
+    expect(days.at(-1)).toBe('2026-06-13') // the series ends at today
+  })
+
+  it('caps an inclusive periodDays+1 series to the requested window (7 bars for "last 7 days")', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-06-14T12:00:00Z'))
+    const inclusive = {
+      daily: [
+        '2026-06-07',
+        '2026-06-08',
+        '2026-06-09',
+        '2026-06-10',
+        '2026-06-11',
+        '2026-06-12',
+        '2026-06-13',
+        '2026-06-14',
+      ].map((day) => ({ day, input_tokens: 1, output_tokens: 0, sessions: 1 })),
+      by_model: [],
+      totals: {},
+      period_days: 7,
+    }
+    dashboard = await startMockDashboard({ routes: { '/api/analytics/usage': inclusive } })
+    const client = new UsageClient(
+      new DashboardClient({
+        hermesDashboardUrl: dashboard.url,
+        hermesDashboardHost: dashboard.host,
+      }),
+    )
+
+    const summary = await client.getUsage(7)
+
+    const days = summary.daily.map((d) => d.day)
+    expect(days).toHaveLength(7) // not 8
+    expect(days[0]).toBe('2026-06-08') // the oldest, 8th day is trimmed
+    expect(days.at(-1)).toBe('2026-06-14')
   })
 })
