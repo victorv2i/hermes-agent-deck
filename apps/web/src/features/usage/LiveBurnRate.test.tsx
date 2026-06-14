@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { LiveBurnRate } from './LiveBurnRate'
 import { setBudget } from '@/features/budget/budgetStore'
+import { usageWindowDays } from '@/features/budget/budgetAlert'
 import type { UsageDailyPoint, UsageSummary } from './types'
 
 // Drive the component's data deterministically by stubbing the query hook.
@@ -124,6 +125,25 @@ describe('LiveBurnRate', () => {
     renderPill()
     await user.click(screen.getByTestId('burn-rate-pill'))
     expect(screen.getByTestId('location')).toHaveTextContent('/usage')
+  })
+
+  it('requests the whole-month window when a monthly budget is set (so month-to-date is real)', () => {
+    // The month-to-date warning sums the month's daily rows; a 1-day fetch made it
+    // dead (it could only fire if TODAY alone exceeded the monthly cap).
+    setBudget({ monthly: 50 })
+    useUsageMock.mockReturnValue({ data: undefined })
+    renderPill()
+    expect(useUsageMock).toHaveBeenCalledWith(
+      usageWindowDays({ daily: null, monthly: 50 }),
+      expect.anything(),
+    )
+  })
+
+  it('requests only today when there is no monthly budget', () => {
+    setBudget({ daily: 5 })
+    useUsageMock.mockReturnValue({ data: undefined })
+    renderPill()
+    expect(useUsageMock).toHaveBeenCalledWith(1, expect.anything())
   })
 
   it('surfaces an honest approximate hourly rate in the tooltip', () => {

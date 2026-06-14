@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCost } from '@/lib/format'
 import { useBudget } from '@/features/budget/budgetStore'
+import { usageWindowDays } from '@/features/budget/budgetAlert'
 import { useUsage } from './useUsage'
 import { approxHourlyRate, monthToDateSpend, todaySpend } from './burnRate'
 
@@ -32,9 +33,12 @@ export interface LiveBurnRateProps {
 export function LiveBurnRate({ now }: LiveBurnRateProps = {}) {
   const navigate = useNavigate()
   const { budget } = useBudget()
-  // days=1 is enough for "today"; the cache is shared with the Usage surface by
-  // react-query's `days` key, so this is the cheapest possible extra read.
-  const { data } = useUsage(1, { refetchInterval: BURN_RATE_POLL_MS })
+  // Fetch a window wide enough for the warning we'll compute: just today when
+  // there's only a daily cap, but the whole month when a MONTHLY cap is set, so
+  // month-to-date is real (a days=1 fetch made the monthly warning dead). The
+  // cache is shared with the Usage surface / budget watcher by react-query's
+  // `days` key, so this stays the cheapest possible read.
+  const { data } = useUsage(usageWindowDays(budget), { refetchInterval: BURN_RATE_POLL_MS })
 
   const daily = data?.daily ?? []
   const at = now ?? new Date()
