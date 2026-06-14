@@ -18,7 +18,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { EmptyState } from '@/components/ui/state'
+import { EmptyState, ErrorState } from '@/components/ui/state'
 import {
   Dialog,
   DialogContent,
@@ -241,6 +241,11 @@ export function CredentialsTab() {
   const qc = useQueryClient()
   const [addOpen, setAddOpen] = useState(false)
   const [removingKey, setRemovingKey] = useState<string | null>(null)
+  // Removing a key from a rotating pool is one-way and there's no undo, so (like
+  // pairing-revoke and webhook-delete) it asks first instead of firing on click.
+  const [pendingRemove, setPendingRemove] = useState<{ provider: string; index: number } | null>(
+    null,
+  )
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['credentials-pool'],
@@ -296,10 +301,12 @@ export function CredentialsTab() {
       )}
 
       {isError && !unsupported && (
-        <div className="ad-surface mb-4 rounded-xl bg-card px-4 py-3 text-sm text-destructive">
-          Couldn&apos;t load credentials. Your Hermes may be offline, or this build may not support
-          the credential pool.
-        </div>
+        <ErrorState
+          icon={AlertCircle}
+          title="Couldn’t load credentials"
+          description="Your Hermes may be offline, or this build may not support the credential pool."
+          onRetry={() => refetch()}
+        />
       )}
 
       {addOpen && (
@@ -308,6 +315,37 @@ export function CredentialsTab() {
           onAdded={() => qc.invalidateQueries({ queryKey: ['credentials-pool'] })}
         />
       )}
+
+      <Dialog
+        open={pendingRemove !== null}
+        onOpenChange={(next) => {
+          if (!next) setPendingRemove(null)
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove this API key?</DialogTitle>
+            <DialogDescription>
+              This removes the selected {pendingRemove?.provider} key from the rotating pool. The
+              agent stops using it immediately, and this can&apos;t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="ghost" onClick={() => setPendingRemove(null)} autoFocus>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (pendingRemove) void handleRemove(pendingRemove.provider, pendingRemove.index)
+                setPendingRemove(null)
+              }}
+            >
+              Remove key
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {unsupported ? null : providers.length === 0 && !isLoading ? (
         <EmptyState
@@ -321,7 +359,7 @@ export function CredentialsTab() {
             <ProviderSection
               key={p.provider}
               provider={p}
-              onRemove={handleRemove}
+              onRemove={(provider, index) => setPendingRemove({ provider, index })}
               removingKey={removingKey}
             />
           ))}
