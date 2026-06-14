@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -8,9 +10,17 @@ import {
   type KeyboardEvent,
 } from 'react'
 import { ArrowUp, Mic, Paperclip, Square, X } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { RunAttachment } from '@agent-deck/protocol'
+import { usePrefersReducedMotion } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
+
+// The Send/Stop morph is the composer's ONLY framer-motion user. Lazy-load it so
+// framer-motion ships in a deferred chunk instead of the eager entry bundle (the
+// composer is reachable on first paint via the non-lazy ChatRoute). The Suspense
+// fallback below renders the same button without animation until it loads.
+const SendStopButton = lazy(() =>
+  import('./ComposerMotion').then((m) => ({ default: m.SendStopButton })),
+)
 import { ContextRing } from './ContextRing'
 import { ModelPicker } from './ModelPicker'
 import {
@@ -377,6 +387,9 @@ export function Composer({
   // A send is allowed with prose OR with at least one image (an image-only turn
   // is valid — the agent sees the image). Disabled gates everything.
   const canSend = (value.trim().length > 0 || attachments.length > 0) && !disabled
+  // Threaded into the lazy Send/Stop morph + the mic pulse so reduced-motion is
+  // honored without framer-motion's hook (which would re-eager the chunk).
+  const reduce = usePrefersReducedMotion()
 
   // Which slash commands the host actually wired (so we never offer an inert
   // row). `/model` is offered when the picker exists (models + onModelChange).
@@ -755,7 +768,24 @@ export function Composer({
 
           <ContextRing tokens={contextTokens} limit={contextLimit} />
 
-          <SendStopButton running={running} canSend={canSend} onSend={submit} onStop={onStop} />
+          <Suspense
+            fallback={
+              <SendStopButtonStatic
+                running={running}
+                canSend={canSend}
+                onSend={submit}
+                onStop={onStop}
+              />
+            }
+          >
+            <SendStopButton
+              running={running}
+              canSend={canSend}
+              onSend={submit}
+              onStop={onStop}
+              reduce={reduce}
+            />
+          </Suspense>
         </div>
       </div>
     </div>
@@ -815,7 +845,7 @@ function MicButton({
   available: boolean
   unavailableReason: string | null
 }) {
-  const reduce = useReducedMotion()
+  const reduce = usePrefersReducedMotion()
   // The accessible name + tooltip: the honest reason when unavailable, else the
   // toggle action. (`unavailableReason` is non-null exactly when `!available`.)
   const label = !available
@@ -890,14 +920,13 @@ function AttachButton({
 }
 
 /**
- * The composer's primary control — a single button that MORPHS between Send (idle)
- * and Stop (running) rather than snapping. AnimatePresence crossfades + scales the
- * two glyphs (~120ms easeOut, keyed "send"/"stop"); under prefers-reduced-motion
- * the swap is instant (duration 0, no enter/exit transform) via framer's
- * useReducedMotion — the same convention the theme toggle uses. The raw buttons
- * also carry `active:scale-95` for tactility on press (B2).
+ * The Suspense fallback for the composer's primary control while the lazy
+ * {@link SendStopButton} (framer-motion) loads: the SAME Send/Stop button without
+ * the crossfade. Identical markup, ids, and handlers, so the send control is
+ * present and interactive on first paint and the swap to the animated version is
+ * seamless. Carries `active:scale-95` for press tactility like the animated one.
  */
-function SendStopButton({
+function SendStopButtonStatic({
   running,
   canSend,
   onSend,
@@ -908,44 +937,27 @@ function SendStopButton({
   onSend: () => void
   onStop: () => void
 }) {
-  const reduce = useReducedMotion()
-  const duration = reduce ? 0 : 0.12
-
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      {running ? (
-        <motion.button
-          key="stop"
-          type="button"
-          onClick={onStop}
-          aria-label="Stop"
-          data-testid="composer-stop"
-          initial={reduce ? false : { opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
-          transition={{ duration, ease: 'easeOut' }}
-          className="grid size-11 shrink-0 place-items-center rounded-lg bg-foreground/10 text-foreground transition-[transform,background-color] hover:bg-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] active:scale-95 sm:size-10"
-        >
-          <Square className="size-3.5 fill-current" aria-hidden />
-        </motion.button>
-      ) : (
-        <motion.button
-          key="send"
-          type="button"
-          onClick={onSend}
-          disabled={!canSend}
-          aria-label="Send"
-          data-testid="composer-send"
-          initial={reduce ? false : { opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
-          transition={{ duration, ease: 'easeOut' }}
-          className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground transition-[transform,background-color] hover:bg-primary-hover focus-visible:ad-focus active:scale-95 disabled:cursor-not-allowed disabled:bg-primary/15 disabled:text-primary/60 disabled:opacity-100 sm:size-10"
-        >
-          <ArrowUp className="size-4" aria-hidden />
-        </motion.button>
-      )}
-    </AnimatePresence>
+  return running ? (
+    <button
+      type="button"
+      onClick={onStop}
+      aria-label="Stop"
+      data-testid="composer-stop"
+      className="grid size-11 shrink-0 place-items-center rounded-lg bg-foreground/10 text-foreground transition-[transform,background-color] hover:bg-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] active:scale-95 sm:size-10"
+    >
+      <Square className="size-3.5 fill-current" aria-hidden />
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={onSend}
+      disabled={!canSend}
+      aria-label="Send"
+      data-testid="composer-send"
+      className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground transition-[transform,background-color] hover:bg-primary-hover focus-visible:ad-focus active:scale-95 disabled:cursor-not-allowed disabled:bg-primary/15 disabled:text-primary/60 disabled:opacity-100 sm:size-10"
+    >
+      <ArrowUp className="size-4" aria-hidden />
+    </button>
   )
 }
 

@@ -50,11 +50,13 @@ function renderGate() {
 afterEach(() => vi.restoreAllMocks())
 
 describe('OnboardingGate — probe-driven, fail-open', () => {
-  it('shows the wizard when the probe reports setup incomplete and not onboarded', () => {
+  it('shows the wizard when the probe reports setup incomplete and not onboarded', async () => {
     vi.spyOn(onboarded, 'useOnboarded').mockReturnValue([false, vi.fn()])
     mockSetup(base({ status: status() }))
     renderGate()
-    expect(screen.getByTestId('wizard')).toBeInTheDocument()
+    // The wizard is lazy-loaded (off the eager entry path), so it resolves after
+    // the Suspense fallback; await it rather than asserting synchronously.
+    expect(await screen.findByTestId('wizard')).toBeInTheDocument()
     expect(screen.queryByTestId('shell')).toBeNull()
   })
 

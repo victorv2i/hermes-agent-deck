@@ -1,10 +1,18 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useOnboarded } from '@/lib/useOnboarded'
 import { useSetupStatus } from './useSetupStatus'
 import { isSetupComplete, shouldShowWizard } from './onboardingState'
-import { OnboardingWizard } from './OnboardingWizard'
+
+// The first-run wizard (and its animation deps, including framer-motion via the
+// HatchCeremony) is lazy-loaded so it stays OFF the eager entry path: a returning,
+// already-onboarded user never downloads it. The gate's own probe-driven decision
+// is cheap and stays eager; only the heavy full-screen takeover defers behind
+// Suspense, which a first-run user crosses once.
+const OnboardingWizard = lazy(() =>
+  import('./OnboardingWizard').then((m) => ({ default: m.OnboardingWizard })),
+)
 
 /**
  * OnboardingGate — wraps the App shell and decides, from the REAL setup-status
@@ -68,13 +76,24 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   // contract: null/undefined → fail open / hold), so this is safe.
   if (show && status) {
     return (
-      <OnboardingWizard
-        status={status}
-        onRecheck={() => void refetch()}
-        rechecking={isFetching}
-        onMarkOnboarded={markOnboarded}
-        onDismiss={handleDismiss}
-      />
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 z-50 grid place-items-center bg-background">
+            <Loader2
+              className="size-6 animate-spin text-muted-foreground"
+              aria-label="Loading setup"
+            />
+          </div>
+        }
+      >
+        <OnboardingWizard
+          status={status}
+          onRecheck={() => void refetch()}
+          rechecking={isFetching}
+          onMarkOnboarded={markOnboarded}
+          onDismiss={handleDismiss}
+        />
+      </Suspense>
     )
   }
   return (
