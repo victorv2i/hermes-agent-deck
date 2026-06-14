@@ -216,6 +216,19 @@ describe('FilePreview', () => {
     expect(save).toHaveAttribute('aria-keyshortcuts', 'Meta+S Control+S')
   })
 
+  it('reports dirty state to onDirtyChange so the parent can guard a switch', async () => {
+    const onDirtyChange = vi.fn()
+    const user = userEvent.setup()
+    render(<FilePreview {...baseProps()} onDirtyChange={onDirtyChange} />)
+    await user.click(screen.getByRole('button', { name: /edit/i }))
+    const editor = await screen.findByTestId('editor')
+    onDirtyChange.mockClear()
+    await user.type(editor, '!') // diverge from the saved content
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true))
+    await user.click(screen.getByRole('button', { name: /cancel/i }))
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false))
+  })
+
   it('announces save errors without exposing file content', () => {
     render(<FilePreview {...baseProps()} saveError="Could not save this file" />)
     expect(screen.getByRole('alert')).toHaveTextContent('Could not save this file')

@@ -49,6 +49,10 @@ export interface FilePreviewProps {
   readOnly?: boolean
   /** Persist edited text; resolves when the save round-trips. */
   onSave: (next: string) => Promise<void>
+  /** Report unsaved-edit state up so the parent can guard a file switch (and a
+   * tab close) against silently discarding the draft. Fired on every change to
+   * `dirty`, and `false` on unmount. */
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 function basename(path: string): string {
@@ -80,6 +84,7 @@ export function FilePreview({
   saveError,
   readOnly = false,
   onSave,
+  onDirtyChange,
 }: FilePreviewProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -148,6 +153,17 @@ export function FilePreview({
     }
   }, [root, path, showImage])
 
+  // Unsaved-edit state, reported up so the parent can guard a file switch / tab
+  // close (a path change here silently resets `editing`, losing the draft).
+  // Computed and reported BEFORE the early returns below so the hook order stays
+  // stable across the empty and loaded states. The parent's handler is a stable
+  // setter, so the dep is steady; the cleanup clears the flag on unmount.
+  const dirty = editing && content !== null && draft !== content.content
+  useEffect(() => {
+    onDirtyChange?.(dirty)
+  }, [dirty, onDirtyChange])
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
+
   if (!path) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-10 text-center">
@@ -175,8 +191,6 @@ export function FilePreview({
   // Code rendering is the fallback when there's text content that isn't markdown
   // or an image — that's when the language pill + line numbers apply.
   const isCode = !error && !isImage && !isBinary && content !== null && !isMarkdown
-
-  const dirty = editing && content !== null && draft !== content.content
 
   const saveDraft = async () => {
     if (!dirty || saving) return

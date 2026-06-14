@@ -11,7 +11,7 @@
  * at the root (main.tsx) — the converged retry policy (skip permanent 4xx) lives
  * there now, so this surface no longer carries its own client.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ChevronsRight, FolderTree, Lock } from 'lucide-react'
 import { SurfaceHeader } from '@/components/ui/surface-header'
@@ -106,10 +106,38 @@ export function FilesRoute() {
     patchUrl({ dir: path })
   }
 
+  // The preview reports unsaved edits up here, so a switch / tab close can ask
+  // before discarding them (FilePreview resets its editing state on a path
+  // change, which would otherwise lose the draft silently).
+  const [previewDirty, setPreviewDirty] = useState(false)
+  const [pendingEntry, setPendingEntry] = useState<FileEntry | null>(null)
+
   const openEntry = (entry: FileEntry) => {
+    if (previewDirty && entry.path !== openFile?.path) {
+      setPendingEntry(entry)
+      return
+    }
     setOpenFile({ path: entry.path, previewHint: entry.preview })
     patchUrl({ file: entry.path })
   }
+  const confirmSwitch = () => {
+    if (!pendingEntry) return
+    setOpenFile({ path: pendingEntry.path, previewHint: pendingEntry.preview })
+    patchUrl({ file: pendingEntry.path })
+    setPendingEntry(null)
+  }
+
+  // A dirty draft also warns on a tab close / refresh (the browser's native
+  // prompt), cleared the moment the edits are saved or discarded.
+  useEffect(() => {
+    if (!previewDirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [previewDirty])
 
   const handleSave = async (next: string) => {
     if (!activeRootId || !openFile) return
@@ -240,6 +268,15 @@ export function FilesRoute() {
         />
       )}
 
+      {pendingEntry && (
+        <ConfirmBar
+          message={`Discard unsaved changes in "${openFile?.path.split('/').pop() ?? 'this file'}"? Your edits have not been saved.`}
+          confirmLabel="Discard"
+          onConfirm={confirmSwitch}
+          onCancel={() => setPendingEntry(null)}
+        />
+      )}
+
       <div
         data-testid="files-panes"
         className={
@@ -315,6 +352,7 @@ export function FilesRoute() {
             // root forbids writes (a missing root is also treated read-only).
             readOnly={activeRoot?.readOnly ?? true}
             onSave={handleSave}
+            onDirtyChange={setPreviewDirty}
           />
         </div>
       </div>

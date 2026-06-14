@@ -56,7 +56,7 @@ vi.mock('./CodeEditor', () => ({
 
 /** A tiny in-memory mock workspace the fetch stub serves. */
 function mockFetch() {
-  const files: Record<string, string> = { 'README.md': '# Hello' }
+  const files: Record<string, string> = { 'README.md': '# Hello', 'other.md': '# Second' }
 
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(typeof input === 'string' ? input : input.toString(), 'http://x')
@@ -156,6 +156,32 @@ describe('FilesRoute (integration over a mock BFF)', () => {
         ),
       ).toBe(true),
     )
+  })
+
+  it('guards against silently losing unsaved edits when switching files', async () => {
+    const user = userEvent.setup()
+    const FilesRoute = await loadRoute()
+    renderWithClient(<FilesRoute />)
+
+    const tree = await screen.findByTestId('file-browser')
+    await user.click(await within(tree).findByText('README.md'))
+    await waitFor(() => expect(screen.getByTestId('md')).toHaveTextContent('# Hello'))
+
+    // Edit it (make the draft dirty) but do NOT save.
+    await user.click(screen.getByRole('button', { name: /edit/i }))
+    const editor = await screen.findByTestId('editor')
+    await user.clear(editor)
+    await user.type(editor, '# Unsaved work')
+
+    // Click a different file: the switch must not silently discard the draft.
+    await user.click(await within(tree).findByText('other.md'))
+    expect(await screen.findByText(/unsaved changes/i)).toBeInTheDocument()
+    // Still on the original file's editor, draft intact (switch blocked).
+    expect(screen.getByTestId('editor')).toHaveValue('# Unsaved work')
+
+    // Confirm the discard → the other file finally opens.
+    await user.click(screen.getByRole('button', { name: /discard/i }))
+    await waitFor(() => expect(screen.getByTestId('md')).toHaveTextContent('# Second'))
   })
 
   it('restores the open file from the URL on mount (refresh-durable, deep-linkable)', async () => {
