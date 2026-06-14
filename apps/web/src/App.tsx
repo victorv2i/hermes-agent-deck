@@ -125,6 +125,16 @@ function AppShellLayout() {
   // One-shot: on a reload that landed MID-STREAM, the very first /chat/:id is
   // owned by the in-flight run replay (not history rehydration). See the seed effect.
   const reloadResumeHandledRef = useRef(false)
+  // The seed effect's ACTION, held in a ref so the effect can call the latest
+  // version without listing it as a dependency. continueSession gets a new identity
+  // on every activeSessionId change (useChatRun re-memoizes to expose the new value);
+  // depending on it would re-fire the seed effect on session changes (e.g. New chat
+  // flipping the id to null), re-fetching a session the URL no longer names. It is
+  // behaviorally stable (it reads only internal refs/setters), so the ref is safe.
+  const continueSessionRef = useRef(continueSession)
+  useEffect(() => {
+    continueSessionRef.current = continueSession
+  }, [continueSession])
 
   // First-run onboarding flag (spec §2/§3). Once set, the user is "onboarded":
   // they land on Chat (not the Home front door) next time. The flag is shared
@@ -307,7 +317,7 @@ function AppShellLayout() {
         // slow load from clobbering the new chat: without this it re-seeds the old
         // turns and snaps the URL back via the activeSessionId effect below.
         if (consumedRef.current !== chatRouteId) return
-        continueSession(chatRouteId, transcriptToTurns(messages), {
+        continueSessionRef.current(chatRouteId, transcriptToTurns(messages), {
           title: detail?.title,
           model: detail?.model,
         })
@@ -316,10 +326,12 @@ function AppShellLayout() {
         // it; the user just doesn't see the prior turns rendered. Same staleness
         // guard: never adopt a session the user already navigated away from.
         if (consumedRef.current !== chatRouteId) return
-        continueSession(chatRouteId, [])
+        continueSessionRef.current(chatRouteId, [])
       }
     })()
-  }, [chatRouteId, continueSession, resumingInFlightRun])
+    // continueSession is intentionally omitted (called via continueSessionRef): the
+    // URL's session id and the reload-resume flag are the only real triggers here.
+  }, [chatRouteId, resumingInFlightRun])
 
   // Reflect the live conversation's durable session id into the URL, but ONLY when
   // the URL names NO session yet (chatRouteId === null): a fresh chat that just

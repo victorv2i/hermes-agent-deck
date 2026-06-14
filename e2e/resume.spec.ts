@@ -295,6 +295,52 @@ test('starting a New chat while a session is still loading drops the stale load 
   expect(errors).toEqual([])
 })
 
+test('starting a New chat from a FULLY loaded session opens a blank chat (no snap-back, no reload)', async ({
+  page,
+}) => {
+  const errors = trackConsole(page)
+  await stubDashboardRest(page)
+
+  // Count transcript loads so we can prove New chat does NOT re-fetch the session
+  // it just left (the live-repro symptom: the URL snapped back and re-loaded it).
+  let messageLoads = 0
+  await page.route('**/api/agent-deck/sessions/sess-1/messages', (route) => {
+    messageLoads += 1
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(SESSION_MESSAGES),
+    })
+  })
+  await page.route('**/api/agent-deck/sessions/sess-1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(SESSION_DETAIL),
+    }),
+  )
+
+  // Load the session FULLY first, so it is the live/active session (not still in
+  // flight, which the gated race test above already covers).
+  await page.goto('/chat/sess-1')
+  await expect(page.getByText('Sure, here is the plan.', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/\/chat\/sess-1$/)
+  expect(messageLoads).toBe(1)
+
+  // New chat must drop into a blank chat and STAY there: no snap-back to
+  // /chat/sess-1, the old transcript gone, and the session NOT re-fetched.
+  await page
+    .getByRole('button', { name: /^new chat$/i })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/chat$/)
+  await page.waitForTimeout(700)
+  await expect(page).toHaveURL(/\/chat$/)
+  await expect(page.getByText('Sure, here is the plan.', { exact: true })).toHaveCount(0)
+  expect(messageLoads).toBe(1)
+  expect(errors).toEqual([])
+})
+
 const SESSION_MESSAGES_2 = {
   session_id: 'sess-2',
   messages: [
