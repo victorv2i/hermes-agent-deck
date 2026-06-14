@@ -40,9 +40,13 @@ const TS_RE = /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:[,.]\d+)?)/
  * run-scoped lines with one) is skipped; the logger (if present) is the next
  * dotted/worded token, optionally suffixed with a colon. Everything after is the
  * message.
+ *
+ * The bracket skip uses a lazy `.*?` (not `[^\]]+`) so it also strips a run-id
+ * the secret scrubber rewrote to a NESTED `[[redacted]]` (a bracket inside a
+ * bracket), which is the `errors` file's exact shape. With `[^\]]+` the inner `]`
+ * ended the class early, so the redaction leaked into the logger + message cols.
  */
-const REST_RE =
-  /^\s+(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s+(?:\[[^\]]+\]\s+)?(?:([\w.-]+):?\s+)?(.*)$/
+const REST_RE = /^\s+(DEBUG|INFO|WARNING|ERROR|CRITICAL)\s+(?:\[.*?\]\s+)?(?:([\w.-]+):?\s+)?(.*)$/
 
 const KNOWN_LEVELS: ReadonlySet<string> = new Set(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])
 

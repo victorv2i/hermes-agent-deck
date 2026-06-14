@@ -67,6 +67,20 @@ describe('parseLogLine', () => {
     // the dangling newline is stripped from raw, not surfaced to the UI
     expect(e.raw.endsWith('\n')).toBe(false)
   })
+
+  it('parses a line whose run-id was scrubbed to a nested [[redacted]] bracket (the errors file)', () => {
+    // The `errors` file is exactly what a user opens when something breaks; its
+    // run-id prefix is rewritten by the secret scrubber to [[redacted]] (a bracket
+    // INSIDE a bracket). The skip must still strip it so the logger + message land
+    // in the right columns instead of the run-id leaking into the message.
+    const e = parseLogLine(
+      '2026-06-13 09:41:26,909 ERROR [[redacted]] agent.conversation_loop: API call failed after retries\n',
+      9,
+    )
+    expect(e.level).toBe('ERROR')
+    expect(e.logger).toBe('agent.conversation_loop')
+    expect(e.message).toBe('API call failed after retries')
+  })
 })
 
 describe('LogsClient.getLogs', () => {
