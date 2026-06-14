@@ -106,3 +106,24 @@ if (auth.required) {
   }
   console.log('  Enter this token in the browser unlock screen; it is never injected into HTML.')
 }
+
+// Graceful shutdown. `systemctl restart`/`stop` sends SIGTERM, which by default
+// kills the process WITHOUT firing Socket.IO's engine 'close', the only pty
+// teardown path (terminalNamespace), so parked shells and their node-pty children
+// would leak on every restart (worst in the non-tmux fallback, whose park grace
+// defaults to 24h). Closing io runs that cleanup; then close the HTTP server.
+// Bounded by a short timer so a wedged socket can't hang the unit's stop, and
+// idempotent so a second signal is a no-op.
+let shuttingDown = false
+function shutdown(signal: string): void {
+  if (shuttingDown) return
+  shuttingDown = true
+  console.log(`agent-deck received ${signal}, shutting down`)
+  const force = setTimeout(() => process.exit(0), 3000)
+  force.unref()
+  io.close(() => {
+    void app.close().finally(() => process.exit(0))
+  })
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
