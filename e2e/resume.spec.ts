@@ -294,3 +294,102 @@ test('starting a New chat while a session is still loading drops the stale load 
   await expect(page.getByText('Sure, here is the plan.')).toHaveCount(0)
   expect(errors).toEqual([])
 })
+
+const SESSION_MESSAGES_2 = {
+  session_id: 'sess-2',
+  messages: [
+    {
+      id: '1',
+      role: 'user',
+      content: 'a question in the second session',
+      timestamp: NOW,
+      reasoning: null,
+      tool_name: null,
+      tool_calls: [],
+    },
+    {
+      id: '2',
+      role: 'assistant',
+      content: 'Answer for the second session.',
+      timestamp: NOW,
+      reasoning: null,
+      tool_name: null,
+      tool_calls: [],
+    },
+  ],
+}
+const SESSION_DETAIL_2 = {
+  ...SESSION_DETAIL,
+  id: 'sess-2',
+  title: 'Second Session',
+  preview: 'a question in the second session',
+}
+const summary = (id: string, title: string) => ({
+  id,
+  source: 'web',
+  model: 'openai/gpt-5.5',
+  title,
+  started_at: NOW,
+  last_active: NOW,
+  message_count: 2,
+  input_tokens: 100,
+  output_tokens: 50,
+})
+
+test('switching from one active session to another lands on the clicked one (no snap-back)', async ({
+  page,
+}) => {
+  const errors = trackConsole(page)
+  await stubDashboardRest(page)
+  // Override the rail's session list so BOTH sessions appear as clickable rows;
+  // everything else falls through to the catch-all stub above.
+  await page.route('**/api/agent-deck/**', (route) => {
+    if (new URL(route.request().url()).pathname.endsWith('/sessions')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessions: [summary('sess-2', 'Second Session'), summary('sess-1', 'First Session')],
+        }),
+      })
+    }
+    return route.fallback()
+  })
+  for (const id of ['sess-1', 'sess-2'] as const) {
+    await page.route(`**/api/agent-deck/sessions/${id}/messages`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(id === 'sess-1' ? SESSION_MESSAGES : SESSION_MESSAGES_2),
+      }),
+    )
+    await page.route(`**/api/agent-deck/sessions/${id}`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(id === 'sess-1' ? SESSION_DETAIL : SESSION_DETAIL_2),
+      }),
+    )
+  }
+
+  // Open session 1 (it becomes the live/active session).
+  await page.goto('/chat/sess-1')
+  await expect(page.getByText('Sure, here is the plan.')).toBeVisible()
+  await expect(page).toHaveURL(/\/chat\/sess-1$/)
+
+  // Click session 2 in the rail. It must land on sess-2 and STAY: the prior active
+  // session must not fight the switch and snap the URL back to sess-1.
+  await page
+    .getByRole('list', { name: 'Sessions' })
+    .getByRole('listitem')
+    .filter({ hasText: 'Second Session' })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/chat\/sess-2$/)
+  await expect(page.getByText('Answer for the second session.')).toBeVisible()
+  // Give the now-stale sess-1 effects time to (not) snap back.
+  await page.waitForTimeout(600)
+  await expect(page).toHaveURL(/\/chat\/sess-2$/)
+  await expect(page.getByText('Sure, here is the plan.')).toHaveCount(0)
+  expect(errors).toEqual([])
+})

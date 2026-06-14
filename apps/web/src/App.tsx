@@ -321,17 +321,18 @@ function AppShellLayout() {
     })()
   }, [chatRouteId, continueSession, resumingInFlightRun])
 
-  // When the live conversation learns its durable session id (captured from
-  // run.started for a fresh chat, or set by a resume), mark it consumed so the
-  // rehydration effect above never re-fetches and clobbers the live transcript,
-  // and reflect it into the URL (`/chat/:id`, replace) if it isn't there yet — so
-  // a browser refresh can rehydrate it.
+  // Reflect the live conversation's durable session id into the URL, but ONLY when
+  // the URL names NO session yet (chatRouteId === null): a fresh chat that just
+  // learned its id from run.started. We adopt it (replace) so a refresh rehydrates,
+  // and mark it consumed so the seed effect never re-fetches and clobbers the live
+  // transcript. When the URL ALREADY names a session, that id is the user's intent
+  // (a click or a resume) and MUST win: navigating back to the active run's session
+  // would fight the user's switch to another session and, with the seed effect's
+  // staleness guard, drop the session they just clicked.
   useEffect(() => {
-    if (!activeSessionId || !onChat) return
+    if (!activeSessionId || !onChat || chatRouteId !== null) return
     consumedRef.current = activeSessionId
-    if (chatRouteId !== activeSessionId) {
-      navigate(`${CHAT_PATH}/${encodeURIComponent(activeSessionId)}`, { replace: true })
-    }
+    navigate(`${CHAT_PATH}/${encodeURIComponent(activeSessionId)}`, { replace: true })
   }, [activeSessionId, onChat, chatRouteId, navigate])
 
   // Back-compat: an old `?continue=<id>` deep-link (external bookmark, ⌘K) funnels
