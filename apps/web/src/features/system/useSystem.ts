@@ -114,13 +114,16 @@ export function useRunDoctor() {
   })
 }
 
-/** Read the live host/process snapshot for the System resources card. Refetch on
- * focus (a returning user sees fresh mem/disk); a modest stale time avoids churn. */
+/** Read the live host/process snapshot for the System resources card. The card
+ * calls it a "live" snapshot, so poll every 5s while the page is open (the shared
+ * client never polls in the background) to keep mem/disk/cpu ticking, plus the
+ * focus refetch for a returning user. */
 export function useSystemStats() {
   return useQuery<SystemStats>({
     queryKey: systemStatsKey,
     queryFn: ({ signal }) => fetchSystemStats(signal),
-    staleTime: 10_000,
+    staleTime: 4_000,
+    refetchInterval: 5_000,
   })
 }
 

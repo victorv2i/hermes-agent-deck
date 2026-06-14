@@ -153,6 +153,22 @@ describe('CuratorCard', () => {
     expect(screen.getByText(/paused/i)).toBeInTheDocument()
   })
 
+  it('shows Disabled (not Active) when available but turned off in config', () => {
+    render(
+      <CuratorCard
+        curator={{ ...CURATOR_ACTIVE, enabled: false, paused: false }}
+        isLoading={false}
+        error={null}
+        actions={makeCuratorActions()}
+      />,
+    )
+    // enabled:false means the daemon will NOT run, so "Active" would be a lie.
+    expect(screen.getByText(/disabled/i)).toBeInTheDocument()
+    expect(screen.queryByText('Active')).toBeNull()
+    // No pause/resume toggle for a daemon that's off (you'd enable it in config).
+    expect(screen.queryByRole('button', { name: /pause curator|resume curator/i })).toBeNull()
+  })
+
   it('shows the unavailable state when the curator module is absent', () => {
     render(
       <CuratorCard

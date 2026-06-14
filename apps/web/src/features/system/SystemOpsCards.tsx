@@ -19,6 +19,7 @@ import { useState } from 'react'
 import {
   Activity,
   CheckCircle,
+  CircleOff,
   CirclePause,
   HardDrive,
   Loader2,
@@ -206,6 +207,12 @@ export function CuratorCard({
 }) {
   const unavailable = !curator?.available
   const paused = curator?.paused ?? false
+  // A curator can be loaded (available) yet turned OFF in config (enabled:false).
+  // It won't run in that state, so it must read "Disabled", never "Active" with a
+  // live dot, and the pause/resume toggle (which only makes sense for a running
+  // daemon) is hidden.
+  const enabled = curator?.enabled ?? false
+  const disabled = !unavailable && curator != null && !enabled
 
   return (
     <section role="region" aria-label="Curator">
@@ -230,7 +237,12 @@ export function CuratorCard({
                   </span>
                 ) : curator ? (
                   <span className="flex items-center gap-2 text-sm">
-                    {paused ? (
+                    {disabled ? (
+                      <>
+                        <CircleOff className="size-3.5 text-foreground-tertiary" aria-hidden />
+                        <span className="text-muted-foreground">Disabled</span>
+                      </>
+                    ) : paused ? (
                       <>
                         <CirclePause className="size-3.5 text-warning" aria-hidden />
                         <span className="text-muted-foreground">Paused</span>
@@ -250,7 +262,7 @@ export function CuratorCard({
                 ) : null}
               </div>
             </div>
-            {!unavailable && curator && (
+            {!unavailable && curator && enabled && (
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
