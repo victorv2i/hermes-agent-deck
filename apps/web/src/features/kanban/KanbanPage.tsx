@@ -29,6 +29,7 @@ import type {
   KanbanBoardSummary,
   KanbanColumn,
   KanbanMoveTarget,
+  KanbanStats,
 } from '@agent-deck/protocol'
 import { SurfaceHeader } from '@/components/ui/surface-header'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,7 @@ import { EmptyState, ErrorState } from '@/components/ui/state'
 import { StatusDot, type StatusTone } from '@/components/ui/StatusDot'
 import { BoardColumn } from './BoardColumn'
 import { BoardScroller } from './BoardScroller'
+import { BoardStatsBar } from './BoardStatsBar'
 import { BoardSelector } from './BoardSelector'
 import { KanbanExpandedShell } from './KanbanExpandedShell'
 import type { KanbanLiveStatus } from './kanbanSocket'
@@ -50,6 +52,8 @@ export interface KanbanPageProps {
   onSelectBoard: (slug: string) => void
   /** Live socket status for the header dot. */
   liveStatus: KanbanLiveStatus
+  /** Queue-health stats for the HUD strip (null/absent → the strip stays hidden). */
+  stats?: KanbanStats | null
 
   isLoading: boolean
   isFetching: boolean
@@ -92,6 +96,7 @@ export function KanbanPage(props: KanbanPageProps) {
     movePendingId,
     onStopCard,
     stopPendingId,
+    stats,
     expanded,
     onToggleExpanded,
   } = props
@@ -173,6 +178,8 @@ export function KanbanPage(props: KanbanPageProps) {
         subtitle={available ? 'Your task board, live' : undefined}
         actions={headerActions}
       />
+
+      {available ? <BoardStatsBar stats={stats ?? null} /> : null}
 
       <BoardScroller>
         {error ? (

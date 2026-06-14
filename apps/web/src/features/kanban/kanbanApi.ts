@@ -23,6 +23,7 @@ import {
   KanbanDispatchResult,
   KanbanMoveTaskResult,
   KanbanReassignResult,
+  KanbanStatsResponse,
   KanbanTaskResponse,
   KanbanTerminateResult,
   type KanbanCommentInput,
@@ -51,6 +52,15 @@ export async function fetchBoard(
 export async function fetchBoards(signal?: AbortSignal): Promise<KanbanBoardListResponse> {
   const raw = await apiFetch<unknown>('/kanban/boards', { signal })
   return KanbanBoardListResponse.parse(raw)
+}
+
+/** GET the board's queue-health stats (status counts + oldest-ready age) for the HUD. */
+export async function fetchStats(
+  board?: string,
+  signal?: AbortSignal,
+): Promise<KanbanStatsResponse> {
+  const raw = await apiFetch<unknown>(`/kanban/stats${boardQuery(board)}`, { signal })
+  return KanbanStatsResponse.parse(raw)
 }
 
 /** GET one task's full detail (the drawer). */

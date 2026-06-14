@@ -30,6 +30,7 @@ import { TaskDrawer } from './TaskDrawer'
 import {
   useKanbanBoard,
   useKanbanBoards,
+  useKanbanStats,
   useKanbanTask,
   useMoveTask,
   useTerminateRun,
@@ -85,6 +86,7 @@ export function KanbanRoute() {
 
   const boardQuery = useKanbanBoard(boardSlug)
   const boardsQuery = useKanbanBoards()
+  const statsQuery = useKanbanStats(boardSlug)
   const taskQuery = useKanbanTask(openCardId, boardSlug)
 
   // Subscribe the live channel; it writes snapshots straight into the board cache
@@ -159,6 +161,7 @@ export function KanbanRoute() {
         selectedBoard={activeSlug}
         onSelectBoard={selectBoard}
         liveStatus={liveStatus}
+        stats={statsQuery.data?.available ? statsQuery.data.data : null}
         isLoading={boardQuery.isLoading}
         isFetching={boardQuery.isFetching}
         error={boardQuery.error}

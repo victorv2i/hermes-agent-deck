@@ -14,6 +14,7 @@ import type {
   KanbanCreateTaskInput,
   KanbanMoveTarget,
   KanbanReassignInput,
+  KanbanStatsResponse,
   KanbanTaskResponse,
   KanbanTerminateInput,
 } from '@agent-deck/protocol'
@@ -23,6 +24,7 @@ import {
   dispatch,
   fetchBoard,
   fetchBoards,
+  fetchStats,
   fetchTask,
   moveTask,
   reassignTask,
@@ -37,6 +39,7 @@ export const kanbanKeys = {
   board: (board?: string) => ['kanban', 'board', board ?? ''] as const,
   boards: ['kanban', 'boards'] as const,
   task: (id: string, board?: string) => ['kanban', 'task', board ?? '', id] as const,
+  stats: (board?: string) => ['kanban', 'stats', board ?? ''] as const,
 }
 
 /**
@@ -69,6 +72,17 @@ export function useKanbanBoards(): UseQueryResult<KanbanBoardListResponse> {
     queryKey: kanbanKeys.boards,
     queryFn: ({ signal }) => fetchBoards(signal),
     staleTime: 30_000,
+  })
+}
+
+/** The board's queue-health stats for the HUD strip. Polls on the same gentle
+ * fallback cadence as the board; the socket carries the live card moves. */
+export function useKanbanStats(board?: string): UseQueryResult<KanbanStatsResponse> {
+  return useQuery({
+    queryKey: kanbanKeys.stats(board),
+    queryFn: ({ signal }) => fetchStats(board, signal),
+    staleTime: 5_000,
+    refetchInterval: KANBAN_FALLBACK_REFRESH_MS,
   })
 }
 
