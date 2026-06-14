@@ -164,4 +164,89 @@ describe('SystemRoute', () => {
     )
     expect(screen.getByText(/Updated to v0\.16\.0/)).toBeInTheDocument()
   })
+
+  const SAMPLE_STATS = {
+    psutil: true,
+    os: 'Linux',
+    arch: 'x86_64',
+    hermes_version: '0.16.0',
+    memory: { total: 100, available: 40, used: 60, percent: 60 },
+    disk: { total: 200, used: 120, free: 80, percent: 60 },
+    uptime_seconds: 90061,
+  }
+  const SAMPLE_CURATOR = {
+    available: true,
+    enabled: true,
+    paused: false,
+    interval_hours: 168,
+    last_run_at: null,
+    min_idle_hours: null,
+    stale_after_days: null,
+    archive_after_days: null,
+  }
+
+  it('mounts the System resources, Curator, and Validate cards from their own reads', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        const u = String(url)
+        if (u.endsWith('/system/stats')) return Response.json(SAMPLE_STATS)
+        if (u.endsWith('/curator')) return Response.json(SAMPLE_CURATOR)
+        return Response.json(UP_TO_DATE)
+      }),
+    )
+    renderRoute()
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: /system stats/i })).toBeInTheDocument(),
+    )
+    expect(screen.getByRole('region', { name: /curator/i })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /provider key validation/i })).toBeInTheDocument()
+    // The host read actually landed (the snapshot's OS shows in the stats card).
+    expect(
+      within(screen.getByRole('region', { name: /system stats/i })).getByText(/Linux/),
+    ).toBeInTheDocument()
+  })
+
+  it('toggles the curator pause through a real PUT', async () => {
+    let pauseCalls = 0
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url)
+      if (u.endsWith('/curator/paused')) {
+        pauseCalls += 1
+        expect(init?.method).toBe('PUT')
+        expect(String(init?.body)).toContain('"paused":true')
+        return Response.json({ ok: true, paused: true })
+      }
+      if (u.endsWith('/curator')) return Response.json(SAMPLE_CURATOR)
+      if (u.endsWith('/system/stats')) return Response.json(SAMPLE_STATS)
+      return Response.json(UP_TO_DATE)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    renderRoute()
+    const region = await screen.findByRole('region', { name: /curator/i })
+    await user.click(within(region).getByRole('button', { name: /pause curator/i }))
+    await waitFor(() => expect(pauseCalls).toBe(1))
+  })
+
+  it('validates a provider key through a real POST and shows the honest verdict', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const u = String(url)
+      if (u.endsWith('/providers/validate')) {
+        expect(init?.method).toBe('POST')
+        return Response.json({ ok: true, reachable: true, message: '' })
+      }
+      if (u.endsWith('/curator')) return Response.json(SAMPLE_CURATOR)
+      if (u.endsWith('/system/stats')) return Response.json(SAMPLE_STATS)
+      return Response.json(UP_TO_DATE)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    renderRoute()
+    const region = await screen.findByRole('region', { name: /provider key validation/i })
+    await user.type(within(region).getByLabelText(/environment variable/i), 'OPENAI_API_KEY')
+    await user.type(within(region).getByLabelText(/key value/i), 'sk-test')
+    await user.click(within(region).getByRole('button', { name: /verify key/i }))
+    await waitFor(() => expect(within(region).getByText(/key accepted/i)).toBeInTheDocument())
+  })
 })

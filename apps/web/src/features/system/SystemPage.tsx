@@ -94,9 +94,13 @@ export interface SystemPageProps {
   gateway: GatewayActionState
   hermesUpdate: HermesUpdateActionState
   doctor: DoctorActionState
+  /** Extra dock cards rendered at the end of the stack (host resources, curator,
+   * key validation). The connected route wires their own reads + actions and
+   * passes them here, keeping this page presentational. */
+  children?: ReactNode
 }
 
-export function SystemPage({ system, gateway, hermesUpdate, doctor }: SystemPageProps) {
+export function SystemPage({ system, gateway, hermesUpdate, doctor, children }: SystemPageProps) {
   return (
     <div className="mx-auto flex w-full max-w-[920px] flex-col px-6 py-8">
       <PageHeader
@@ -109,6 +113,7 @@ export function SystemPage({ system, gateway, hermesUpdate, doctor }: SystemPage
         <HermesUpdateCard hermes={system.hermes} action={hermesUpdate} />
         <DoctorCard action={doctor} />
         <AgentDeckUpdateCard agentDeck={system.agentDeck} />
+        {children}
       </div>
     </div>
   )

@@ -94,6 +94,16 @@ export function apiPost<T>(path: string, body: unknown, options: ApiFetchOptions
   })
 }
 
+/** PUT JSON convenience wrapper over {@link apiFetch}. */
+export function apiPut<T>(path: string, body: unknown, options: ApiFetchOptions = {}): Promise<T> {
+  return apiFetch<T>(path, {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    body: JSON.stringify(body),
+  })
+}
+
 /** PATCH JSON convenience wrapper over {@link apiFetch}. */
 export function apiPatch<T>(
   path: string,

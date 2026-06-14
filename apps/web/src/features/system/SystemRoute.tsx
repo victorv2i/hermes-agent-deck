@@ -4,7 +4,18 @@ import { PageHeader } from '@/components/ui/page-header'
 import { ErrorState } from '@/components/ui/state'
 import { toast } from '@/lib/toast'
 import { SystemPage, type HermesUpdateActionState, type DoctorActionState } from './SystemPage'
-import { useApplyHermesUpdate, useRestartGateway, useRunDoctor, useSystem } from './useSystem'
+import { SystemStatsCard, CuratorCard, ProviderValidateCard } from './SystemOpsCards'
+import {
+  useApplyHermesUpdate,
+  useCurator,
+  useRestartGateway,
+  useRunCurator,
+  useRunDoctor,
+  useSetCuratorPaused,
+  useSystem,
+  useSystemStats,
+  useValidateProviderKey,
+} from './useSystem'
 
 /**
  * Route element for the Maintenance dock (`/system`). Bridges the `useSystem`
@@ -27,6 +38,11 @@ export function SystemRoute() {
   const restart = useRestartGateway()
   const apply = useApplyHermesUpdate()
   const doctor = useRunDoctor()
+  const stats = useSystemStats()
+  const curator = useCurator()
+  const setCuratorPaused = useSetCuratorPaused()
+  const runCurator = useRunCurator()
+  const validate = useValidateProviderKey()
 
   const onRestart = () => {
     restart.mutate(undefined, {
@@ -80,6 +96,34 @@ export function SystemRoute() {
       },
       onError: (err) => toast.error("Couldn't run the health check", { description: err.message }),
     })
+  }
+
+  const onToggleCuratorPause = () => {
+    const next = !(curator.data?.paused ?? false)
+    setCuratorPaused.mutate(next, {
+      onSuccess: () => toast.success(next ? 'Curator paused' : 'Curator resumed'),
+      onError: (err) => toast.error("Couldn't update the curator", { description: err.message }),
+    })
+  }
+
+  const onRunCuratorNow = () => {
+    runCurator.mutate(undefined, {
+      onSuccess: () =>
+        toast.success('Curator review started', { description: 'It runs in the background.' }),
+      onError: (err) =>
+        toast.error("Couldn't start a curator review", { description: err.message }),
+    })
+  }
+
+  const onValidateKey = (key: string, value: string) => {
+    validate.mutate(
+      { key, value },
+      {
+        // The card renders the accepted/rejected/unreachable verdict itself; a
+        // toast only covers a transport failure (the request never landed).
+        onError: (err) => toast.error("Couldn't validate the key", { description: err.message }),
+      },
+    )
   }
 
   const hermesUpdate: HermesUpdateActionState = {
@@ -136,6 +180,28 @@ export function SystemRoute() {
       gateway={{ status: restart.isPending ? 'restarting' : 'idle', onRestart }}
       hermesUpdate={hermesUpdate}
       doctor={doctorAction}
-    />
+    >
+      <SystemStatsCard
+        stats={stats.data ?? null}
+        isLoading={stats.isPending}
+        error={stats.error?.message ?? null}
+      />
+      <CuratorCard
+        curator={curator.data ?? null}
+        isLoading={curator.isPending}
+        error={curator.error?.message ?? null}
+        actions={{
+          onTogglePause: onToggleCuratorPause,
+          onRunNow: onRunCuratorNow,
+          isPauseLoading: setCuratorPaused.isPending,
+          isRunLoading: runCurator.isPending,
+        }}
+      />
+      <ProviderValidateCard
+        isValidating={validate.isPending}
+        result={validate.data ?? null}
+        onValidate={onValidateKey}
+      />
+    </SystemPage>
   )
 }

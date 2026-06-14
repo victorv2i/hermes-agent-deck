@@ -1,9 +1,12 @@
-import { apiFetch, apiPost } from '@/lib/apiFetch'
+import { apiFetch, apiPost, apiPut } from '@/lib/apiFetch'
 import {
   SystemState,
   SystemGatewayState,
   HermesUpdateApplyResult,
   HermesDoctorReport,
+  SystemStats,
+  CuratorStatus,
+  ProviderValidateResult,
   type HermesUpdateChannel,
 } from '@agent-deck/protocol'
 
@@ -52,4 +55,38 @@ export async function applyHermesUpdate(
  */
 export async function runDoctor(): Promise<HermesDoctorReport> {
   return HermesDoctorReport.parse(await apiPost<unknown>('/system/doctor', {}))
+}
+
+/* -------------------------------------------------------------------------- */
+/* Dock cards: host resources, curator, key validation                        */
+/* -------------------------------------------------------------------------- */
+
+/** Read the slim, secret-free host/process snapshot (mem/disk/cpu/uptime). */
+export async function fetchSystemStats(signal?: AbortSignal): Promise<SystemStats> {
+  return SystemStats.parse(await apiFetch<unknown>('/system/stats', { signal }))
+}
+
+/** Read the skill-curator's status + cadence (available:false when the module is absent). */
+export async function fetchCurator(signal?: AbortSignal): Promise<CuratorStatus> {
+  return CuratorStatus.parse(await apiFetch<unknown>('/curator', { signal }))
+}
+
+/** Pause or resume the curator. Returns the BFF's small ack; the card re-reads the
+ * full status on settle, so this is only used for the toast. */
+export async function setCuratorPaused(paused: boolean): Promise<{ ok: boolean; paused: boolean }> {
+  return apiPut<{ ok: boolean; paused: boolean }>('/curator/paused', { paused })
+}
+
+/** Trigger a curator review now (backgrounded on Hermes). */
+export async function runCurator(): Promise<{ ok: boolean }> {
+  return apiPost<{ ok: boolean }>('/curator/run', {})
+}
+
+/** Live-probe a provider API key before saving. Returns all three honest outcomes
+ * (accepted / rejected / unreachable); the BFF fails open to `reachable:false`. */
+export async function validateProviderKey(
+  key: string,
+  value: string,
+): Promise<ProviderValidateResult> {
+  return ProviderValidateResult.parse(await apiPost<unknown>('/providers/validate', { key, value }))
 }

@@ -5,13 +5,28 @@ import type {
   HermesUpdateApplyResult,
   HermesUpdateChannel,
   HermesDoctorReport,
+  SystemStats,
+  CuratorStatus,
+  ProviderValidateResult,
 } from '@agent-deck/protocol'
 import { statusKey } from '@/features/activity/useStatus'
 import { modelsKey } from '@/features/models/useModels'
 import { homeHealthKey, chatHealthKey } from '@/lib/api'
-import { applyHermesUpdate, fetchSystem, restartGateway, runDoctor } from './api'
+import {
+  applyHermesUpdate,
+  fetchCurator,
+  fetchSystem,
+  fetchSystemStats,
+  restartGateway,
+  runCurator,
+  runDoctor,
+  setCuratorPaused,
+  validateProviderKey,
+} from './api'
 
 const systemKey = ['agent-deck', 'system'] as const
+const systemStatsKey = ['agent-deck', 'system-stats'] as const
+const curatorKey = ['agent-deck', 'curator'] as const
 
 /**
  * Read the Maintenance dock state. Refetches on focus so a change made elsewhere
@@ -96,5 +111,56 @@ export function useApplyHermesUpdate() {
 export function useRunDoctor() {
   return useMutation<HermesDoctorReport, Error, void>({
     mutationFn: () => runDoctor(),
+  })
+}
+
+/** Read the live host/process snapshot for the System resources card. Refetch on
+ * focus (a returning user sees fresh mem/disk); a modest stale time avoids churn. */
+export function useSystemStats() {
+  return useQuery<SystemStats>({
+    queryKey: systemStatsKey,
+    queryFn: ({ signal }) => fetchSystemStats(signal),
+    staleTime: 10_000,
+  })
+}
+
+/** Read the curator status + cadence for the Curator card. */
+export function useCurator() {
+  return useQuery<CuratorStatus>({
+    queryKey: curatorKey,
+    queryFn: ({ signal }) => fetchCurator(signal),
+    staleTime: 10_000,
+  })
+}
+
+/** Pause/resume the curator, then invalidate the curator read so the card
+ * re-resolves from a fresh status rather than the ack's (already-consumed) value. */
+export function useSetCuratorPaused() {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean; paused: boolean }, Error, boolean>({
+    mutationFn: (paused) => setCuratorPaused(paused),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: curatorKey })
+    },
+  })
+}
+
+/** Trigger a curator review now. The run is backgrounded on Hermes, so this only
+ * acks; the Curator card's `last_run_at` re-resolves on the next read. */
+export function useRunCurator() {
+  const qc = useQueryClient()
+  return useMutation<{ ok: boolean }, Error, void>({
+    mutationFn: () => runCurator(),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: curatorKey })
+    },
+  })
+}
+
+/** Live-probe a provider key before saving. On-demand (never auto-run); the card
+ * renders the honest accepted/rejected/unreachable verdict from the result. */
+export function useValidateProviderKey() {
+  return useMutation<ProviderValidateResult, Error, { key: string; value: string }>({
+    mutationFn: ({ key, value }) => validateProviderKey(key, value),
   })
 }
