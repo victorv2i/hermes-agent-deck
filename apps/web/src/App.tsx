@@ -301,13 +301,21 @@ function AppShellLayout() {
           fetchSessionMessages(chatRouteId),
           fetchSession(chatRouteId).catch(() => null),
         ])
+        // If the user started a New chat (which clears consumedRef to null) or
+        // opened a DIFFERENT session (which sets it to that id) while this load
+        // was in flight, the result is now STALE. Dropping it here is what stops a
+        // slow load from clobbering the new chat: without this it re-seeds the old
+        // turns and snaps the URL back via the activeSessionId effect below.
+        if (consumedRef.current !== chatRouteId) return
         continueSession(chatRouteId, transcriptToTurns(messages), {
           title: detail?.title,
           model: detail?.model,
         })
       } catch {
         // A failed preload still adopts the session id so the next send carries
-        // it; the user just doesn't see the prior turns rendered.
+        // it; the user just doesn't see the prior turns rendered. Same staleness
+        // guard: never adopt a session the user already navigated away from.
+        if (consumedRef.current !== chatRouteId) return
         continueSession(chatRouteId, [])
       }
     })()

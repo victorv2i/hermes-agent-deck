@@ -245,3 +245,52 @@ test('forking a HISTORICAL message of a resumed session does NOT reuse the origi
 
   expect(errors).toEqual([])
 })
+
+test('starting a New chat while a session is still loading drops the stale load (no snap-back)', async ({
+  page,
+}) => {
+  const errors = trackConsole(page)
+  await stubDashboardRest(page)
+
+  // Hold the session-transcript load OPEN so we can start a New chat WHILE it is
+  // in flight (the reported race). The detail resolves immediately; the seed
+  // effect's Promise.all still waits on this gated messages load.
+  let release: () => void = () => {}
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await page.route('**/api/agent-deck/sessions/sess-1/messages', async (route) => {
+    await gate
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(SESSION_MESSAGES),
+    })
+  })
+  await page.route('**/api/agent-deck/sessions/sess-1', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(SESSION_DETAIL),
+    }),
+  )
+
+  // Open the session; its transcript load is now held open.
+  await page.goto('/chat/sess-1')
+  await expect(page).toHaveURL(/\/chat\/sess-1$/)
+
+  // Start a NEW chat while the load is still in flight.
+  await page
+    .getByRole('button', { name: /^new chat$/i })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/chat$/)
+
+  // Release the now-stale load. It must be DROPPED: the URL stays on the new chat
+  // (no navigate-back) and the old transcript is never seeded.
+  release()
+  await page.waitForTimeout(600)
+  await expect(page).toHaveURL(/\/chat$/)
+  await expect(page.getByText('Sure, here is the plan.')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
