@@ -369,17 +369,18 @@ export class KanbanClient {
 
   /** Full board for `board` (active board when omitted), columns in fixed order. */
   async board(board?: string): Promise<KanbanBoardResponse> {
-    const result = await this.fetchAvailable(this.path('/board', board), (raw) =>
-      mapBoard(raw, board ?? 'default'),
-    )
-    // Enrich running cards with their active run so the UI shows worker info without a
-    // per-card round-trip. A workers fetch failing must NOT fail the board — running
-    // cards just keep worker=null.
-    if (result.available) {
+    // Fetch the board and its active workers in PARALLEL (the workers list only
+    // needs the same slug, not the board result), halving this call's latency on
+    // the 4s board poll. A workers failure must NOT fail the board, so it's caught
+    // to null and running cards just keep worker=null.
+    const [result, workersRaw] = await Promise.all([
+      this.fetchAvailable(this.path('/board', board), (raw) => mapBoard(raw, board ?? 'default')),
+      this.dashboard.getJson<unknown>(this.path('/workers/active', board)).catch(() => null),
+    ])
+    // Enrich running cards with their active run so the UI shows worker info
+    // without a per-card round-trip.
+    if (result.available && workersRaw !== null) {
       try {
-        const workersRaw = await this.dashboard.getJson<unknown>(
-          this.path('/workers/active', board),
-        )
         const byTask = new Map<string, KanbanRun>()
         for (const w of mapWorkers(workersRaw).workers) {
           byTask.set(w.taskId, {
