@@ -17,10 +17,16 @@ export function SwitchAgentButton({
   name,
   size = 'sm',
   className,
+  onApplied,
 }: {
   name: string
   size?: 'sm' | 'default'
   className?: string
+  /** Fired once the switch is applied, so a parent can keep this affordance
+   * mounted even after its own `isActive` gate flips (the roster reports this
+   * agent active the moment `active_profile` is written, BEFORE the gateway
+   * restart that actually applies it). Without this the restart card unmounts. */
+  onApplied?: () => void
 }) {
   const switchProfile = useSwitchProfile()
   const [applied, setApplied] = useState(false)
@@ -29,6 +35,7 @@ export function SwitchAgentButton({
     try {
       await switchProfile.mutateAsync(name)
       setApplied(true)
+      onApplied?.()
     } catch (err) {
       toast.error('Couldn’t set the active agent', {
         description: err instanceof Error ? err.message : 'Please try again.',

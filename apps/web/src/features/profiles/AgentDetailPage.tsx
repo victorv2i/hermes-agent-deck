@@ -52,6 +52,16 @@ export function AgentDetailPage() {
   const { name = '' } = useParams<{ name: string }>()
   const location = useLocation()
   const { data, loading, error, refetch } = useProfiles()
+  // Once a switch is applied the restart card must persist even though the roster
+  // immediately reports this agent active (active_profile is written before the
+  // gateway restart that applies it). Keep the affordance mounted past that flip;
+  // reset when navigating to a different agent's hub.
+  const [switchApplied, setSwitchApplied] = useState(false)
+  const [switchAppliedFor, setSwitchAppliedFor] = useState(name)
+  if (name !== switchAppliedFor) {
+    setSwitchAppliedFor(name)
+    setSwitchApplied(false)
+  }
   // The birth ceremony plays once, when we arrive here straight from a Hatch
   // (NewAgentDialog navigates with `state.hatched`). One-shot: the flag is
   // dropped from history so a refresh or Back never replays it.
@@ -235,9 +245,9 @@ export function AgentDetailPage() {
             </p>
           </div>
 
-          {!profile.isActive && (
+          {(!profile.isActive || switchApplied) && (
             <div className="shrink-0 self-start">
-              <SwitchAgentButton name={profile.name} />
+              <SwitchAgentButton name={profile.name} onApplied={() => setSwitchApplied(true)} />
             </div>
           )}
         </div>

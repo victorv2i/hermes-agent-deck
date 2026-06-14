@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { AgentDetailPage } from './AgentDetailPage'
@@ -91,6 +91,50 @@ describe('AgentDetailPage (per-agent hub)', () => {
       </QueryClientProvider>,
     )
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/atlas has hatched/i))
+  })
+
+  it('keeps the post-switch restart card after the roster flips this agent to Active', async () => {
+    // The bug: after POST /profiles/switch the roster reports isActive:true while
+    // the gateway still runs the OLD profile, and the restart card (the only way to
+    // apply the switch) lived behind the !isActive gate, so it vanished the instant
+    // the roster flipped, stranding the user with an Active badge and no apply.
+    let switched = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes('/profiles/switch') && init?.method === 'POST') {
+          switched = true
+          return { ok: true, status: 200, json: async () => ({ active: 'atlas' }) } as Response
+        }
+        if (url.endsWith('/profiles'))
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              active: switched ? 'atlas' : 'default',
+              profiles: [{ ...profiles.profiles[0]!, isActive: switched, gatewayRunning: false }],
+            }),
+          } as Response
+        if (url.includes('/soul'))
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ content: '', exists: true }),
+          } as Response
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ content: '', exists: false }),
+        } as Response
+      }),
+    )
+    renderAt('atlas')
+    fireEvent.click(await screen.findByRole('button', { name: /switch to this agent/i }))
+    // Wait for the roster flip (the Active badge proves isActive became true).
+    await waitFor(() => expect(screen.getByText('Active')).toBeInTheDocument())
+    // The restart affordance must STILL be present, and not reverted to the button.
+    expect(screen.getByRole('button', { name: /restart your agent/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /switch to this agent/i })).toBeNull()
   })
 
   it('holds the skeleton (never "no agent") while a just-hatched agent is still materializing', async () => {
