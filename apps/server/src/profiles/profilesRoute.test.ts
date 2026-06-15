@@ -167,15 +167,17 @@ describe('GET /api/agent-deck/profiles', () => {
 })
 
 /**
- * SOUL / MEMORY / USER BFF routes. These read/write the profile dir on the
- * filesystem directly because stock Hermes only exposes SOUL over HTTP; MEMORY
- * and USER are Agent Deck BFF-owned.
+ * SOUL BFF routes. These read/write the profile dir on the filesystem directly
+ * (SOUL.md is a real per-profile file). The Studio READS + EDITS soul through
+ * hermes's own API (the Studio route, covered by studioRoute.test.ts); this
+ * on-disk pair is the ceremony path (onboarding seeds the default agent's soul
+ * here, create seeds a new agent's preset). The former MEMORY.md / USER.md
+ * flat-file editors were RETIRED — installed hermes has no such files (see the
+ * dedicated "retired" describe block below).
  *   GET /api/agent-deck/profiles/:name/soul   -> { content, exists }
  *   PUT /api/agent-deck/profiles/:name/soul   body { content } -> { ok }
- *   GET /api/agent-deck/profiles/:name/memory -> { content, exists }
- *   GET /api/agent-deck/profiles/:name/user   -> { content, exists }
  */
-describe('SOUL / MEMORY / USER routes', () => {
+describe('SOUL routes', () => {
   it('GET soul returns { content, exists } for the default profile', async () => {
     writeFileSync(join(home, 'SOUL.md'), 'soul body')
     const res = await app.inject({ method: 'GET', url: '/api/agent-deck/profiles/default/soul' })
@@ -187,22 +189,6 @@ describe('SOUL / MEMORY / USER routes', () => {
     const res = await app.inject({ method: 'GET', url: '/api/agent-deck/profiles/default/soul' })
     expect(res.statusCode).toBe(200)
     expect(res.json()).toMatchObject({ content: '', exists: false })
-  })
-
-  it('GET memory reads memories/MEMORY.md', async () => {
-    mkdirSync(join(home, 'memories'), { recursive: true })
-    writeFileSync(join(home, 'memories', 'MEMORY.md'), '# Memory Index')
-    const res = await app.inject({ method: 'GET', url: '/api/agent-deck/profiles/default/memory' })
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ content: '# Memory Index', exists: true })
-  })
-
-  it('GET user reads memories/USER.md for a named profile', async () => {
-    mkdirSync(join(home, 'profiles', 'coder', 'memories'), { recursive: true })
-    writeFileSync(join(home, 'profiles', 'coder', 'memories', 'USER.md'), 'user facts')
-    const res = await app.inject({ method: 'GET', url: '/api/agent-deck/profiles/coder/user' })
-    expect(res.statusCode).toBe(200)
-    expect(res.json()).toMatchObject({ content: 'user facts', exists: true })
   })
 
   it('PUT soul writes the file and round-trips through GET', async () => {
@@ -246,61 +232,6 @@ describe('SOUL / MEMORY / USER routes', () => {
       payload: { content: 123 },
     })
     expect(put.statusCode).toBe(400)
-  })
-
-  // ── MEMORY.md + USER.md are now EDITABLE (symmetric to SOUL.md) ──
-  it('PUT memory writes memories/MEMORY.md and round-trips through GET', async () => {
-    const put = await app.inject({
-      method: 'PUT',
-      url: '/api/agent-deck/profiles/default/memory',
-      payload: { content: '# Edited memory\n' },
-    })
-    expect(put.statusCode).toBe(200)
-    expect(put.json()).toMatchObject({ ok: true })
-    expect(readFileSync(join(home, 'memories', 'MEMORY.md'), 'utf8')).toBe('# Edited memory\n')
-
-    const get = await app.inject({ method: 'GET', url: '/api/agent-deck/profiles/default/memory' })
-    expect(get.json()).toMatchObject({ content: '# Edited memory\n', exists: true })
-  })
-
-  it('PUT user writes memories/USER.md to a named profile dir', async () => {
-    mkdirSync(join(home, 'profiles', 'coder'), { recursive: true })
-    const put = await app.inject({
-      method: 'PUT',
-      url: '/api/agent-deck/profiles/coder/user',
-      payload: { content: 'user facts' },
-    })
-    expect(put.statusCode).toBe(200)
-    expect(readFileSync(join(home, 'profiles', 'coder', 'memories', 'USER.md'), 'utf8')).toBe(
-      'user facts',
-    )
-  })
-
-  it('PUT memory for a missing profile returns 404', async () => {
-    const put = await app.inject({
-      method: 'PUT',
-      url: '/api/agent-deck/profiles/ghost/memory',
-      payload: { content: 'x' },
-    })
-    expect(put.statusCode).toBe(404)
-  })
-
-  it('PUT user with a non-string body returns 400', async () => {
-    const put = await app.inject({
-      method: 'PUT',
-      url: '/api/agent-deck/profiles/default/user',
-      payload: { content: { not: 'a string' } },
-    })
-    expect(put.statusCode).toBe(400)
-  })
-
-  it('PUT memory rejects a traversal profile name with 403/404 (path guard) and never escapes', async () => {
-    const put = await app.inject({
-      method: 'PUT',
-      url: '/api/agent-deck/profiles/..%2f..%2fetc/memory',
-      payload: { content: 'x' },
-    })
-    expect([403, 404]).toContain(put.statusCode)
   })
 
   // HON-01: unexpected errors on the 500 branch must be logged server-side
@@ -371,6 +302,40 @@ describe('SOUL / MEMORY / USER routes', () => {
         rmSync(badHome, { recursive: true, force: true })
       }
     })
+  })
+})
+
+/**
+ * RETIRED flat-file memory/user editors. Installed hermes (config schema v29)
+ * has NO flat MEMORY.md / USER.md files in a profile: memory is store-backed
+ * plus an external memory provider. The BFF's former GET/PUT /profiles/:name/
+ * memory and /user routes were removed; memory is now authored through the
+ * Studio (provider + memory.* config). These tests pin that the dead routes are
+ * GONE (404), so the flat-file write path cannot resurface.
+ */
+describe('retired flat-file memory/user routes', () => {
+  it.each([
+    ['GET', '/api/agent-deck/profiles/default/memory'],
+    ['GET', '/api/agent-deck/profiles/default/user'],
+    ['PUT', '/api/agent-deck/profiles/default/memory'],
+    ['PUT', '/api/agent-deck/profiles/default/user'],
+  ] as const)('%s %s is no longer served (404)', async (method, url) => {
+    const res = await app.inject({
+      method,
+      url,
+      ...(method === 'PUT' ? { payload: { content: 'x' } } : {}),
+    })
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('does NOT write a MEMORY.md to disk on a PUT to the retired route', async () => {
+    await app.inject({
+      method: 'PUT',
+      url: '/api/agent-deck/profiles/default/memory',
+      payload: { content: '# should not be written\n' },
+    })
+    // The route is gone, so no flat-file write happened.
+    expect(existsSync(join(home, 'memories', 'MEMORY.md'))).toBe(false)
   })
 })
 
@@ -778,6 +743,135 @@ describe('POST /api/agent-deck/profiles (create)', () => {
       payload: { name: 'dupe' },
     })
     expect(res.statusCode).toBe(502)
+    await a.close()
+  })
+
+  // ── Clone: create FROM a source profile (`hermes profile create <name>
+  // --clone-from <source>`, which copies config.yaml/.env/SOUL.md/skills). The
+  // source name is path-guard-validated server-side BEFORE any exec.
+  it('passes --clone-from <source> when cloneFrom is provided (argv, no shell)', async () => {
+    mkdirSync(join(home, 'profiles', 'mentor'), { recursive: true })
+    const calls: Array<{ args: string[]; opts: Record<string, unknown> }> = []
+    const exec: ExecFileLike = (_file, args, opts, cb) => {
+      calls.push({ args, opts: opts as Record<string, unknown> })
+      // args = ['profile', 'create', '<name>', '--clone-from', '<source>']
+      mkdirSync(join(home, 'profiles', args[2]!), { recursive: true })
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles',
+      payload: { name: 'apprentice', cloneFrom: 'mentor' },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(res.json()).toMatchObject({ name: 'apprentice' })
+    expect(calls[0]!.args).toEqual(['profile', 'create', 'apprentice', '--clone-from', 'mentor'])
+    expect(calls[0]!.opts.shell ?? false).toBeFalsy()
+    await a.close()
+  })
+
+  it('canonicalizes the clone SOURCE name like hermes (trim + lowercase) before exec', async () => {
+    mkdirSync(join(home, 'profiles', 'mentor'), { recursive: true })
+    const calls: string[][] = []
+    const exec: ExecFileLike = (_file, args, _opts, cb) => {
+      calls.push(args)
+      mkdirSync(join(home, 'profiles', args[2]!), { recursive: true })
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles',
+      payload: { name: 'apprentice', cloneFrom: 'Mentor' },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(calls[0]).toEqual(['profile', 'create', 'apprentice', '--clone-from', 'mentor'])
+    await a.close()
+  })
+
+  it('does NOT seed a SOUL preset when cloning (the clone already carries the source soul)', async () => {
+    mkdirSync(join(home, 'profiles', 'mentor'), { recursive: true })
+    writeFileSync(join(home, 'profiles', 'mentor', 'SOUL.md'), 'MENTOR SOUL', 'utf8')
+    const exec: ExecFileLike = (_file, args, _opts, cb) => {
+      const dir = join(home, 'profiles', args[2]!)
+      mkdirSync(dir, { recursive: true })
+      // Simulate --clone-from copying the source soul into the new profile.
+      writeFileSync(join(dir, 'SOUL.md'), 'MENTOR SOUL', 'utf8')
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles',
+      // A soulPreset is IGNORED on a clone: the cloned soul wins (no overwrite).
+      payload: { name: 'apprentice', cloneFrom: 'mentor', soulPreset: 'coder' },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(readFileSync(join(home, 'profiles', 'apprentice', 'SOUL.md'), 'utf8')).toBe('MENTOR SOUL')
+    await a.close()
+  })
+
+  it('rejects an invalid clone SOURCE name with 400 BEFORE any exec', async () => {
+    let execCalls = 0
+    const exec: ExecFileLike = (_file, _args, _opts, cb) => {
+      execCalls += 1
+      cb(null, '', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    // A traversal / illegal-character / spaced source is rejected before exec.
+    for (const cloneFrom of ['Bad Name', '../evil', 'a/b']) {
+      const res = await a.inject({
+        method: 'POST',
+        url: '/api/agent-deck/profiles',
+        payload: { name: 'apprentice', cloneFrom },
+      })
+      expect(res.statusCode).toBe(400)
+    }
+    expect(execCalls).toBe(0)
+    await a.close()
+  })
+
+  it('treats an empty-string cloneFrom as "no clone" (plain create, 201)', async () => {
+    const calls: string[][] = []
+    const exec: ExecFileLike = (_file, args, _opts, cb) => {
+      calls.push(args)
+      mkdirSync(join(home, 'profiles', args[2]!), { recursive: true })
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles',
+      payload: { name: 'apprentice', cloneFrom: '' },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(calls[0]).toEqual(['profile', 'create', 'apprentice'])
+    await a.close()
+  })
+
+  it('omits --clone-from entirely when cloneFrom is absent (plain create)', async () => {
+    const calls: string[][] = []
+    const exec: ExecFileLike = (_file, args, _opts, cb) => {
+      calls.push(args)
+      mkdirSync(join(home, 'profiles', args[2]!), { recursive: true })
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles',
+      payload: { name: 'solo' },
+    })
+    expect(res.statusCode).toBe(201)
+    expect(calls[0]).toEqual(['profile', 'create', 'solo'])
+    expect(calls[0]).not.toContain('--clone-from')
     await a.close()
   })
 })

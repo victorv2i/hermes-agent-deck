@@ -1,6 +1,5 @@
 import { lazy, type ReactNode } from 'react'
 import {
-  Home,
   MessagesSquare,
   History,
   Library,
@@ -14,7 +13,6 @@ import {
   ScrollText,
   KanbanSquare,
   ShieldCheck,
-  Wrench,
   type LucideIcon,
 } from 'lucide-react'
 import type { ApprovalChoice, RunAttachment } from '@agent-deck/protocol'
@@ -27,10 +25,14 @@ import { en } from '@/i18n/messages.en'
 // loads on first navigation, behind the Suspense skeleton in App.
 import { ChatRoute } from '@/components/chat/ChatRoute'
 
-// Home is the welcoming front door — the ROOT/index surface newcomers land on.
-// It's code-split: the entry chunk stays lean, and the index Home renders behind
-// the Suspense skeleton in App on first paint.
-const HomeRoute = lazy(() => import('@/features/home').then((m) => ({ default: m.HomeRoute })))
+// Agent Studio is Home — the ROOT/index surface. Pick / create / clone an agent
+// and author everything about it (soul, model, tools, memory, skills, env) in one
+// place, plus a slim launchpad strip so Home stays a daily landing. It's
+// code-split: the entry chunk stays lean and the index Studio renders behind the
+// Suspense skeleton in App on first paint.
+const StudioRoute = lazy(() =>
+  import('@/features/studio').then((m) => ({ default: m.StudioRoute })),
+)
 const SessionsRoute = lazy(() =>
   import('@/features/sessions/SessionsRoute').then((m) => ({ default: m.SessionsRoute })),
 )
@@ -46,9 +48,6 @@ const FilesRoute = lazy(() =>
 // paths resolve to this same surface via router.tsx aliases.
 const TerminalSurface = lazy(() =>
   import('@/features/terminal/TerminalSurface').then((m) => ({ default: m.TerminalSurface })),
-)
-const ProfilesPage = lazy(() =>
-  import('@/features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })),
 )
 const SettingsPage = lazy(() =>
   import('@/features/settings').then((m) => ({ default: m.SettingsPage })),
@@ -75,12 +74,6 @@ const SystemRoute = lazy(() =>
 const ConnectionsRoute = lazy(() =>
   import('@/features/connections').then((m) => ({ default: m.ConnectionsRoute })),
 )
-const ToolsetsRoute = lazy(() =>
-  import('@/features/tools').then((m) => ({ default: m.ToolsetsRoute })),
-)
-const AgentDetailPage = lazy(() =>
-  import('@/features/profiles/AgentDetailPage').then((m) => ({ default: m.AgentDetailPage })),
-)
 
 /**
  * Surface registry — the SINGLE source of truth for the app's navigable
@@ -88,7 +81,7 @@ const AgentDetailPage = lazy(() =>
  * (app/router.tsx) turns each entry into a route. Registering a new surface is a
  * purely additive edit here: append a `NavItem` and provide its `element`.
  *
- * Home owns the index ('/') — the welcoming front door — and Chat lives at
+ * Agent Studio owns the index ('/') — the Home front door — and Chat lives at
  * '/chat'. Every other surface maps its own path.
  */
 
@@ -97,10 +90,10 @@ const AgentDetailPage = lazy(() =>
  * stable internal identifier; the human-facing rail HEADER is {@link NAV_GROUP_LABELS}:
  * friendly words ("Your agent", "Workspace", "Activity") instead of raw jargon.
  *
- * Home + Chat are PINNED-TOP standalone items (not group members), so there's no
- * "chat"/"Conversations" group: the rail leads with the two primary destinations,
- * then "Your agent" first (identity + capabilities, the product's personalization
- * core), then Workspace, then Activity.
+ * Agent Studio (Home) + Chat are PINNED-TOP standalone items (not group members),
+ * so there's no "chat"/"Conversations" group: the rail leads with the two primary
+ * destinations, then "Your agent" first (identity + capabilities, the product's
+ * personalization core), then Workspace, then Activity.
  */
 export const NAV_GROUPS = ['agent', 'workspace', 'activity'] as const
 export type NavGroup = (typeof NAV_GROUPS)[number]
@@ -174,17 +167,18 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   {
-    // Home is a STANDALONE top item — the welcoming front door, NOT a member of
-    // any group. `pinnedTop` floats it ABOVE the grouped nav (mirror of how
-    // Settings is `pinned` below). Its `group` is just a stable routing tag (the
-    // rail never lists it there); `workspace` is an arbitrary valid bucket.
-    key: 'home',
-    label: navMessage('navigation.item.home.label'),
-    labelKey: 'navigation.item.home.label',
+    // Agent Studio is Home — a STANDALONE top item, the index ('/') front door.
+    // `pinnedTop` floats it ABOVE the grouped nav (mirror of how Settings is
+    // `pinned` below). Its `group` is just a stable routing tag (the rail never
+    // lists it there); `agent` is the natural bucket (it's the personalization
+    // core). The Agents + Tools surfaces folded INTO it (see router.tsx redirects).
+    key: 'studio',
+    label: navMessage('navigation.item.studio.label'),
+    labelKey: 'navigation.item.studio.label',
     path: '/',
-    icon: Home,
-    group: 'workspace',
-    element: <HomeRoute />,
+    icon: IdCard,
+    group: 'agent',
+    element: <StudioRoute />,
     pinnedTop: true,
   },
   {
@@ -277,29 +271,6 @@ export const NAV: NavItem[] = [
     element: <TerminalSurface />,
   },
   {
-    key: 'profiles',
-    label: navMessage('navigation.item.profiles.label'),
-    labelKey: 'navigation.item.profiles.label',
-    path: '/profiles',
-    icon: IdCard,
-    group: 'agent',
-    element: <ProfilesPage />,
-  },
-  {
-    // The Tools surface — "what your agent can actually do." Models = its brain,
-    // MCP/Voice/Messaging now live in Connections, Tools = the built-in toolsets
-    // (web/browser/terminal/files/vision/…). Real in-browser toggle backed by
-    // stock PUT /api/tools/toolsets/{name} (web_server.py:5752); change persists
-    // to config.yaml and takes effect after a gateway restart (honest copy shown).
-    key: 'tools',
-    label: navMessage('navigation.item.tools.label'),
-    labelKey: 'navigation.item.tools.label',
-    path: '/tools',
-    icon: Wrench,
-    group: 'agent',
-    element: <ToolsetsRoute />,
-  },
-  {
     // Connections — ONE tabbed home for the agent's outward reach: Voice ·
     // Messaging · MCP (folded from three separate rail rows). These are
     // settings-shaped (Settings deep-links "Configured on the X page →"), not
@@ -313,19 +284,6 @@ export const NAV: NavItem[] = [
     icon: Cable,
     group: 'agent',
     element: <ConnectionsRoute />,
-  },
-  {
-    // The per-agent HUB. Routed (the catch-all `*` is replaced by this dynamic
-    // child) but NOT a rail link — you reach it from the Agents list / chip.
-    // Soul (the former standalone /memory) lives here now, scoped to the agent.
-    key: 'agent-detail',
-    label: navMessage('navigation.item.agent-detail.label'),
-    labelKey: 'navigation.item.agent-detail.label',
-    path: '/profiles/:name',
-    icon: IdCard,
-    group: 'agent',
-    element: <AgentDetailPage />,
-    hidden: true,
   },
   {
     // Usage = cost + token metering, not the agent's "Activity" (Tasks/Board). It is
@@ -418,19 +376,18 @@ export function pinnedNavItems(): NavItem[] {
 
 /**
  * The friendly TITLE for a surface, resolved from a pathname — what the shell
- * header shows on surfaces that don't project their own header content (most of
- * them today read as contextless). Matches the longest static NAV path so
- * `/profiles/foo` still reads "Agents"; the dynamic `/sessions/:id` reads
- * "History" (its conceptual home). Returns null for an unknown path (the header
- * then stays a plain spacer rather than inventing a title).
+ * header shows on surfaces that don't project their own header content. The
+ * dynamic `/sessions/:id` reads "History" (its conceptual home). Returns null for
+ * an unknown path (the header then stays a plain spacer rather than inventing a
+ * title). The folded `/profiles` + `/tools` paths redirect to the Studio
+ * (router.tsx), so they never reach this resolver with a live pathname.
  */
 export function surfaceTitle(pathname: string): string | null {
-  // The index '/' is Home.
-  if (pathname === '/') return navMessage('navigation.item.home.label')
+  // The index '/' is the Agent Studio (Home).
+  if (pathname === '/') return navMessage('navigation.item.studio.label')
   // A session-history deep link belongs to the History surface conceptually.
   if (pathname.startsWith('/sessions/')) return navMessage('navigation.item.chats.label')
-  // Longest static-prefix match over the visible + routed surfaces, so nested
-  // paths (e.g. /profiles/:name) resolve to their parent surface's label.
+  // Longest static-prefix match over the visible + routed surfaces.
   const candidates = NAV.filter((i) => i.path !== '/' && !i.path.includes(':'))
   let best: NavItem | null = null
   for (const item of candidates) {
@@ -462,8 +419,8 @@ export interface ChatOutletContext {
   /** Clear the current conversation in place — wires the composer's `/clear`. */
   clearChat: () => void
   /** Open the ⌘K command palette. The App layout owns the palette's open state;
-   * surfaces that advertise it (Home's hero ⌘K hint chip) drive it through this
-   * App-owned action, the same seam as newChat/clearChat. */
+   * surfaces that advertise it drive it through this App-owned action, the same
+   * seam as newChat/clearChat. */
   openPalette: () => void
   /** The active hermes session id (null/undefined for an unsent new chat). Keys
    * the composer's per-conversation persisted draft so each chat keeps its own.

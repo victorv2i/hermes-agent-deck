@@ -5,8 +5,6 @@ import { join } from 'node:path'
 import {
   readProfiles,
   readSoul,
-  readMemory,
-  readUserMemory,
   writeSoul,
   writeAvatar,
   writeActiveProfile,
@@ -179,16 +177,17 @@ describe('readProfiles', () => {
 })
 
 /**
- * SOUL / MEMORY / USER readers + the SOUL writer. The profile dir for the
- * "default" profile IS HERMES_HOME; named profiles live under
- * <home>/profiles/<name>/. Verified file layout (hermes_cli/profiles.py):
- *   ${profile_dir}/SOUL.md
- *   ${profile_dir}/memories/MEMORY.md
- *   ${profile_dir}/memories/USER.md
- * Reads are presence-safe (never throw → { content, exists }); the SOUL write is
- * confined to the profile dir by the Files path guard.
+ * SOUL reader + the SOUL writer. The profile dir for the "default" profile IS
+ * HERMES_HOME; named profiles live under <home>/profiles/<name>/. Verified file
+ * layout (hermes_cli/profiles.py): ${profile_dir}/SOUL.md. Reads are
+ * presence-safe (never throw → { content, exists }); the SOUL write is confined
+ * to the profile dir by the Files path guard.
+ *
+ * NOTE: the former readMemory / readUserMemory readers (memories/MEMORY.md,
+ * memories/USER.md) were REMOVED. Installed hermes has no such files; memory is
+ * provider + config, authored through the Studio.
  */
-describe('readSoul / readMemory / readUserMemory', () => {
+describe('readSoul', () => {
   it('reads SOUL.md for the default profile (= HERMES_HOME)', () => {
     writeFileSync(join(home, 'SOUL.md'), '# Soul\nbe kind\n')
     const out = readSoul(home, 'default')
@@ -208,28 +207,6 @@ describe('readSoul / readMemory / readUserMemory', () => {
     const out = readSoul(home, 'default')
     expect(out.exists).toBe(false)
     expect(out.content).toBe('')
-  })
-
-  it('reads memories/MEMORY.md', () => {
-    mkdirSync(join(home, 'memories'), { recursive: true })
-    writeFileSync(join(home, 'memories', 'MEMORY.md'), '# Memory Index\n')
-    const out = readMemory(home, 'default')
-    expect(out.exists).toBe(true)
-    expect(out.content).toBe('# Memory Index\n')
-  })
-
-  it('returns exists:false when memories/MEMORY.md is missing', () => {
-    const out = readMemory(home, 'default')
-    expect(out.exists).toBe(false)
-    expect(out.content).toBe('')
-  })
-
-  it('reads memories/USER.md', () => {
-    mkdirSync(join(home, 'profiles', 'coder', 'memories'), { recursive: true })
-    writeFileSync(join(home, 'profiles', 'coder', 'memories', 'USER.md'), 'about the user')
-    const out = readUserMemory(home, 'coder')
-    expect(out.exists).toBe(true)
-    expect(out.content).toBe('about the user')
   })
 
   it('rejects a profile name that escapes the home dir (path traversal)', () => {

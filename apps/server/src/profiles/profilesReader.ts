@@ -276,14 +276,15 @@ export function readProfiles(hermesHome: string): ProfilesResult {
   return { active, profiles }
 }
 
-/* ────────────────────────────── SOUL / MEMORY / USER ─────────────────────────
- * The Memory/Soul surface reads (and edits SOUL.md, MEMORY.md, USER.md) on the
- * filesystem directly. Stock Hermes exposes GET/PUT for SOUL only; MEMORY/USER
- * are not dashboard routes. Verified layout (hermes_cli/profiles.py):
- *   ${profile_dir}/SOUL.md
- *   ${profile_dir}/memories/MEMORY.md
- *   ${profile_dir}/memories/USER.md
- * where profile_dir is HERMES_HOME for "default", else <home>/profiles/<name>.
+/* ────────────────────────────── SOUL ──────────────────────────────────────
+ * The Soul surface reads (and edits) SOUL.md on the filesystem directly.
+ * Verified layout (hermes_cli/profiles.py): ${profile_dir}/SOUL.md, where
+ * profile_dir is HERMES_HOME for "default", else <home>/profiles/<name>.
+ *
+ * NOTE: the former MEMORY.md / USER.md readers+writers were REMOVED. Installed
+ * hermes (config schema v29) has NO flat MEMORY.md / USER.md files in a profile
+ * (memory is store-backed plus an external memory provider). Memory is authored
+ * through the Studio surface (provider + memory.* config), never a flat-file edit.
  *
  * SECURITY: a profile <name> is attacker-influenced (it comes from a URL param),
  * so the profile dir is resolved through the Files path guard
@@ -355,16 +356,6 @@ export function readProfileAvatar(hermesHome: string, name: string): AvatarId | 
   return readIdentityAvatar(resolveProfileDir(hermesHome, name))
 }
 
-/** Read ${profile_dir}/memories/MEMORY.md (presence-safe). Guards the name. */
-export function readMemory(hermesHome: string, name: string): ProfileFile {
-  return readProfileFile(resolveProfileDir(hermesHome, name), join('memories', 'MEMORY.md'))
-}
-
-/** Read ${profile_dir}/memories/USER.md (presence-safe). Guards the name. */
-export function readUserMemory(hermesHome: string, name: string): ProfileFile {
-  return readProfileFile(resolveProfileDir(hermesHome, name), join('memories', 'USER.md'))
-}
-
 /** Thrown when a SOUL write targets a profile whose dir does not exist. */
 export class ProfileNotFoundError extends Error {
   constructor(name: string) {
@@ -413,20 +404,6 @@ function writeProfileFile(
  */
 export function writeSoul(hermesHome: string, name: string, content: string): void {
   writeProfileFile(hermesHome, name, 'SOUL.md', content)
-}
-
-/**
- * Write ${profile_dir}/memories/MEMORY.md (atomic, path-guarded). SYMMETRIC to
- * {@link writeSoul}. HONEST BOUNDARY: this edits the file on disk but does NOT
- * stop the runtime memory provider from rewriting it (the UI surfaces that note).
- */
-export function writeMemory(hermesHome: string, name: string, content: string): void {
-  writeProfileFile(hermesHome, name, join('memories', 'MEMORY.md'), content)
-}
-
-/** Write ${profile_dir}/memories/USER.md (atomic, path-guarded). User's file. */
-export function writeUserMemory(hermesHome: string, name: string, content: string): void {
-  writeProfileFile(hermesHome, name, join('memories', 'USER.md'), content)
 }
 
 /**

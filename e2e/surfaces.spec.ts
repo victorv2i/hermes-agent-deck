@@ -274,6 +274,24 @@ async function stubBff(page: Page) {
       return json(route, usagePayload(days))
     }
 
+    // The Agent Studio (Home) launchpad reads the cross-source status + cron +
+    // kanban to compose its "what your agent is tending" line — well-formed,
+    // healthy shapes so the launchpad renders without console noise.
+    if (path.endsWith('/status')) {
+      return json(route, {
+        gatewayRunning: true,
+        gatewayState: 'running',
+        platforms: [],
+        activeSessions: 0,
+        version: '0.15.2',
+        configUpdateAvailable: false,
+      })
+    }
+    if (path.endsWith('/cron/jobs')) return json(route, { jobs: [] })
+    if (path.endsWith('/kanban/board') || path.endsWith('/kanban/boards')) {
+      return json(route, { enabled: false, reason: 'not_enabled', board: null })
+    }
+
     // Anything else: a harmless empty 200 so a stray probe never 404-noises.
     return json(route, {})
   })
@@ -349,12 +367,16 @@ test('Models: the configured models render in the Settings model section, consol
   expect(errors).toEqual([])
 })
 
-test('Agents: renders the agent cards, console-clean', async ({ page }) => {
+test('Agent Studio (Home): renders the launchpad + agent roster, console-clean', async ({
+  page,
+}) => {
   const errors = trackConsole(page)
-  await page.goto('/profiles')
+  // Agents folded into the Agent Studio, which is Home ('/'). The launchpad strip
+  // ("Start a chat") + the agent roster card both render.
+  await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: /Agents/i })).toBeVisible()
-  await expect(page.getByTestId('profile-card-default')).toBeVisible()
+  await expect(page.getByRole('button', { name: /start a chat/i })).toBeVisible()
+  await expect(page.getByTestId('studio-roster-card-default')).toBeVisible()
 
   expect(errors).toEqual([])
 })

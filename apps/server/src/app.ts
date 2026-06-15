@@ -45,7 +45,6 @@ import { registerSkillsRoutes } from './skills/skillsRoute'
 import { SkillsClient } from './skills/skillsClient'
 import { registerSkillsHubRoutes } from './skills/skillsHubRoute'
 import { registerEnvRoutes } from './settings/envRoute'
-import { registerToolsetsRoutes } from './tools/toolsetsRoute'
 import { registerOrganizationRoutes } from './organization/organizationRoutes'
 import { OrganizationStore } from './organization/organizationStore'
 import { registerSetupRoutes } from './setup/setupRoute'
@@ -57,6 +56,7 @@ import { registerCliOpRoute } from './system/cliOpRoute'
 import { registerSystemStatsRoute } from './system/systemStatsRoute'
 import { registerCuratorRoute } from './system/curatorRoute'
 import { registerMemoryProviderRoute } from './profiles/memoryProviderRoute'
+import { registerStudioRoutes } from './profiles/studioRoute'
 import { registerProviderValidateRoute } from './settings/providerValidateRoute'
 
 const HEALTH_PROBE_TIMEOUT_MS = 1_500
@@ -430,12 +430,6 @@ export async function buildApp(
   // three frontend tabs + tests all shipped, but this registration was missing, so
   // the Pairing/Webhooks/Credentials tabs 404'd for every user — now wired.
   await app.register(registerConnectionsRoutes, { dashboard })
-  // Tools surface (READ-ONLY): proxies stock `GET /api/tools/toolsets` — the
-  // agent's configurable toolsets (web/browser/terminal/file/vision/…), their
-  // enabled/configured state, and the concrete tools each grants. Stock has NO
-  // HTTP toggle (that's the `hermes tools` TUI), so the surface is honest read +
-  // a copyable CLI command; it never fakes a toggle. No NEW hermes route shape.
-  await app.register(registerToolsetsRoutes, { dashboard })
   // Agent Deck's OWN project/tag metadata store (server-side JSON under
   // <HERMES_HOME>/agent-deck/organization.json) — not a dashboard proxy; it
   // syncs across the user's devices that drive this one bind over Tailscale.
@@ -499,6 +493,14 @@ export async function buildApp(
   // (GET /api/memory, PUT /api/memory/provider, POST /api/memory/reset,
   // web_server.py:4983/5018/5042). Switch flags restart_required = true (honest).
   await registerMemoryProviderRoute(app, { dashboard })
+
+  // Agent Studio surface: per-profile authoring (config/model/skills/env/soul)
+  // proxied through hermes's OWN per-profile dashboard API, scoped by ?profile=
+  // (query) or body.profile. NO bespoke profile-file writes; the config subset
+  // drops secrets, the env view is shape-only, and a hostile profile name is
+  // refused before any dashboard call. Memory is provider (memoryProviderRoute,
+  // above) + memory.* config (via this surface's config passthrough).
+  await app.register(registerStudioRoutes, { dashboard })
 
   // Provider validate: live-probe a credential before saving
   // (POST /api/providers/validate, web_server.py:1974). Fails open on network error.

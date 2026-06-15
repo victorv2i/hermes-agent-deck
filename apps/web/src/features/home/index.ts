@@ -1,8 +1,13 @@
 /**
- * Home feature barrel — the integrator lazy-mounts {@link HomeRoute} at `/home`
- * and reads the first-run landing flag via `@/lib/useOnboarded`. The
- * presentational {@link HomePage} is exported for screenshots/tests.
+ * Home feature barrel — the standalone Home hero + dashboard were RETIRED when the
+ * Agent Studio became Home (`/`). What survives is the pure "what your agent is
+ * tending" summarizer, which the Studio's launchpad strip reuses to show the
+ * agent's live tending status.
  */
-export { HomeRoute } from './HomeRoute'
-export { HomePage, type HomePageProps } from './HomePage'
-export { CHANGELOG, RECENT_CHANGELOG } from './changelog'
+export {
+  summarizeTending,
+  NEEDS_OK_COPY,
+  type TendingSummary,
+  type TendingInputs,
+  type TendingConnection,
+} from './tendingSummary'

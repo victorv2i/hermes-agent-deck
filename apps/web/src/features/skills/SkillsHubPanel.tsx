@@ -7,7 +7,7 @@
  *    behavior — the gateway must restart to pick up a changed skill set.
  *  - Update does NOT signal restart (hermes picks it up without restart).
  *  - enabled !== installed: this panel shows HUB skills (not installed), not the
- *    enabled set (that is the main AgentSkillsSection). The panel is additive.
+ *    installed/enabled set the Studio's per-agent Skills section lists. It is additive.
  *  - No fake states: if the hub call fails we show the error clearly.
  *
  * Design: debounced search input (300ms), result rows with name/source/trust

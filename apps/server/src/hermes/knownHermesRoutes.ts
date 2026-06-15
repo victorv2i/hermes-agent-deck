@@ -116,6 +116,12 @@ const ROUTES: readonly KnownHermesRoute[] = [
   { method: 'DELETE', path: '/api/profiles/{name}', cite: 'web_server.py:3029' },
   { method: 'GET', path: '/api/profiles/{name}/soul', cite: 'web_server.py:3047' },
   { method: 'PUT', path: '/api/profiles/{name}/soul', cite: 'web_server.py:3058' },
+  // Set the main model (model.default + model.provider) for a SPECIFIC profile's
+  // config.yaml without touching the dashboard's own active profile (the Studio's
+  // per-agent model picker). Mirrors POST /api/model/set but scoped to {name} via
+  // the HERMES_HOME override. Verified present in the installed hermes (config
+  // schema v29) at web_server.py:9080.
+  { method: 'PUT', path: '/api/profiles/{name}/model', cite: 'web_server.py:9080' },
   { method: 'GET', path: '/api/skills', cite: 'web_server.py:3079' },
   { method: 'PUT', path: '/api/skills/toggle', cite: 'web_server.py:3091' },
   // Skills Hub — browse (search) + install/uninstall/update (background actions).

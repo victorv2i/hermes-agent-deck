@@ -52,20 +52,24 @@ const SESSIONS_PANE_WIDTH = 280
 
 /**
  * Path PREFIXES whose surfaces render their OWN in-content header — a `PageHeader`
- * or `SurfaceHeader` (an `<h1>`), e.g. Home, Files, Models, Settings, Usage, MCP,
- * the History/Sessions views, …. For these the chrome header-title fallback is
+ * or `SurfaceHeader` (an `<h1>`), e.g. Files, Settings, Usage, the
+ * History/Sessions views, …. For these the chrome header-title fallback is
  * SUPPRESSED so the page title isn't stacked twice ("Settings" over "Settings").
- * The fallback is kept only for a surface that projects NO header at all (none
- * today — every registered surface owns one — but the mechanism stays honest for
- * any future header-less surface). Chat is excluded here because it projects its
- * own header CONTENT into the slot (handled by the `headerContent` check), which
- * already suppresses the fallback.
+ * The fallback is kept for a surface that projects NO header of its own — the
+ * Agent Studio (Home) is one: it leads with a launchpad strip + roster/workbench
+ * (no page <h1>), so it reads its "Agent Studio" title from the chrome fallback.
+ * Chat is excluded here because it projects its own header CONTENT into the slot
+ * (handled by the `headerContent` check), which already suppresses the fallback.
  *
- * Matched by longest-prefix so nested paths (`/profiles/:name`, `/sessions/:id`)
+ * Matched by longest-prefix so nested paths (`/sessions/:id`)
  * resolve through their parent surface.
  */
 const SURFACES_WITH_OWN_HEADER = [
-  '/', // Home — its own identity hero <h1>
+  // NOTE: the index '/' is the Agent Studio (Home), which does NOT render its own
+  // page <h1> (it leads with a slim launchpad strip + the roster/workbench), so it
+  // is intentionally ABSENT here — the chrome header shows its "Agent Studio"
+  // fallback title. The folded `/profiles` + `/tools` paths redirect to '/', so
+  // they need no entry either.
   '/chat',
   '/history',
   '/sessions',
@@ -76,12 +80,10 @@ const SURFACES_WITH_OWN_HEADER = [
   // and brings its own SurfaceHeader, so suppress the chrome fallback title here.
   '/workspaces',
   '/jobs',
-  '/profiles',
   // Connections mounts the existing Voice/Messaging/MCP Routes as tabs, and each
   // brings its OWN PageHeader — so the chrome fallback title is suppressed here
   // too (the tab strip + the surface's own header are the page chrome).
   '/connections',
-  '/tools', // ToolsetsPage brings its own PageHeader
   '/usage',
   '/logs',
   '/system',
@@ -89,12 +91,12 @@ const SURFACES_WITH_OWN_HEADER = [
 ] as const
 
 /** Whether the active surface renders its own in-content header (so the chrome
- * fallback title must not duplicate it). `/` matches only exactly (Home), every
- * other entry matches the path or any nested child path. */
+ * fallback title must not duplicate it). The index '/' (the Agent Studio) is
+ * intentionally NOT in the list — it has no own page <h1>, so it reads its
+ * "Agent Studio" title from the chrome fallback. Every listed prefix matches the
+ * path itself or any nested child path. */
 function surfaceRendersOwnHeader(pathname: string): boolean {
-  return SURFACES_WITH_OWN_HEADER.some((p) =>
-    p === '/' ? pathname === '/' : pathname === p || pathname.startsWith(p + '/'),
-  )
+  return SURFACES_WITH_OWN_HEADER.some((p) => pathname === p || pathname.startsWith(p + '/'))
 }
 
 /**

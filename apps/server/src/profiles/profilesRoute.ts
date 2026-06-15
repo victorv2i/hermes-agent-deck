@@ -12,11 +12,7 @@ import {
 import {
   readProfiles,
   readSoul,
-  readMemory,
-  readUserMemory,
   writeSoul,
-  writeMemory,
-  writeUserMemory,
   writeAvatar,
   writeActiveProfile,
   profileExists,
@@ -114,11 +110,20 @@ export async function profilesRoutes(
     return result
   })
 
-  // ── SOUL / MEMORY / USER (agent-deck BFF — NOT a hermes contract route) ──
-  // These read/write the profile dir directly because stock Hermes only exposes
-  // SOUL over HTTP. MEMORY/USER and Agent Deck's avatar sidecar are BFF-owned.
-  // The profile :name is path-guarded in profilesReader; a hostile name throws
-  // a PathGuardError → 403 here.
+  // ── SOUL (agent-deck BFF, reads/writes the profile dir directly) ──
+  // The Studio READS + EDITS a profile's soul through hermes's own per-profile
+  // API (studioRoute: GET/PUT /api/agent-deck/studio/profiles/:name/soul). This
+  // on-disk GET/PUT pair is the CEREMONY path: the onboarding hatch step seeds the
+  // default agent's SOUL.md here (IdentityRung) and the create handler below seeds
+  // a new agent's preset (writeSoul). Both run before a gateway exists to serve
+  // the API. The profile :name is path-guarded in profilesReader; a hostile name
+  // throws a PathGuardError (403) here.
+  //
+  // NOTE: the former flat-file MEMORY.md / USER.md editors were REMOVED. Installed
+  // hermes (config schema v29) has NO such files (memory is store-backed plus an
+  // external memory provider). Memory is authored through the Studio surface
+  // instead: the provider selector (/api/agent-deck/memory-provider) + the memory.*
+  // config block (/api/agent-deck/studio/config).
 
   /** Map a thrown error to an HTTP reply (path-guard → 403, missing → 404). */
   function sendError(reply: FastifyReply, err: unknown): FastifyReply {
@@ -147,46 +152,23 @@ export async function profilesRoutes(
     },
   )
 
-  app.get<{ Params: { name: string } }>(
-    '/api/agent-deck/profiles/:name/memory',
-    async (req, reply) => {
-      try {
-        return await reply.send(readMemory(hermesHome, req.params.name))
-      } catch (err) {
-        return sendError(reply, err)
-      }
-    },
-  )
-
-  app.get<{ Params: { name: string } }>(
-    '/api/agent-deck/profiles/:name/user',
-    async (req, reply) => {
-      try {
-        return await reply.send(readUserMemory(hermesHome, req.params.name))
-      } catch (err) {
-        return sendError(reply, err)
-      }
-    },
-  )
-
   /**
-   * Shared PUT handler for an editable profile text file (SOUL / MEMORY / USER).
-   * Validates a string body, then runs the supplied (already path-guarded) writer.
-   * MEMORY.md + USER.md are editable SYMMETRIC to SOUL.md; the honest boundary
-   * (editing MEMORY does not stop the runtime memory provider rewriting it) lives
-   * in the UI copy, not here.
+   * PUT handler for the editable SOUL.md. Validates a string body, then runs the
+   * (already path-guarded) writer. Used by the onboarding hatch ceremony to seed
+   * the default agent's soul. The former MEMORY.md / USER.md write handlers were
+   * removed: installed hermes has no such files, so the Studio authors memory via
+   * the provider + memory.* config instead.
    */
-  async function handleFileWrite(
+  async function handleSoulWrite(
     req: { params: { name: string }; body: { content?: unknown } | null | undefined },
     reply: FastifyReply,
-    write: (home: string, name: string, content: string) => void,
   ): Promise<FastifyReply> {
     const content = req.body?.content
     if (typeof content !== 'string') {
       return reply.code(400).send({ error: 'bad_request', message: 'content (string) is required' })
     }
     try {
-      write(hermesHome, req.params.name, content)
+      writeSoul(hermesHome, req.params.name, content)
       return await reply.send({ ok: true })
     } catch (err) {
       return sendError(reply, err)
@@ -195,17 +177,7 @@ export async function profilesRoutes(
 
   app.put<{ Params: { name: string }; Body: { content?: unknown } }>(
     '/api/agent-deck/profiles/:name/soul',
-    (req, reply) => handleFileWrite(req, reply, writeSoul),
-  )
-
-  app.put<{ Params: { name: string }; Body: { content?: unknown } }>(
-    '/api/agent-deck/profiles/:name/memory',
-    (req, reply) => handleFileWrite(req, reply, writeMemory),
-  )
-
-  app.put<{ Params: { name: string }; Body: { content?: unknown } }>(
-    '/api/agent-deck/profiles/:name/user',
-    (req, reply) => handleFileWrite(req, reply, writeUserMemory),
+    (req, reply) => handleSoulWrite(req, reply),
   )
 
   // ── Avatar write (identity ceremony / picker) ──
@@ -253,8 +225,34 @@ export async function profilesRoutes(
         .send({ error: 'bad_request', message: 'default is the built-in agent' })
     }
 
+    // Optional CLONE source. `cloneFrom` is read from the raw body (it is not part
+    // of the protocol create schema) and validated the SAME way as the new name:
+    // canonicalize (trim + lowercase) like hermes, then PROFILE_ID_RE-check BEFORE
+    // any exec, so a hostile source ("../evil") never reaches the CLI. When present,
+    // the create runs `hermes profile create <name> --clone-from <source>`, which
+    // copies config.yaml/.env/SOUL.md/skills from the source profile.
+    const rawCloneFrom = (req.body as { cloneFrom?: unknown } | null)?.cloneFrom
+    let cloneFrom: string | undefined
+    if (rawCloneFrom !== undefined && rawCloneFrom !== null && rawCloneFrom !== '') {
+      if (typeof rawCloneFrom !== 'string') {
+        return reply
+          .code(400)
+          .send({ error: 'bad_request', message: 'cloneFrom must be a valid profile id' })
+      }
+      const canonicalSource = canonicalizeProfileName(rawCloneFrom)
+      if (!isProfileId(canonicalSource)) {
+        return reply
+          .code(400)
+          .send({ error: 'bad_request', message: 'cloneFrom must be a valid profile id' })
+      }
+      cloneFrom = canonicalSource
+    }
+
     try {
-      const result = await runHermes(['profile', 'create', name], {
+      const createArgs = cloneFrom
+        ? ['profile', 'create', name, '--clone-from', cloneFrom]
+        : ['profile', 'create', name]
+      const result = await runHermes(createArgs, {
         hermesBin,
         execFile: opts.execFile,
       })
@@ -274,8 +272,11 @@ export async function profilesRoutes(
     // Born with a soul: write the chosen SOUL preset to the new profile's
     // SOUL.md. `default` is skipped — stock `hermes profile create` already
     // seeds Hermes' own default soul (seededByHermes), so overwriting it would
-    // only risk drift. The dir now exists, so a path-guard refusal is surfaced.
-    if (soulPreset && !SOUL_PRESETS[soulPreset].seededByHermes) {
+    // only risk drift. A CLONE is also skipped: `--clone-from` already copied the
+    // SOURCE profile's SOUL.md, and overwriting it with a preset would silently
+    // discard exactly what the user chose to clone. The dir now exists, so a
+    // path-guard refusal is surfaced.
+    if (!cloneFrom && soulPreset && !SOUL_PRESETS[soulPreset].seededByHermes) {
       try {
         writeSoul(hermesHome, name, SOUL_PRESETS[soulPreset].soul)
       } catch (err) {

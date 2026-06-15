@@ -53,12 +53,21 @@ function mapSkill(raw: RawSkill): SkillSummary | null {
   }
 }
 
+/** Build a `?profile=<name>` suffix for a valid profile name, else empty. */
+function profileSuffix(profile?: string): string {
+  return profile ? `?profile=${encodeURIComponent(profile)}` : ''
+}
+
 export class SkillsClient {
   constructor(private readonly dashboard: DashboardClient) {}
 
-  /** List every installed skill (enabled flag resolved). */
-  async listSkills(): Promise<SkillSummary[]> {
-    const raw = await this.dashboard.getJson<unknown>('/api/skills')
+  /**
+   * List every installed skill (enabled flag resolved). When `profile` is given,
+   * the dashboard read is scoped to that profile via `?profile=` (stock
+   * GET /api/skills accepts it); omitting it targets the active profile.
+   */
+  async listSkills(profile?: string): Promise<SkillSummary[]> {
+    const raw = await this.dashboard.getJson<unknown>(`/api/skills${profileSuffix(profile)}`)
     if (!Array.isArray(raw)) {
       throw new DashboardError('skills response was not an array')
     }
@@ -68,13 +77,19 @@ export class SkillsClient {
   /**
    * Enable or disable a skill by name. Returns the resolved `{ name, enabled }`.
    * Sends the dashboard's `PUT /api/skills/toggle` with the bearer token handled
-   * by the shared client.
+   * by the shared client. When `profile` is given, it is sent as `body.profile`
+   * so the toggle writes that profile's skills.disabled list (stock accepts it);
+   * omitting it targets the active profile.
    */
-  async toggleSkill(name: string, enabled: boolean): Promise<{ name: string; enabled: boolean }> {
+  async toggleSkill(
+    name: string,
+    enabled: boolean,
+    profile?: string,
+  ): Promise<{ name: string; enabled: boolean }> {
     const res = await this.dashboard.authedFetch('/api/skills/toggle', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ name, enabled }),
+      body: JSON.stringify(profile ? { name, enabled, profile } : { name, enabled }),
     })
     if (!res.ok) {
       throw new DashboardError(`PUT /api/skills/toggle failed: HTTP ${res.status}`, res.status)

@@ -142,12 +142,14 @@ describe('AppShell', () => {
     expect(within(banner).queryByTestId('surface-title')).not.toBeInTheDocument()
   })
 
-  it('does NOT stack a chrome surface-title on the Tools surface (it renders its own header)', () => {
-    // ToolsetsPage brings its own PageHeader, so the chrome fallback title must
-    // stay suppressed — the page was showing "Tools" twice.
-    renderShell({}, '/tools')
+  it('SHOWS the chrome surface-title on the Agent Studio (Home), which renders no own header', () => {
+    // The Agent Studio is Home (the index '/'); unlike the old Home hero it has no
+    // page <h1> (it leads with a launchpad strip + roster/workbench), so the chrome
+    // header shows its "Agent Studio" fallback title. (The folded Tools + Agents
+    // paths redirect to '/' via router.tsx, so they no longer reach the shell.)
+    renderShell({}, '/')
     const banner = screen.getByRole('banner')
-    expect(within(banner).queryByTestId('surface-title')).not.toBeInTheDocument()
+    expect(within(banner).getByTestId('surface-title')).toHaveTextContent('Agent Studio')
   })
 
   it('does NOT show a surface-title label on the Chat surface (it projects its own header)', () => {
@@ -397,12 +399,13 @@ describe('AppShell', () => {
       // sessions pane. It never shapeshifts to icons on resize.
       setViewport(false, /* wide */ true, /* cockpit */ true)
       renderShell({ variant: 'split', sessionsPane: pane })
-      // The labeled nav column is present, with visible text labels. (Agents is a
-      // stable always-visible labeled link, standing in as the proof that labels
-      // render, not icon-only rows.)
+      // The labeled nav column is present, with visible text labels.
       const nav = screen.getByRole('navigation', { name: /^sidebar$/i })
       expect(within(nav).getByRole('link', { name: /^chat$/i })).toBeInTheDocument()
-      expect(within(nav).getByRole('link', { name: /^agents$/i })).toBeInTheDocument()
+      // Agent Studio (Home) is a stable always-visible labeled link, standing in as
+      // the proof that labels render, not icon-only rows. (The old Agents link
+      // folded into the Studio.)
+      expect(within(nav).getByRole('link', { name: /^agent studio$/i })).toBeInTheDocument()
       // The dedicated sessions pane stays beside it.
       expect(screen.getByTestId('sessions-pane')).toBeInTheDocument()
       // The labeled column does NOT collapse to the slim icon-nav.

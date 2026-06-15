@@ -440,9 +440,9 @@ function AppShellLayout() {
           else togglePreview()
         }}
       >
-        {/* Surfaces are route-level code-split (navigation.tsx) — including Home,
-            which owns the index '/'; the Suspense boundary shows a calm skeleton
-            while a surface chunk loads on first navigation. */}
+        {/* Surfaces are route-level code-split (navigation.tsx) — including the
+            Agent Studio (Home), which owns the index '/'; the Suspense boundary
+            shows a calm skeleton while a surface chunk loads on first navigation. */}
         <Suspense fallback={<SurfaceFallback />}>
           <Outlet context={context} />
         </Suspense>

@@ -24,13 +24,19 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { Sidebar } from '@/components/layout/Sidebar'
 
 describe('NAV registry', () => {
-  it('mounts the Home front door at the index path as a STANDALONE top item', () => {
-    const home = NAV.find((i) => i.key === 'home')!
-    expect(home.label).toBe('Home')
-    expect(home.path).toBe('/')
-    expect(home.hidden).toBeUndefined()
-    // Home floats ABOVE the grouped nav as a pinned-top standalone item.
-    expect(home.pinnedTop).toBe(true)
+  it('mounts the Agent Studio (Home) at the index path as a STANDALONE top item', () => {
+    const studio = NAV.find((i) => i.key === 'studio')!
+    expect(studio.label).toBe('Agent Studio')
+    expect(studio.path).toBe('/')
+    expect(studio.hidden).toBeUndefined()
+    // The Studio floats ABOVE the grouped nav as a pinned-top standalone item.
+    expect(studio.pinnedTop).toBe(true)
+    // The old Home/Agents/Tools entries folded into the Studio (their paths
+    // redirect via router.tsx), so they are no longer NAV entries.
+    expect(NAV.find((i) => i.key === 'home')).toBeUndefined()
+    expect(NAV.find((i) => i.key === 'profiles')).toBeUndefined()
+    expect(NAV.find((i) => i.key === 'tools')).toBeUndefined()
+    expect(NAV.find((i) => i.key === 'agent-detail')).toBeUndefined()
   })
 
   it('promotes Chat to a STANDALONE pinned-top item at /chat (beside Home)', () => {
@@ -55,7 +61,7 @@ describe('NAV registry', () => {
 
   it('registers every integrated surface', () => {
     expect(NAV.map((i) => i.key)).toEqual([
-      'home',
+      'studio',
       'chat',
       'chats',
       'sessions',
@@ -63,10 +69,7 @@ describe('NAV registry', () => {
       'jobs',
       'kanban',
       'terminal',
-      'profiles',
-      'tools',
       'connections',
-      'agent-detail',
       'usage',
       'logs',
       'system',
@@ -74,9 +77,9 @@ describe('NAV registry', () => {
     ])
     // The dynamic Sessions History route is routed but hidden from the rail.
     expect(NAV.find((i) => i.key === 'sessions')?.hidden).toBe(true)
-    // The per-agent hub (/profiles/:name) is routed but hidden — reached from the
-    // Agents list / chip, not a rail link. (Memory/Soul + Skills folded into it.)
-    expect(NAV.find((i) => i.key === 'agent-detail')?.hidden).toBe(true)
+    // The per-agent hub (/profiles/:name) folded into the Agent Studio: no longer
+    // a NAV entry (the path redirects to /?agent=<name> via router.tsx).
+    expect(NAV.find((i) => i.key === 'agent-detail')).toBeUndefined()
     // Terminal + Workspaces UNIFIED into one surface: the separate Workspaces rail
     // entry and the standalone single-workspace route are gone (saved sets live in
     // a switcher inside the Terminal surface; the `/workspaces` + `/workspaces/:id`
@@ -119,13 +122,13 @@ describe('NAV registry', () => {
     expect(grouped).not.toContain('usage')
   })
 
-  it('pins Home + Chat to the TOP of the rail as standalone items', () => {
-    expect(NAV.find((i) => i.key === 'home')?.pinnedTop).toBe(true)
+  it('pins Agent Studio (Home) + Chat to the TOP of the rail as standalone items', () => {
+    expect(NAV.find((i) => i.key === 'studio')?.pinnedTop).toBe(true)
     expect(NAV.find((i) => i.key === 'chat')?.pinnedTop).toBe(true)
-    expect(pinnedTopNavItems().map((i) => i.key)).toEqual(['home', 'chat'])
-    // The grouped rail nav never re-lists the pinned-top Home/Chat.
+    expect(pinnedTopNavItems().map((i) => i.key)).toEqual(['studio', 'chat'])
+    // The grouped rail nav never re-lists the pinned-top Studio/Chat.
     const grouped = navByGroup().flatMap((g) => g.items.map((i) => i.key))
-    expect(grouped).not.toContain('home')
+    expect(grouped).not.toContain('studio')
     expect(grouped).not.toContain('chat')
   })
 
@@ -151,18 +154,16 @@ describe('NAV registry', () => {
 
   it('navByGroup orders by NAV_GROUPS, drops empty + hidden + pinned + pinnedTop, preserves order', () => {
     const grouped = navByGroup()
-    // The collapsible "Advanced" group was REMOVED — its surfaces flattened into the
-    // three visible groups: Files + Terminal into "Workspace", Tools into "Your
-    // agent", Usage into "Activity". Home/Chat are pinned-top; History/Sessions/
-    // Logs hidden; Settings pinned-bottom.
-    // "Your agent" leads (identity + capabilities, the personalization core), then
-    // Workspace, then Activity.
+    // Agent Studio (Home) + Chat are pinned-top; the Agents + Tools surfaces folded
+    // INTO the Studio, so the "Your agent" group is now just Connections (the
+    // outward reach). Files + Terminal in "Workspace"; History/Sessions/Logs
+    // hidden; Usage + Settings pinned-bottom.
+    // "Your agent" leads (the personalization core), then Workspace, then Activity.
     expect(grouped.map((g) => g.group)).toEqual(['agent', 'workspace', 'activity'])
     expect(grouped.map((g) => g.label)).toEqual(['Your agent', 'Workspace', 'Activity'])
-    // "Your agent" = who the agent is + what it can do (Agents, Tools, Connections).
+    // "Your agent" = the agent's outward reach (Connections); identity + tools live
+    // in the Studio (Home) now, not as separate rail rows.
     expect(grouped.find((g) => g.group === 'agent')!.items.map((i) => i.key)).toEqual([
-      'profiles',
-      'tools',
       'connections',
     ])
     // Workspace = the daily work surfaces (Files, Terminal). Terminal is now the
@@ -186,7 +187,7 @@ describe('NAV registry', () => {
   })
 
   it('surfaceTitle resolves the friendly active-surface name from a pathname', () => {
-    expect(surfaceTitle('/')).toBe('Home')
+    expect(surfaceTitle('/')).toBe('Agent Studio')
     expect(surfaceTitle('/chat')).toBe('Chat')
     expect(surfaceTitle('/history')).toBe('History')
     expect(surfaceTitle('/files')).toBe('Files')
@@ -197,10 +198,12 @@ describe('NAV registry', () => {
     // The folded Connections surface resolves its title; Voice/Messaging/MCP now
     // redirect here, so the live path the header reads is always /connections.
     expect(surfaceTitle('/connections')).toBe('Connections')
-    // The Tools surface resolves its title.
-    expect(surfaceTitle('/tools')).toBe('Tools')
-    // Nested paths resolve to their parent surface's label.
-    expect(surfaceTitle('/profiles/scout')).toBe('Agents')
+    // Tools + the Agents roster/hub folded into the Studio (their paths redirect
+    // to '/' via router.tsx), so they are no longer resolvable surface titles —
+    // a visit redirects before the header ever reads the old path.
+    expect(surfaceTitle('/tools')).toBeNull()
+    expect(surfaceTitle('/profiles')).toBeNull()
+    expect(surfaceTitle('/profiles/scout')).toBeNull()
     // A session-history deep link reads as its conceptual home (History).
     expect(surfaceTitle('/sessions/abc123')).toBe('History')
     // An unknown path yields no title (the header stays a plain spacer).
@@ -331,16 +334,17 @@ describe('Chat surface routing', () => {
     )
   }
 
-  it('renders the Home front door at the index route "/"', async () => {
+  it('renders the Agent Studio (Home) at the index route "/"', async () => {
     renderAt('/')
-    // Home is code-split, so the Suspense fallback shows first…
+    // The Studio is code-split, so the Suspense fallback shows first…
     expect(screen.getByTestId('surface-fallback')).toBeInTheDocument()
-    // …then the lazy Home chunk resolves and the welcoming hero appears. With no
-    // resolved active profile in this bare render, the hero shows the wordmark.
+    // …then the lazy Studio chunk resolves and its slim launchpad "Start a chat"
+    // action appears (no BFF in jsdom → empty roster, but the launchpad still
+    // renders, so it's the cleanest index-surface signal).
     await waitFor(() =>
-      expect(screen.getByRole('heading', { name: /agent deck/i })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: /start a chat/i })).toBeInTheDocument(),
     )
-    // The index is the front door, NOT the chat composer.
+    // The index is the Studio, NOT the chat composer.
     expect(screen.queryByRole('textbox', { name: /message your agent/i })).not.toBeInTheDocument()
   })
 

@@ -56,7 +56,7 @@ export interface MockDashboardOptions {
    * A matched path returns 200 with the body; an unmatched gated POST 404s. */
   postRoutes?: Record<string, unknown>
   /** Canned JSON bodies keyed by path for gated PUT routes (e.g.
-   * `/api/tools/toolsets/{name}`). A matched path returns `{ status: 200, body }`;
+   * `/api/skills/toggle`). A matched path returns `{ status: 200, body }`;
    * an unmatched gated PUT 404s exactly like an unknown GET route. */
   putRoutes?: Record<string, unknown>
   /** Override the PUBLIC `/api/status` body (no token). Defaults to

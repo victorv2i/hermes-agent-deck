@@ -177,14 +177,18 @@ describe('Sidebar', () => {
     // The "Advanced" collapsible toggle is gone entirely.
     expect(screen.queryByRole('button', { name: /^advanced$/i })).not.toBeInTheDocument()
     // The ex-Advanced surfaces are now visible top-level links (no expand needed):
-    // Files + Terminal (Workspace), Tools (Your agent), Usage (Activity).
+    // Files + Terminal (Workspace), Usage (Activity).
     expect(screen.getByRole('link', { name: /^files$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^terminal$/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /^tools$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^usage$/i })).toBeInTheDocument()
     // The promoted Tasks · Board · Connections remain visible top-level links.
     expect(screen.getByRole('link', { name: /^tasks$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^board$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^connections$/i })).toBeInTheDocument()
+    // The Agents + Tools surfaces FOLDED into the Agent Studio (Home), which leads
+    // the rail as a pinned-top link; they are no longer their own rail rows.
+    expect(screen.getByRole('link', { name: /^agent studio$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^tools$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^agents$/i })).not.toBeInTheDocument()
   })
 })

@@ -392,11 +392,12 @@ test.beforeEach(async ({ page }) => {
  */
 const ROUTES: { path: string; anchor: (page: Page) => Promise<void> }[] = [
   {
-    // Home (/) — the front door. The hero h1 is "Agent Deck" (or "Meet <name>"
-    // once an agent is named); with the stubbed default profile it reads "Meet".
+    // Home (/) — the Agent Studio. It leads with a slim launchpad strip (status +
+    // "Start a chat") above the roster/workbench, so the launchpad's stable
+    // "Start a chat" action is the first-paint anchor (no page hero h1).
     path: '/',
     anchor: async (page) => {
-      await expect(page.getByRole('heading', { name: /Agent Deck|Meet |Welcome/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /start a chat/i })).toBeVisible()
     },
   },
   {
@@ -441,15 +442,18 @@ const ROUTES: { path: string; anchor: (page: Page) => Promise<void> }[] = [
     },
   },
   {
+    // Agents folded into the Agent Studio (Home): /profiles REDIRECTS to '/', so
+    // the Studio launchpad is what lands (and must stay console-clean).
     path: '/profiles',
     anchor: async (page) => {
-      await expect(page.getByRole('heading', { name: /Agents/i })).toBeVisible()
+      await expect(page.getByRole('button', { name: /start a chat/i })).toBeVisible()
     },
   },
   {
+    // Tools folded into the Agent Studio (Home): /tools REDIRECTS to '/'.
     path: '/tools',
     anchor: async (page) => {
-      await expect(page.getByRole('heading', { name: 'Tools' })).toBeVisible()
+      await expect(page.getByRole('button', { name: /start a chat/i })).toBeVisible()
     },
   },
   {
@@ -545,4 +549,20 @@ test('/models redirects to /settings and the model picker is reachable there', a
   await expect(page).toHaveURL(/\/settings$/)
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   await expect(page.locator('[data-testid^="model-row-"]').first()).toBeVisible()
+})
+
+test('Agents + Tools fold into the Agent Studio (Home): the old paths redirect', async ({
+  page,
+}) => {
+  // /profiles + /tools → '/' (the Studio is the single canonical authoring home).
+  await page.goto('/profiles')
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('button', { name: /start a chat/i })).toBeVisible()
+  await page.goto('/tools')
+  await expect(page).toHaveURL(/\/$/)
+  // A per-agent deep link opens that agent in the Studio (/?agent=<name>).
+  await page.goto('/profiles/default')
+  await expect(page).toHaveURL(/\/\?agent=default$/)
+  // The selected agent's workbench is open (its Identity tab leads).
+  await expect(page.getByRole('tab', { name: 'Identity' })).toBeVisible()
 })

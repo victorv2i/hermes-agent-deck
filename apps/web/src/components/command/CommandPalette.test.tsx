@@ -404,9 +404,8 @@ describe('CommandPalette (connected)', () => {
     expect(screen.getByRole('option', { name: /open logs/i })).toBeInTheDocument()
   })
 
-  // Note: the Home ⌘K chip seam is App-owned now: the chip drives the
-  // `openPalette` Outlet-context action, so the connected palette has no
-  // self-open path. That wiring is pinned in App.test.tsx ("the Outlet
-  // context's openPalette action opens the command palette") and the chip
-  // side in HomePage.test.tsx / HomeRoute.test.tsx.
+  // Note: the ⌘K palette open seam is App-owned: the `openPalette`
+  // Outlet-context action drives it, so the connected palette has no self-open
+  // path. That wiring is pinned in App.test.tsx ("the Outlet context's
+  // openPalette action opens the command palette").
 })

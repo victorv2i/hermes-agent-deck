@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { KNOWN_HERMES_ROUTES, routeKey, type HttpMethod } from './knownHermesRoutes'
 
 /**
- * CONTRACT-CONFORMANCE TEST — the anti-recurrence net.
+ * CONTRACT-CONFORMANCE TEST - the anti-recurrence net.
  *
  * Agent Deck's BFF must only ever call hermes routes that STOCK hermes actually
  * serves. v1 was built against a retired dashboard overlay and shipped
  * calls to endpoints absent from stock (Models, Files), which silently 404'd.
  * This test makes that class of bug a RED build: every hermes route shape the
- * BFF invokes is asserted to be a member of `KNOWN_HERMES_ROUTES` — the frozen
+ * BFF invokes is asserted to be a member of `KNOWN_HERMES_ROUTES` - the frozen
  * transcription of stock's real route table (`knownHermesRoutes.ts`).
  *
  * `BFF_CALLED_ROUTES` below is a hand-maintained mirror of the BFF's hermes
@@ -23,9 +23,9 @@ import { KNOWN_HERMES_ROUTES, routeKey, type HttpMethod } from './knownHermesRou
  * gone from `BFF_CALLED_ROUTES`.
  *
  * The shared DashboardClient (Lane A) is re-pointed off the RETIRED
- * `GET /api/auth/session-token` (stock removed it — the token now ships inside
+ * `GET /api/auth/session-token` (stock removed it - the token now ships inside
  * index.html as `window.__HERMES_SESSION_TOKEN__`, web_server.py:3881; the
- * endpoint 404s — tests/hermes_cli/test_web_server.py:300-311) onto `GET /`, the
+ * endpoint 404s - tests/hermes_cli/test_web_server.py:300-311) onto `GET /`, the
  * SPA catch-all that serves the token-injected page (web_server.py:3927). The
  * BFF reads the token out of that HTML, so `GET /` is the (real) token-source
  * route now listed below, and the fabricated endpoint is gone.
@@ -47,7 +47,7 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   // status (public, statusClient.ts)
   { method: 'GET', path: '/api/status', site: 'hermes/statusClient.ts:55' },
 
-  // dashboard session token — read from the SPA root's injected
+  // dashboard session token - read from the SPA root's injected
   // window.__HERMES_SESSION_TOKEN__ (DashboardClient.fetchSessionToken). Real
   // stock route: the SPA catch-all serve_spa (web_server.py:3927).
   { method: 'GET', path: '/', site: 'hermes/dashboardClient.ts:120' },
@@ -87,30 +87,20 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   { method: 'GET', path: '/api/skills', site: 'skills/skillsClient.ts:61' },
   { method: 'PUT', path: '/api/skills/toggle', site: 'skills/skillsClient.ts:74' },
 
-  // toolsets (tools/toolsetsClient.ts) — list (web_server.py:5716) + toggle
-  // (web_server.py:5752). The toggle PUT persists to config.yaml; the gateway
-  // must restart to reload — the UI surfaces honest "restart to apply" copy.
-  { method: 'GET', path: '/api/tools/toolsets', site: 'tools/toolsetsClient.ts' },
-  {
-    method: 'PUT',
-    path: '/api/tools/toolsets/{name}',
-    site: 'tools/toolsetsClient.ts (toggleToolset)',
-  },
-
-  // analytics / usage (usage/usageClient.ts) — the rollup, PLUS the per-model
+  // analytics / usage (usage/usageClient.ts) - the rollup, PLUS the per-model
   // billing_provider join (web_server.py:3239) that lets the BFF derive an honest
   // billing mode instead of mislabeling a $0 subscription window as "free".
   { method: 'GET', path: '/api/analytics/usage', site: 'usage/usageClient.ts' },
   { method: 'GET', path: '/api/analytics/models', site: 'usage/usageClient.ts' },
 
-  // messaging hub (messaging/messagingRoutes.ts) — registry × live status × env.
+  // messaging hub (messaging/messagingRoutes.ts) - registry × live status × env.
   // GET reads the stock env shape (web_server.py:1249); the token write proxies
   // the stock env write (web_server.py:1268), allowlisted to registry bot tokens
   // only. (GET /api/status is already listed above via statusClient.)
   { method: 'GET', path: '/api/env', site: 'messaging/messagingRoutes.ts' },
   { method: 'PUT', path: '/api/env', site: 'messaging/messagingRoutes.ts' },
 
-  // voice console (voice/voiceRoutes.ts) — composes the tts/stt/voice config
+  // voice console (voice/voiceRoutes.ts) - composes the tts/stt/voice config
   // blocks (GET /api/config, web_server.py:910), writes them confined to those
   // blocks (read-modify-write against PUT /api/config, web_server.py:1239), and
   // reads/writes provider key SHAPE via /api/env (GET web_server.py:1249 / PUT
@@ -122,21 +112,21 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   { method: 'PUT', path: '/api/config', site: 'voice/voiceRoutes.ts' },
   { method: 'GET', path: '/api/env', site: 'voice/voiceRoutes.ts' },
   { method: 'PUT', path: '/api/env', site: 'voice/voiceRoutes.ts' },
-  // "Speak this" test — proxies POST /api/audio/speak (web_server.py:1265).
+  // "Speak this" test - proxies POST /api/audio/speak (web_server.py:1265).
   { method: 'POST', path: '/api/audio/speak', site: 'voice/voiceRoutes.ts (speak)' },
-  // ElevenLabs voice picker — proxies GET /api/audio/elevenlabs/voices (web_server.py:1215).
+  // ElevenLabs voice picker - proxies GET /api/audio/elevenlabs/voices (web_server.py:1215).
   { method: 'GET', path: '/api/audio/elevenlabs/voices', site: 'voice/voiceRoutes.ts (el-voices)' },
 
-  // MCP Server Manager (mcp/mcpRoutes.ts) — an agent-deck-OWN surface: the LIST +
+  // MCP Server Manager (mcp/mcpRoutes.ts) - an agent-deck-OWN surface: the LIST +
   // add/toggle/remove writes touch the `~/.hermes/config.yaml` `mcp_servers` slice
   // DIRECTLY (path-guarded fs), the catalog is a path-guarded manifest read, and
   // the `test` probe execs `hermes mcp test <name>` (the CLI, not an HTTP route).
   // The ONLY hermes HTTP route it calls is the masked-key store via stock
-  // `PUT /api/env` (web_server.py:1268) — already listed above for messaging, so
+  // `PUT /api/env` (web_server.py:1268) - already listed above for messaging, so
   // it adds NO new route shape. (Listed here for provenance, deduped by routeKey.)
   { method: 'PUT', path: '/api/env', site: 'mcp/mcpRoutes.ts (masked key store)' },
 
-  // models — re-pointed (Lane C) onto real stock /api/model/* endpoints, fetched
+  // models - re-pointed (Lane C) onto real stock /api/model/* endpoints, fetched
   // concurrently by the BFF (web_server.py:937 / :1037 / :1055), plus the oauth
   // status read (web_server.py:1573) that drives the `usable` flag.
   { method: 'GET', path: '/api/model/info', site: 'models/modelsRoute.ts' },
@@ -168,16 +158,16 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
     path: '/api/providers/oauth/{provider_id}',
     site: 'models/modelsRoute.ts',
   },
-  // models — the cross-provider switch proxies the stock POST /api/model/set
+  // models - the cross-provider switch proxies the stock POST /api/model/set
   // (web_server.py:1099).
   { method: 'POST', path: '/api/model/set', site: 'models/modelsRoute.ts' },
 
-  // files — re-pointed (Lane D) off the fabricated /api/workspace/* surface.
+  // files - re-pointed (Lane D) off the fabricated /api/workspace/* surface.
   // listRoots() now derives workspace roots from GET /api/status (hermes_home,
   // already listed above via statusClient); directory/file reads are BFF-local
-  // fs reads, not hermes calls — so Files contributes no NEW route shape here.
+  // fs reads, not hermes calls - so Files contributes no NEW route shape here.
 
-  // skills hub (skills/skillsHubRoute.ts) — browse/install/uninstall/update.
+  // skills hub (skills/skillsHubRoute.ts) - browse/install/uninstall/update.
   // All four routes are REAL stock hermes endpoints (web_server.py:5390/5350/5367/5380).
   // The action-status poll reuses GET /api/actions/{name}/status (web_server.py:794),
   // already listed above; deduped by routeKey.
@@ -187,24 +177,24 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   { method: 'POST', path: '/api/skills/hub/update', site: 'skills/skillsHubRoute.ts' },
   { method: 'GET', path: '/api/actions/{name}/status', site: 'skills/skillsHubRoute.ts (poll)' },
 
-  // env surface (settings/envRoute.ts) — provider/tool/voice key CRUD (shape-only).
+  // env surface (settings/envRoute.ts) - provider/tool/voice key CRUD (shape-only).
   // GET/PUT/DELETE /api/env are all real stock routes (web_server.py:1926/1945/2029).
   // Already listed above for messaging + voice + mcp; deduped by routeKey.
   { method: 'GET', path: '/api/env', site: 'settings/envRoute.ts' },
   { method: 'PUT', path: '/api/env', site: 'settings/envRoute.ts' },
   { method: 'DELETE', path: '/api/env', site: 'settings/envRoute.ts' },
 
-  // system stats (system/systemStatsRoute.ts) — proxies real stock GET /api/system/stats
+  // system stats (system/systemStatsRoute.ts) - proxies real stock GET /api/system/stats
   // (web_server.py:756); psutil-enriched when present, graceful fallback when absent.
   { method: 'GET', path: '/api/system/stats', site: 'system/systemStatsRoute.ts' },
 
-  // curator (system/curatorRoute.ts) — proxies real stock curator routes
+  // curator (system/curatorRoute.ts) - proxies real stock curator routes
   // (web_server.py:844/869/877). Pause/resume/run-now controls.
   { method: 'GET', path: '/api/curator', site: 'system/curatorRoute.ts (status)' },
   { method: 'PUT', path: '/api/curator/paused', site: 'system/curatorRoute.ts (pause)' },
   { method: 'POST', path: '/api/curator/run', site: 'system/curatorRoute.ts (run-now)' },
 
-  // memory provider (profiles/memoryProviderRoute.ts) — proxies real stock routes
+  // memory provider (profiles/memoryProviderRoute.ts) - proxies real stock routes
   // (web_server.py:4983/5018/5042). Read active provider + catalog, switch, reset.
   { method: 'GET', path: '/api/memory', site: 'profiles/memoryProviderRoute.ts (status)' },
   { method: 'PUT', path: '/api/memory/provider', site: 'profiles/memoryProviderRoute.ts (set)' },
@@ -214,7 +204,7 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
     site: 'profiles/memoryProviderRoute.ts (reset)',
   },
 
-  // provider validate (settings/providerValidateRoute.ts) — proxies real stock
+  // provider validate (settings/providerValidateRoute.ts) - proxies real stock
   // POST /api/providers/validate (web_server.py:1974). Live-probes a key.
   {
     method: 'POST',
@@ -222,7 +212,19 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
     site: 'settings/providerValidateRoute.ts',
   },
 
-  // kanban plugin (kanban/kanbanClient.ts) — all real, mounted /api/plugins/kanban
+  // Agent Studio (profiles/studioRoute.ts) - per-profile authoring through hermes's
+  // OWN per-profile dashboard API, scoped by ?profile= / body.profile. Config
+  // (GET/PUT /api/config), model options (GET /api/model/options), skills (GET
+  // /api/skills + PUT /api/skills/toggle), and env (GET/PUT /api/env) are all real
+  // stock routes already listed above (deduped by routeKey). The Studio adds three
+  // route SHAPES not previously called by the BFF: the per-profile model set and
+  // the soul GET/PUT (the former fs-backed soul route never hit the dashboard).
+  // All three are members of the frozen registry (web_server.py:9080/9035/9046).
+  { method: 'PUT', path: '/api/profiles/{name}/model', site: 'profiles/studioRoute.ts (model set)' },
+  { method: 'GET', path: '/api/profiles/{name}/soul', site: 'profiles/studioRoute.ts (soul read)' },
+  { method: 'PUT', path: '/api/profiles/{name}/soul', site: 'profiles/studioRoute.ts (soul write)' },
+
+  // kanban plugin (kanban/kanbanClient.ts) - all real, mounted /api/plugins/kanban
   { method: 'GET', path: '/api/plugins/kanban/board', site: 'kanban/kanbanClient.ts:314' },
   { method: 'GET', path: '/api/plugins/kanban/boards', site: 'kanban/kanbanClient.ts:350' },
   {
@@ -256,7 +258,7 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
     site: 'kanban/kanbanClient.ts (addComment)',
   },
 
-  // connections (connections/connectionsRoutes.ts) — pairing / webhooks / credential
+  // connections (connections/connectionsRoutes.ts) - pairing / webhooks / credential
   // pool. All real stock routes (web_server.py:4620-4945). This whole client was
   // previously absent from BOTH this mirror AND app.ts's registration, so it shipped
   // unwired and slipped the net; now registered + mirrored here.

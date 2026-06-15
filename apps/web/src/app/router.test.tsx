@@ -1,47 +1,64 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import {
-  createMemoryRouter,
-  Navigate,
-  Outlet,
-  RouterProvider,
-  type RouteObject,
-} from 'react-router-dom'
+import { render } from '@testing-library/react'
+import { createMemoryRouter, Outlet, RouterProvider, type RouteObject } from 'react-router-dom'
 import { routes } from './router'
 
 /**
- * Router redirect contract: the standalone `/memory` and `/skills` surfaces were
- * folded into each agent's hub, but deep links must survive. This mirrors the
- * hand-authored non-NAV children in router.tsx (kept in sync) and asserts those
- * visits land on `/profiles`.
+ * Router redirect contract for the Agent Studio fold: the Agents roster
+ * (`/profiles`), the per-agent hub (`/profiles/:name`), and Tools (`/tools`) all
+ * folded INTO the Studio (Home), so the old paths must still resolve as redirects
+ * (deep links + the command palette keep working). The standalone Memory + Skills
+ * surfaces folded in earlier, now redirecting to the Studio too.
+ *
+ * These extract the REAL redirect route objects from the exported `routes` config
+ * (NOT a stub) and mount them under a plain Outlet — so the actual `<Navigate>` /
+ * `<ProfileNameRedirect>` elements are exercised, while the heavy `App` shell that
+ * owns '/' (and needs the full provider stack) is swapped for a marker. A
+ * regression in the real redirect lines is therefore still caught.
  */
-function routesWithRedirect(): RouteObject[] {
+const realChildren = routes[0]!.children!
+const realChild = (path: string) => realChildren.find((r) => r.path === path)
+
+/** The real redirect children, re-homed under a bare Outlet (App swapped out). */
+function redirectRoutes(): RouteObject[] {
+  const paths = ['profiles', 'profiles/:name', 'tools', 'memory', 'skills']
   return [
     {
       path: '/',
       element: <Outlet />,
       children: [
-        { path: 'profiles', element: <div>Agents roster</div> },
-        { path: 'memory', element: <Navigate to="/profiles" replace /> },
-        { path: 'skills', element: <Navigate to="/profiles" replace /> },
+        { index: true, element: <div data-testid="studio-home">studio</div> },
+        ...paths.map((p) => {
+          const real = realChild(p)
+          if (!real) throw new Error(`router.tsx is missing the '${p}' redirect route`)
+          return { path: p, element: real.element }
+        }),
       ],
     },
   ]
 }
 
-describe('router · retired surface redirects', () => {
-  it('redirects /memory → /profiles (deep links survive the fold)', () => {
-    const router = createMemoryRouter(routesWithRedirect(), { initialEntries: ['/memory'] })
+describe('router · Studio fold redirects', () => {
+  const redirectsToHome = ['/profiles', '/tools', '/memory', '/skills']
+  for (const from of redirectsToHome) {
+    it(`redirects ${from} → / (folded into the Agent Studio)`, () => {
+      const router = createMemoryRouter(redirectRoutes(), { initialEntries: [from] })
+      render(<RouterProvider router={router} />)
+      expect(router.state.location.pathname).toBe('/')
+    })
+  }
+
+  it('redirects /profiles/:name → /?agent=<name> (the per-agent deep link opens that agent)', () => {
+    const router = createMemoryRouter(redirectRoutes(), { initialEntries: ['/profiles/scout'] })
     render(<RouterProvider router={router} />)
-    expect(screen.getByText('Agents roster')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.search).toBe('?agent=scout')
   })
 
-  it('redirects /skills → /profiles (skills folded into the agent hub)', () => {
-    const router = createMemoryRouter(routesWithRedirect(), { initialEntries: ['/skills'] })
+  it('preserves the per-agent deep link through URL-encoding of the name', () => {
+    const router = createMemoryRouter(redirectRoutes(), { initialEntries: ['/profiles/my-agent'] })
     render(<RouterProvider router={router} />)
-    expect(screen.getByText('Agents roster')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/profiles')
+    expect(router.state.location.search).toBe('?agent=my-agent')
   })
 })
 

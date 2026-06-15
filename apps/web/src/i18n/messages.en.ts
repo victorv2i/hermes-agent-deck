@@ -35,7 +35,9 @@ export const en = {
   'navigation.group.workspace.label': 'Workspace',
   'navigation.group.agent.label': 'Your agent',
   'navigation.group.activity.label': 'Activity',
-  'navigation.item.home.label': 'Home',
+  // Agent Studio is Home (the index '/'). The Agents + Tools surfaces folded into
+  // it, so their label keys are gone (their old paths redirect via router.tsx).
+  'navigation.item.studio.label': 'Agent Studio',
   'navigation.item.chat.label': 'Chat',
   // The History destination folded into Chat in the nav; its route survives, so
   // the label key stays (read by surfaceTitle for /history + /sessions/:id).
@@ -45,10 +47,7 @@ export const en = {
   'navigation.item.kanban.label': 'Board',
   'navigation.item.jobs.label': 'Tasks',
   'navigation.item.terminal.label': 'Terminal',
-  'navigation.item.profiles.label': 'Agents',
-  'navigation.item.tools.label': 'Tools',
   'navigation.item.connections.label': 'Connections',
-  'navigation.item.agent-detail.label': 'Agent',
   'navigation.item.usage.label': 'Usage',
   'navigation.item.logs.label': 'Logs',
   'navigation.item.system.label': 'System',

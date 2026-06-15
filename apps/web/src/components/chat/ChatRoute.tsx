@@ -25,8 +25,9 @@ import { resolveChatAgent } from './chatIdentity'
 import type { ChatOutletContext } from '@/app/navigation'
 
 /**
- * The first-run hand-off Home rides into Chat (HomeRoute.onStartChat): a starter
- * prompt to seed into the composer, and whether to land focus there.
+ * The hand-off the Agent Studio (Home) rides into Chat (its "Start a chat"
+ * action): a starter prompt to seed into the composer, and whether to land focus
+ * there.
  */
 interface ChatHandoffState {
   draft?: string
