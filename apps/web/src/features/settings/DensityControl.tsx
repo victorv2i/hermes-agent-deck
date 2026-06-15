@@ -1,6 +1,6 @@
 import { AlignJustify, Rows3 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useDensity, type Density } from './density'
 
 /**
@@ -15,22 +15,15 @@ import { useDensity, type Density } from './density'
  * list so it's reachable regardless of the config load state.
  */
 
-interface Option {
-  value: Density
-  label: string
-  hint: string
-  icon: typeof Rows3
-}
-
-const OPTIONS: Option[] = [
+const OPTIONS = [
   {
-    value: 'comfortable',
+    value: 'comfortable' as Density,
     label: 'Comfortable',
     hint: 'Spacious (the default)',
     icon: Rows3,
   },
   {
-    value: 'compact',
+    value: 'compact' as Density,
     label: 'Compact',
     hint: 'Tighter, more per screen',
     icon: AlignJustify,
@@ -52,38 +45,12 @@ export function DensityControl() {
           </p>
         </div>
 
-        <div
-          role="radiogroup"
+        <SegmentedControl
+          value={density}
+          onValueChange={(v) => setDensity(v)}
+          options={OPTIONS}
           aria-label="Density"
-          className="ad-surface inline-flex shrink-0 rounded-[10px] bg-surface-1 p-1"
-        >
-          {OPTIONS.map((opt) => {
-            const checked = density === opt.value
-            const Icon = opt.icon
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="radio"
-                aria-checked={checked}
-                title={opt.hint}
-                onClick={() => setDensity(opt.value)}
-                className={cn(
-                  // min-h-11 keeps a 44px touch target on mobile, relaxed to the
-                  // compact density on sm+ (touch-manipulation drops tap delay).
-                  'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0',
-                  'focus-visible:ad-focus',
-                  checked
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
+        />
       </CardContent>
     </Card>
   )

@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Switch } from '@/components/ui/switch'
 
 /**
  * VoiceToggle — an honest, accessible on/off switch (the shared `role="switch"`
@@ -39,31 +39,13 @@ export function VoiceToggle({
           {hint}
         </p>
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        disabled={disabled}
         aria-labelledby={labelId}
         aria-describedby={hintId}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          // 44px touch target on mobile (WCAG 2.5.5); compact pill on sm+.
-          'relative inline-flex min-h-11 min-w-11 touch-manipulation shrink-0 items-center rounded-full transition-colors',
-          'sm:h-6 sm:min-h-0 sm:min-w-0 sm:w-11',
-          'focus-visible:ad-focus',
-          'disabled:cursor-not-allowed disabled:opacity-60',
-          checked ? 'bg-primary' : 'bg-muted',
-        )}
-      >
-        <span
-          aria-hidden
-          className={cn(
-            'inline-block size-5 rounded-full bg-background shadow-sm transition-transform motion-reduce:transition-none',
-            checked ? 'translate-x-[22px]' : 'translate-x-0.5',
-          )}
-        />
-      </button>
+      />
     </div>
   )
 }

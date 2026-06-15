@@ -5,12 +5,12 @@
  * title + period selector, headline stat cards, the per-day token trend, and the
  * per-model breakdown. Centered, generous whitespace.
  */
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useState } from 'react'
 import { BarChart3, Brain, Coins, DollarSign, MessagesSquare, Sparkles } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState, ErrorState } from '@/components/ui/state'
-import { cn } from '@/lib/utils'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { PeriodSelector } from './PeriodSelector'
 import { StatCard } from './StatCard'
 import { CacheHitTile } from './CacheHitTile'
@@ -266,7 +266,16 @@ export function UsagePage({
               up per-provider by their recorded billing_provider. A small
               segmented toggle swaps the view; ModelBreakdown stays untouched. */}
           <section className="flex flex-col gap-3">
-            <BreakdownToggle value={breakdownBy} onChange={setBreakdownBy} />
+            <SegmentedControl<'model' | 'provider'>
+              aria-label="Breakdown grouping"
+              options={[
+                { value: 'model', label: 'By model' },
+                { value: 'provider', label: 'By provider' },
+              ]}
+              value={breakdownBy}
+              onValueChange={setBreakdownBy}
+              className="self-start"
+            />
             {breakdownBy === 'provider' ? (
               <ProviderBreakdown byModel={data.byModel} />
             ) : (
@@ -288,96 +297,6 @@ export function UsagePage({
           />
         </>
       ) : null}
-    </div>
-  )
-}
-
-const BREAKDOWN_OPTIONS: Array<{ key: 'model' | 'provider'; label: string }> = [
-  { key: 'model', label: 'By model' },
-  { key: 'provider', label: 'By provider' },
-]
-
-/**
- * Segmented toggle for the breakdown view (By model / By provider). Same shape +
- * accent rules as PeriodSelector: a hairline-bordered pill where the active
- * segment carries the amber `--primary` (the one place amber is right here — it's
- * an active/selected state), inactive segments stay muted. 44px touch target on
- * mobile, relaxed on desktop.
- *
- * a11y (I5): an ARIA radiogroup implementing the roving-tabindex pattern — only
- * the checked radio is in the tab order; ArrowLeft/ArrowRight (and Up/Down) move
- * selection with wrap-around, mirroring PeriodSelector's WAI-ARIA radio map.
- */
-function BreakdownToggle({
-  value,
-  onChange,
-}: {
-  value: 'model' | 'provider'
-  onChange: (next: 'model' | 'provider') => void
-}) {
-  // Refs to each radio button so an arrow keypress can move DOM focus to the
-  // newly-selected segment (roving tabindex).
-  const buttonsRef = useRef<Array<HTMLButtonElement | null>>([])
-
-  const selectAt = (index: number) => {
-    const wrapped =
-      ((index % BREAKDOWN_OPTIONS.length) + BREAKDOWN_OPTIONS.length) % BREAKDOWN_OPTIONS.length
-    const next = BREAKDOWN_OPTIONS[wrapped]
-    if (next === undefined) return
-    onChange(next.key)
-    // Move focus to the now-checked radio so the tab order follows selection.
-    buttonsRef.current[wrapped]?.focus()
-  }
-
-  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        e.preventDefault()
-        selectAt(index + 1)
-        break
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        e.preventDefault()
-        selectAt(index - 1)
-        break
-    }
-  }
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Breakdown grouping"
-      className="inline-flex items-center gap-0.5 self-start rounded-[9px] border border-border bg-surface-2/60 p-0.5"
-    >
-      {BREAKDOWN_OPTIONS.map((opt, index) => {
-        const active = opt.key === value
-        return (
-          <button
-            key={opt.key}
-            ref={(el) => {
-              buttonsRef.current[index] = el
-            }}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            // Roving tabindex: only the checked radio is reachable via Tab; the
-            // arrow keys traverse the rest.
-            tabIndex={active ? 0 : -1}
-            onClick={() => onChange(opt.key)}
-            onKeyDown={(e) => onKeyDown(e, index)}
-            className={cn(
-              'min-h-11 touch-manipulation rounded-[6px] px-3 py-1.5 text-xs font-medium transition-colors motion-reduce:transition-none sm:min-h-0',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
-            )}
-          >
-            {opt.label}
-          </button>
-        )
-      })}
     </div>
   )
 }

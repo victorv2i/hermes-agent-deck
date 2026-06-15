@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { NotificationsControl } from '@/components/notifications'
 import { PageHeader } from '@/components/ui/page-header'
 import { useTranslation } from '@/i18n'
@@ -220,7 +221,7 @@ function SettingsSearch({ value, onChange }: { value: string; onChange: (v: stri
         className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-foreground-tertiary"
         aria-hidden
       />
-      <input
+      <Input
         id={id}
         type="search"
         role="searchbox"
@@ -228,7 +229,7 @@ function SettingsSearch({ value, onChange }: { value: string; onChange: (v: stri
         placeholder="Search settings…"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="ad-surface h-10 w-full rounded-[10px] bg-card pr-3 pl-9 text-sm text-foreground placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="bg-card pr-3 pl-9"
       />
     </div>
   )

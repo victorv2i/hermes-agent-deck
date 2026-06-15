@@ -12,6 +12,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react'
+import { RadioCardGroup } from '@/components/ui/radio-card-group'
 import type {
   GatewayStatus,
   HermesUpdateState,
@@ -320,87 +321,41 @@ function ChannelChooser({
   selected: HermesUpdateChannel
   onSelect: (channel: HermesUpdateChannel) => void
 }) {
-  const groupLabelId = useId()
+  const options = (
+    [
+      {
+        channel: 'stable' as const,
+        hint: 'Recommended: the released version your install tracks.',
+      },
+      {
+        channel: 'latest-commit' as const,
+        hint: 'Advanced · bleeding-edge: the newest commit on the main branch.',
+      },
+    ] as const
+  ).map(({ channel, hint }) => {
+    const available = channels[channel].status === 'update-available'
+    return {
+      value: channel,
+      label: CHANNEL_LABEL[channel],
+      // Per-channel verdict stays honest but quiet; folded into description so the
+      // ONE amber badge on the card header remains the primary update signal.
+      description: `${available ? 'Update available · ' : ''}${hint}`,
+    }
+  })
+
   return (
     <div className="px-4 pt-1">
-      <p id={groupLabelId} className="mb-1.5 text-xs font-medium text-muted-foreground">
-        Update channel
-      </p>
-      <div role="radiogroup" aria-labelledby={groupLabelId} className="flex flex-col gap-1.5">
-        <ChannelOption
-          channel="stable"
-          state={channels.stable}
-          selected={selected === 'stable'}
-          onSelect={onSelect}
-          hint="Recommended: the released version your install tracks."
-        />
-        <ChannelOption
-          channel="latest-commit"
-          state={channels['latest-commit']}
-          selected={selected === 'latest-commit'}
-          onSelect={onSelect}
-          hint="Advanced · bleeding-edge: the newest commit on the main branch."
-        />
-      </div>
+      <p className="mb-1.5 text-xs font-medium text-muted-foreground">Update channel</p>
+      <RadioCardGroup
+        value={selected}
+        onValueChange={onSelect}
+        options={options}
+        aria-label="Update channel"
+      />
       <p className="mt-1.5 text-[11px] leading-relaxed text-foreground-tertiary">
         Channels track git branches (Hermes ships from a checkout), not signed release tags.
       </p>
     </div>
-  )
-}
-
-function ChannelOption({
-  channel,
-  state,
-  selected,
-  onSelect,
-  hint,
-}: {
-  channel: HermesUpdateChannel
-  state: HermesChannelState
-  selected: boolean
-  onSelect: (channel: HermesUpdateChannel) => void
-  hint: string
-}) {
-  const available = state.status === 'update-available'
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={() => onSelect(channel)}
-      className={cn(
-        'ad-surface flex min-h-[44px] items-center gap-3 rounded-lg border px-3 py-2 text-left',
-        'transition-colors focus-visible:ad-focus',
-        selected ? 'border-border-strong bg-surface-1' : 'border-border hover:bg-muted/40',
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          'grid size-4 shrink-0 place-items-center rounded-full border',
-          selected ? 'border-primary' : 'border-border-strong',
-        )}
-      >
-        {selected ? <span className="size-2 rounded-full bg-primary" /> : null}
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-          {CHANNEL_LABEL[channel]}
-          {/* Per-channel verdict stays honest but quiet — the ONE amber badge
-              lives on the card header; rows get a subtle dot + plain text. */}
-          {available ? (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-normal text-muted-foreground">
-              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warning" />
-              Update available
-            </span>
-          ) : (
-            <Check className="size-3.5 text-success" aria-label="Up to date" />
-          )}
-        </span>
-        <span className="text-[11px] leading-relaxed text-muted-foreground">{hint}</span>
-      </span>
-    </button>
   )
 }
 

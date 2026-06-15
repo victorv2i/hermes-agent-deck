@@ -290,7 +290,7 @@ describe('ConnectProviderDialog', () => {
     // Anthropic now defaults to the OAuth launcher (the verified-live browser path).
     expect(screen.getByTestId('oauth-browser-launcher')).toBeInTheDocument()
     // The method switch is present because Anthropic supports BOTH paths.
-    expect(screen.getByRole('group', { name: /connection method/i })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: /connection method/i })).toBeInTheDocument()
   })
 
   it('drives the oauth-capable set from the live provider-oauth list (catalog can’t hide it)', async () => {
@@ -301,8 +301,8 @@ describe('ConnectProviderDialog', () => {
     renderDialog({ oauthProviders: new Set(['xai']) })
     await user.click(screen.getByRole('radio', { name: /xAI/i }))
     // The method switch surfaces because the live list made xAI oauth-capable.
-    const methodGroup = screen.getByRole('group', { name: /connection method/i })
-    await user.click(within(methodGroup).getByRole('button', { name: /browser sign-in/i }))
+    const methodGroup = screen.getByRole('radiogroup', { name: /connection method/i })
+    await user.click(within(methodGroup).getByRole('radio', { name: /browser sign-in/i }))
     expect(screen.getByTestId('oauth-browser-launcher')).toBeInTheDocument()
   })
 

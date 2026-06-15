@@ -326,7 +326,9 @@ function LoadedWorkspace({
       {probe.phase === 'ready' && !probe.status.available && (
         <Panel
           title="Terminal unavailable"
-          body={probe.status.reason ?? 'The terminal backend (node-pty) is not available on this host.'}
+          body={
+            probe.status.reason ?? 'The terminal backend (node-pty) is not available on this host.'
+          }
         />
       )}
 
@@ -334,7 +336,9 @@ function LoadedWorkspace({
       {backendAvailable && !cwdAvailable && (
         <Panel
           title="Terminal unavailable"
-          body={probe.status.reason ?? 'There is no workspace directory to open the terminal in yet.'}
+          body={
+            probe.status.reason ?? 'There is no workspace directory to open the terminal in yet.'
+          }
         />
       )}
 
@@ -442,7 +446,12 @@ function AcknowledgeGate({ onAcknowledge }: { onAcknowledge: () => void }) {
           your own account, just like a terminal on that machine. There&apos;s no sandbox, so take
           the same care you would there.
         </p>
-        <Button variant="outline" size="sm" className="mt-4 min-h-11 md:min-h-7" onClick={onAcknowledge}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4 min-h-11 md:min-h-7"
+          onClick={onAcknowledge}
+        >
           Got it, open the workspace
         </Button>
       </div>

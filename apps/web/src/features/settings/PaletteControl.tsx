@@ -2,6 +2,7 @@ import { useContext, useSyncExternalStore } from 'react'
 import { Check, Moon, Sun } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { usePalette } from '@/features/themes/palette'
 import { PALETTES, type ThemePalette } from '@/features/themes/palette-registry'
 import { ThemeContext, type ResolvedTheme } from '@/components/theme/theme-context'
@@ -102,6 +103,11 @@ export function PaletteControl() {
   )
 }
 
+const MODE_OPTIONS = [
+  { value: 'light' as ResolvedTheme, label: 'light', icon: Sun },
+  { value: 'dark' as ResolvedTheme, label: 'dark', icon: Moon },
+]
+
 /**
  * The light/dark MODE toggle — a governed two-option segmented radiogroup
  * (recognition over a hidden switch). It drives the real app mode via setTheme, so
@@ -115,41 +121,12 @@ function ModeToggle({
   onSetMode: (mode: ResolvedTheme) => void
 }) {
   return (
-    <div
-      role="radiogroup"
+    <SegmentedControl
+      value={mode}
+      onValueChange={onSetMode}
+      options={MODE_OPTIONS}
       aria-label="Mode"
-      className="ad-surface inline-flex shrink-0 items-center gap-0.5 rounded-[10px] bg-surface-1 p-0.5"
-    >
-      {(['light', 'dark'] as const).map((m) => {
-        const checked = mode === m
-        const Icon = m === 'light' ? Sun : Moon
-        return (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={checked}
-            aria-label={m === 'light' ? 'Light' : 'Dark'}
-            onClick={() => onSetMode(m)}
-            className={cn(
-              // Matches the sibling segmented controls' sizing; min-h-11 keeps a
-              // 44px touch target on mobile, relaxed to the compact density on
-              // sm+ (touch-manipulation removes the tap delay).
-              'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[13px] font-medium capitalize transition-colors sm:min-h-0',
-              'focus-visible:ad-focus',
-              // The active segment carries the faint amber selection TINT (the
-              // governed active affordance), not an amber ring. §2.
-              checked
-                ? 'bg-primary/10 text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <Icon className="size-3.5" aria-hidden />
-            <span>{m}</span>
-          </button>
-        )
-      })}
-    </div>
+    />
   )
 }
 

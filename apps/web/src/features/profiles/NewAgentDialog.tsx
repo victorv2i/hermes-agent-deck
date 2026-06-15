@@ -1,6 +1,6 @@
 import { useState, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
 import {
   PROFILE_ID_RE,
   SOUL_PRESET_LIST,
@@ -17,8 +17,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
-import { cn } from '@/lib/utils'
 import { toast } from '@/lib/toast'
+import { RadioCardGroup } from '@/components/ui/radio-card-group'
 import { avatarForProfile } from './avatarForProfile'
 import { AvatarPicker } from './AvatarPicker'
 import { useCreateProfile, useWriteAvatar } from './mutations'
@@ -248,11 +248,8 @@ export function NewAgentDialog({
 }
 
 /**
- * SoulPresetPicker — choose the new agent's starting personality. A real ARIA
- * radiogroup of preset tiles (label + one-line blurb). Selection uses the
- * IDENTITY ring (`--border-strong`) + a faint surface, never the action accent;
- * only the small "selected" check is the accent (an active-state marker). The
- * chosen preset's SOUL.md template is written on hatch and stays editable.
+ * SoulPresetPicker — choose the new agent's starting personality. Delegates to
+ * RadioCardGroup for consistent ARIA, roving keys, and neutral identity ring.
  */
 function SoulPresetPicker({
   value,
@@ -261,60 +258,13 @@ function SoulPresetPicker({
   value: SoulPresetId
   onChange: (id: SoulPresetId) => void
 }) {
-  // Roving arrow-key nav so the radiogroup is keyboard-operable as a single
-  // widget (Tab in, arrows move + select), matching the app's radio/tab pattern.
-  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const ids = SOUL_PRESET_LIST.map((p) => p.id)
-    const i = ids.indexOf(value)
-    if (i === -1) return
-    let next: number | null = null
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % ids.length
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + ids.length) % ids.length
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = ids.length - 1
-    if (next === null) return
-    e.preventDefault()
-    const nextId = ids[next]!
-    onChange(nextId)
-    // Focus follows selection (WAI-ARIA radiogroup): move focus to the chosen
-    // radio so keyboard users stay on the active control.
-    const radios = e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')
-    radios[next]?.focus()
-  }
-
   return (
-    <div
-      role="radiogroup"
+    <RadioCardGroup
+      value={value}
+      onValueChange={onChange}
+      options={SOUL_PRESET_LIST.map((p) => ({ value: p.id, label: p.label, description: p.blurb }))}
       aria-label="Choose a starting soul"
-      onKeyDown={onKeyDown}
-      className="grid grid-cols-2 gap-2"
-    >
-      {SOUL_PRESET_LIST.map((preset) => {
-        const selected = preset.id === value
-        return (
-          <button
-            key={preset.id}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => onChange(preset.id)}
-            className={cn(
-              'flex flex-col gap-0.5 rounded-[10px] border px-3 py-2.5 text-left transition-colors motion-reduce:transition-none',
-              'focus-visible:ad-focus',
-              selected
-                ? 'border-[var(--border-strong)] bg-muted/50'
-                : 'border-border hover:border-[var(--border-strong)] hover:bg-muted/30',
-            )}
-          >
-            <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-              {preset.label}
-              {selected && <Check className="size-3.5 shrink-0 text-primary" aria-hidden />}
-            </span>
-            <span className="text-xs leading-snug text-foreground-tertiary">{preset.blurb}</span>
-          </button>
-        )
-      })}
-    </div>
+      className="grid-cols-2"
+    />
   )
 }

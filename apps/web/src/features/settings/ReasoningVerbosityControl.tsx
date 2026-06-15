@@ -1,6 +1,6 @@
 import { Leaf, ListTree } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { useReasoningVerbosity, type VerbosityMode } from '@/features/reasoning/reasoningPrefs'
 
 /**
@@ -15,22 +15,15 @@ import { useReasoningVerbosity, type VerbosityMode } from '@/features/reasoning/
  * amber for the active option per the accent rules), it sits below Density.
  */
 
-interface Option {
-  value: VerbosityMode
-  label: string
-  hint: string
-  icon: typeof Leaf
-}
-
-const OPTIONS: Option[] = [
+const OPTIONS = [
   {
-    value: 'calm',
+    value: 'calm' as VerbosityMode,
     label: 'Calm',
     hint: 'Reasoning & tools stay collapsed (the default)',
     icon: Leaf,
   },
   {
-    value: 'detailed',
+    value: 'detailed' as VerbosityMode,
     label: 'Detailed',
     hint: 'Reasoning & tools open on arrival',
     icon: ListTree,
@@ -52,38 +45,12 @@ export function ReasoningVerbosityControl() {
           </p>
         </div>
 
-        <div
-          role="radiogroup"
+        <SegmentedControl
+          value={verbosity}
+          onValueChange={(v) => setVerbosity(v)}
+          options={OPTIONS}
           aria-label="Reasoning detail"
-          className="ad-surface inline-flex shrink-0 rounded-[10px] bg-surface-1 p-1"
-        >
-          {OPTIONS.map((opt) => {
-            const checked = verbosity === opt.value
-            const Icon = opt.icon
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="radio"
-                aria-checked={checked}
-                title={opt.hint}
-                onClick={() => setVerbosity(opt.value)}
-                className={cn(
-                  // min-h-11 keeps a 44px touch target on mobile, relaxed to the
-                  // compact density on sm+ (touch-manipulation drops tap delay).
-                  'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0',
-                  'focus-visible:ad-focus',
-                  checked
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                <Icon className="size-3.5" aria-hidden />
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
+        />
       </CardContent>
     </Card>
   )

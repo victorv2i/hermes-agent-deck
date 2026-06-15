@@ -34,6 +34,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { toast } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { cancelProviderOAuth, pollProviderOAuth, startProviderOAuth } from './api'
@@ -55,9 +57,6 @@ import type {
   ProviderConnectResult,
   ProviderOAuthSession,
 } from './types'
-
-const INPUT_CLASS =
-  'h-8 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus disabled:opacity-50'
 
 const DEFAULT_PROVIDER_ID = 'openrouter'
 const DEFAULT_POLL_MS = 2500
@@ -406,7 +405,7 @@ export function ConnectProviderDialog({
                     API key
                   </label>
                   <div className="relative">
-                    <input
+                    <Input
                       id={`${ids}-key`}
                       value={apiKey}
                       type={reveal ? 'text' : 'password'}
@@ -416,7 +415,7 @@ export function ConnectProviderDialog({
                       spellCheck={false}
                       onChange={(e) => setApiKey(e.target.value)}
                       aria-describedby={`${ids}-key-hint`}
-                      className={`${INPUT_CLASS} pr-9 font-mono`}
+                      className="pr-9 font-mono"
                     />
                     <button
                       type="button"
@@ -570,6 +569,12 @@ function ProviderCatalog({
   )
 }
 
+const METHOD_OPTIONS: import('@/components/ui/segmented-control').SegmentedOption<ProviderAuthMethod>[] =
+  [
+    { value: 'oauth', label: 'Browser sign-in', icon: LogIn },
+    { value: 'api-key', label: 'API key', icon: KeyRound },
+  ]
+
 function MethodSwitch({
   method,
   onChange,
@@ -578,36 +583,12 @@ function MethodSwitch({
   onChange: (method: ProviderAuthMethod) => void
 }) {
   return (
-    <div
-      className="ad-surface inline-flex w-fit rounded-lg bg-surface-1 p-1"
-      role="group"
+    <SegmentedControl
+      value={method}
+      onValueChange={onChange}
+      options={METHOD_OPTIONS}
       aria-label="Connection method"
-    >
-      <button
-        type="button"
-        onClick={() => onChange('oauth')}
-        aria-pressed={method === 'oauth'}
-        className={cn(
-          'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors focus-visible:ad-focus focus-visible:outline-none',
-          method === 'oauth' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground',
-        )}
-      >
-        <LogIn className="size-3.5" aria-hidden />
-        Browser sign-in
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('api-key')}
-        aria-pressed={method === 'api-key'}
-        className={cn(
-          'inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors focus-visible:ad-focus focus-visible:outline-none',
-          method === 'api-key' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground',
-        )}
-      >
-        <KeyRound className="size-3.5" aria-hidden />
-        API key
-      </button>
-    </div>
+    />
   )
 }
 
@@ -632,7 +613,7 @@ function ProviderSlugField({
       <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
         Provider
       </label>
-      <input
+      <Input
         id={id}
         value={value}
         placeholder={placeholder}
@@ -642,7 +623,7 @@ function ProviderSlugField({
         spellCheck={false}
         list={`${id}-catalog`}
         onChange={(e) => onChange(e.target.value)}
-        className={`${INPUT_CLASS} font-mono`}
+        className="font-mono"
         aria-describedby={hintId}
       />
       <datalist id={`${id}-catalog`}>

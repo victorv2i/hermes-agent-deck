@@ -7,7 +7,7 @@ import type {
   UpdateVoiceConfigRequest,
 } from '@agent-deck/protocol'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { Select } from '@/components/ui/select'
 import { VoiceKeyField } from './VoiceKeyField'
 import { VoiceToggle } from './VoiceToggle'
 
@@ -20,10 +20,6 @@ import { VoiceToggle } from './VoiceToggle'
  * This card configures the provider the AGENT uses for transcription; the surface
  * says so plainly rather than offering a fake "record" button.
  */
-
-const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-[13px] text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ad-focus'
-const SELECT_CLASS = cn(INPUT_CLASS, 'cursor-pointer appearance-none pr-8')
 
 export interface SttCardProps {
   state: VoiceState
@@ -72,22 +68,18 @@ export function SttCard({ state, onUpdate, onSetKey, saving }: SttCardProps) {
             <label htmlFor={providerId} className="text-xs font-medium text-muted-foreground">
               Provider
             </label>
-            <div className="relative">
-              <select
-                id={providerId}
-                value={state.sttProvider}
-                disabled={saving}
-                onChange={(e) => onUpdate({ sttProvider: e.target.value as SttProvider })}
-                className={SELECT_CLASS}
-              >
-                {state.sttProviders.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-              <Chevron />
-            </div>
+            <Select
+              id={providerId}
+              value={state.sttProvider}
+              disabled={saving}
+              onChange={(e) => onUpdate({ sttProvider: e.target.value as SttProvider })}
+            >
+              {state.sttProviders.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {active ? (
@@ -108,23 +100,5 @@ export function SttCard({ state, onUpdate, onSetKey, saving }: SttCardProps) {
         </CardContent>
       </Card>
     </section>
-  )
-}
-
-/** A non-interactive chevron glyph for the native select (neutral, not amber). */
-function Chevron() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      className="pointer-events-none absolute inset-y-0 right-2.5 my-auto size-4 text-foreground-tertiary"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   )
 }

@@ -161,7 +161,11 @@ export function WorkspacesRoute({ fetchImpl }: WorkspacesRouteProps = {}) {
       />
 
       {state.phase === 'loading' && (
-        <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-2 text-sm text-muted-foreground"
+        >
           <Loader2 className="size-4 animate-spin" />
           Loading workspaces…
         </div>

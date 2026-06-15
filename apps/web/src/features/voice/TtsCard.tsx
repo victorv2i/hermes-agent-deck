@@ -8,7 +8,8 @@ import type {
 } from '@agent-deck/protocol'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { VoiceKeyField } from './VoiceKeyField'
 
 /**
@@ -21,11 +22,6 @@ import { VoiceKeyField } from './VoiceKeyField'
  * is shape-only. Switching the provider only stages the selection — it is applied
  * by the page's mutation, and the surface says a gateway restart is needed.
  */
-
-const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
-
-const SELECT_CLASS = cn(INPUT_CLASS, 'cursor-pointer appearance-none pr-8')
 
 export interface TtsCardProps {
   state: VoiceState
@@ -65,22 +61,18 @@ export function TtsCard({ state, onUpdate, onSetKey, saving }: TtsCardProps) {
             <label htmlFor={providerId} className="text-xs font-medium text-muted-foreground">
               Provider
             </label>
-            <div className="relative">
-              <select
-                id={providerId}
-                value={state.ttsProvider}
-                disabled={saving}
-                onChange={(e) => onUpdate({ ttsProvider: e.target.value as TtsProvider })}
-                className={SELECT_CLASS}
-              >
-                {state.ttsProviders.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-              <Chevron />
-            </div>
+            <Select
+              id={providerId}
+              value={state.ttsProvider}
+              disabled={saving}
+              onChange={(e) => onUpdate({ ttsProvider: e.target.value as TtsProvider })}
+            >
+              {state.ttsProviders.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {active ? (
@@ -205,22 +197,13 @@ function EdgeVoicePicker({
       <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
         {label}
       </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={current}
-          disabled={disabled}
-          onChange={(e) => onSave(e.target.value)}
-          className={cn(SELECT_CLASS, 'disabled:cursor-not-allowed disabled:opacity-60')}
-        >
-          {options.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.label}
-            </option>
-          ))}
-        </select>
-        <Chevron />
-      </div>
+      <Select id={id} value={current} disabled={disabled} onChange={(e) => onSave(e.target.value)}>
+        {options.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.label}
+          </option>
+        ))}
+      </Select>
     </div>
   )
 }
@@ -261,17 +244,14 @@ function VoiceNameField({
         {label}
       </label>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <input
+        <Input
           id={id}
           value={draft}
           spellCheck={false}
           placeholder={placeholder ?? 'Provider default'}
           disabled={disabled}
           onChange={(e) => setDraft(e.target.value)}
-          className={cn(
-            INPUT_CLASS,
-            'flex-1 font-mono disabled:cursor-not-allowed disabled:opacity-60',
-          )}
+          className="flex-1 font-mono"
         />
         <Button
           type="submit"
@@ -283,23 +263,5 @@ function VoiceNameField({
         </Button>
       </div>
     </form>
-  )
-}
-
-/** A non-interactive chevron glyph for the native select (neutral, not amber). */
-function Chevron() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      className="pointer-events-none absolute inset-y-0 right-2.5 my-auto size-4 text-foreground-tertiary"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   )
 }

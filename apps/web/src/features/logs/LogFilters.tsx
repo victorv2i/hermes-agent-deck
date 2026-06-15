@@ -6,85 +6,12 @@
  * ring). Keyboard-friendly: each segmented group is an ARIA radiogroup
  * with roving tabindex + arrow-key traversal (matching PeriodSelector).
  */
-import { useRef, type KeyboardEvent } from 'react'
 import { RefreshCw } from 'lucide-react'
 import type { LogFile } from '@agent-deck/protocol'
 import { Button } from '@/components/ui/button'
+import { SegmentedControl } from '@/components/ui/segmented-control'
 import { cn } from '@/lib/utils'
 import { LEVEL_OPTIONS, LOG_FILES, type LevelOption } from './types'
-
-/** A generic segmented radiogroup (roving tabindex + arrow keys + wrap). */
-function Segmented<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  renderLabel,
-}: {
-  label: string
-  options: ReadonlyArray<T>
-  value: T
-  onChange: (next: T) => void
-  renderLabel: (opt: T) => string
-}) {
-  const buttonsRef = useRef<Array<HTMLButtonElement | null>>([])
-  const selectAt = (index: number) => {
-    const next = options[((index % options.length) + options.length) % options.length]
-    if (next === undefined) return
-    onChange(next)
-    buttonsRef.current[options.indexOf(next)]?.focus()
-  }
-  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        e.preventDefault()
-        selectAt(index + 1)
-        break
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        e.preventDefault()
-        selectAt(index - 1)
-        break
-    }
-  }
-  return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="inline-flex items-center gap-0.5 rounded-[9px] border border-border bg-surface-2/60 p-0.5"
-    >
-      {options.map((opt, index) => {
-        const active = opt === value
-        return (
-          <button
-            key={opt}
-            ref={(el) => {
-              buttonsRef.current[index] = el
-            }}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            tabIndex={active ? 0 : -1}
-            onClick={() => onChange(opt)}
-            onKeyDown={(e) => onKeyDown(e, index)}
-            className={cn(
-              // 44px touch target on mobile; compact on sm+ (px-2.5 py-1).
-              'min-h-11 touch-manipulation rounded-[6px] px-2.5 py-1 text-xs font-medium transition-colors motion-reduce:transition-none',
-              'sm:min-h-0',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active
-                ? 'bg-foreground/10 text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
-            )}
-          >
-            {renderLabel(opt)}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 export interface LogFiltersProps {
   file: LogFile
@@ -117,12 +44,11 @@ export function LogFilters({
       <div className="flex max-w-full min-w-0 flex-col gap-1">
         <span className="text-[11px] font-medium text-foreground-tertiary">Log</span>
         <div className="max-w-full overflow-x-auto pb-0.5">
-          <Segmented<LogFile>
-            label="Log file"
-            options={LOG_FILES.map((f) => f.id)}
+          <SegmentedControl<LogFile>
+            aria-label="Log file"
+            options={LOG_FILES.map((f) => ({ value: f.id, label: f.label }))}
             value={file}
-            onChange={onFileChange}
-            renderLabel={(id) => LOG_FILES.find((f) => f.id === id)?.label ?? id}
+            onValueChange={onFileChange}
           />
         </div>
       </div>
@@ -130,12 +56,14 @@ export function LogFilters({
       <div className="flex max-w-full min-w-0 flex-col gap-1">
         <span className="text-[11px] font-medium text-foreground-tertiary">Minimum level</span>
         <div className="max-w-full overflow-x-auto pb-0.5">
-          <Segmented<LevelOption>
-            label="Minimum level"
-            options={LEVEL_OPTIONS}
+          <SegmentedControl<LevelOption>
+            aria-label="Minimum level"
+            options={LEVEL_OPTIONS.map((opt) => ({
+              value: opt,
+              label: opt === 'ALL' ? 'All' : opt,
+            }))}
             value={level}
-            onChange={onLevelChange}
-            renderLabel={(opt) => (opt === 'ALL' ? 'All' : opt)}
+            onValueChange={onLevelChange}
           />
         </div>
       </div>

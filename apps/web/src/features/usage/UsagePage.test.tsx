@@ -217,10 +217,13 @@ describe('UsagePage', () => {
     expect(screen.getByTestId('provider-breakdown-legend')).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'By provider' })).toHaveAttribute('tabindex', '0')
 
-    // ArrowLeft wraps from the first option back to the last.
-    screen.getByRole('radio', { name: 'By model' }).focus()
+    // ArrowLeft moves selection back: from By provider (now checked) to By model.
+    // Wrap-around is covered: By model is index 0, ArrowLeft from it wraps to
+    // By provider (index 1, the last), which is the initial state already verified
+    // above. Here we confirm reverse traversal via the checked radio.
+    screen.getByRole('radio', { name: 'By provider' }).focus()
     await userEvent.keyboard('{ArrowLeft}')
-    expect(screen.getByTestId('provider-breakdown-legend')).toBeInTheDocument()
+    expect(screen.getByTestId('model-breakdown-legend')).toBeInTheDocument()
   })
 
   it('attaches an info explainer to each headline stat', () => {

@@ -1,7 +1,8 @@
 import { CornerDownLeft, Command, Volume2 } from 'lucide-react'
 import { useId } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { SegmentedControl } from '@/components/ui/segmented-control'
+import { Switch } from '@/components/ui/switch'
 import { useSendKeyPref, type SendKeyPref } from '@/features/chat-input/sendKeyPref'
 import { useVoicePrefs } from '@/features/voice'
 
@@ -23,22 +24,15 @@ import { useVoicePrefs } from '@/features/voice'
  * `role="switch"` toggle with an accessible name + `aria-checked`). LOCAL-ONLY.
  */
 
-interface SendKeyOption {
-  value: SendKeyPref
-  label: string
-  hint: string
-  icon: typeof CornerDownLeft
-}
-
-const SEND_KEY_OPTIONS: SendKeyOption[] = [
+const SEND_KEY_OPTIONS = [
   {
-    value: 'enter',
+    value: 'enter' as SendKeyPref,
     label: 'Enter sends',
     hint: 'Enter sends; ⌘/Ctrl+Enter inserts a newline',
     icon: CornerDownLeft,
   },
   {
-    value: 'mod-enter',
+    value: 'mod-enter' as SendKeyPref,
     label: '⌘·Ctrl+Enter sends',
     hint: '⌘/Ctrl+Enter sends; Enter inserts a newline',
     icon: Command,
@@ -75,38 +69,12 @@ export function ComposerPrefsControl() {
             </p>
           </div>
 
-          <div
-            role="radiogroup"
+          <SegmentedControl
+            value={pref}
+            onValueChange={(v) => setPref(v)}
+            options={SEND_KEY_OPTIONS}
             aria-labelledby={sendKeyLabelId}
-            className="ad-surface inline-flex shrink-0 rounded-[10px] bg-surface-1 p-1"
-          >
-            {SEND_KEY_OPTIONS.map((opt) => {
-              const checked = pref === opt.value
-              const Icon = opt.icon
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={checked}
-                  title={opt.hint}
-                  onClick={() => setPref(opt.value)}
-                  className={cn(
-                    // min-h-11 keeps a 44px touch target on mobile, relaxed to
-                    // the compact density on sm+ (touch-manipulation drops delay).
-                    'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0',
-                    'focus-visible:ad-focus',
-                    checked
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  <Icon className="size-3.5" aria-hidden />
-                  {opt.label}
-                </button>
-              )
-            })}
-          </div>
+          />
         </div>
 
         {/* AUTO-SPEAK — an opt-in switch. */}
@@ -126,27 +94,12 @@ export function ComposerPrefsControl() {
             </p>
           </div>
 
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autoSpeak}
+          <Switch
+            checked={autoSpeak}
+            onCheckedChange={setAutoSpeak}
             aria-labelledby={autoSpeakLabelId}
             aria-describedby={autoSpeakHintId}
-            onClick={() => setAutoSpeak(!autoSpeak)}
-            className={cn(
-              'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-              'focus-visible:ad-focus',
-              autoSpeak ? 'bg-primary' : 'bg-muted',
-            )}
-          >
-            <span
-              aria-hidden
-              className={cn(
-                'inline-block size-5 rounded-full bg-background shadow-sm transition-transform motion-reduce:transition-none',
-                autoSpeak ? 'translate-x-[22px]' : 'translate-x-0.5',
-              )}
-            />
-          </button>
+          />
         </div>
       </CardContent>
     </Card>
