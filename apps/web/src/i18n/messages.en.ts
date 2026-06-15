@@ -45,6 +45,7 @@ export const en = {
   'navigation.item.kanban.label': 'Board',
   'navigation.item.jobs.label': 'Tasks',
   'navigation.item.terminal.label': 'Terminal',
+  'navigation.item.workspaces.label': 'Workspaces',
   'navigation.item.profiles.label': 'Agents',
   'navigation.item.tools.label': 'Tools',
   'navigation.item.connections.label': 'Connections',

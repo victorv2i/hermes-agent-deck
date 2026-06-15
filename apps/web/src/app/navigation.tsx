@@ -6,6 +6,7 @@ import {
   Library,
   FolderTree,
   SquareTerminal,
+  LayoutGrid,
   IdCard,
   Cable,
   Settings,
@@ -42,6 +43,12 @@ const FilesRoute = lazy(() =>
 )
 const TerminalRoute = lazy(() =>
   import('@/features/terminal/TerminalRoute').then((m) => ({ default: m.TerminalRoute })),
+)
+const WorkspacesRoute = lazy(() =>
+  import('@/features/terminal/WorkspacesRoute').then((m) => ({ default: m.WorkspacesRoute })),
+)
+const WorkspaceRoute = lazy(() =>
+  import('@/features/terminal/WorkspaceRoute').then((m) => ({ default: m.WorkspaceRoute })),
 )
 const ProfilesPage = lazy(() =>
   import('@/features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })),
@@ -266,6 +273,30 @@ export const NAV: NavItem[] = [
     icon: SquareTerminal,
     group: 'workspace',
     element: <TerminalRoute />,
+  },
+  {
+    // Workspaces — named, server-persisted grids of terminal panes that reattach
+    // the same shells from any device. A sibling of the ad-hoc Terminal surface
+    // (kept as-is); this is the durable, multi-pane home.
+    key: 'workspaces',
+    label: navMessage('navigation.item.workspaces.label'),
+    labelKey: 'navigation.item.workspaces.label',
+    path: '/workspaces',
+    icon: LayoutGrid,
+    group: 'workspace',
+    element: <WorkspacesRoute />,
+  },
+  {
+    // A single workspace's pane grid. Routed but NOT a rail link — you reach it
+    // from the Workspaces list (mirror of the dynamic `/sessions/:id` route).
+    key: 'workspace-detail',
+    label: navMessage('navigation.item.workspaces.label'),
+    labelKey: 'navigation.item.workspaces.label',
+    path: '/workspaces/:id',
+    icon: LayoutGrid,
+    group: 'workspace',
+    element: <WorkspaceRoute />,
+    hidden: true,
   },
   {
     key: 'profiles',

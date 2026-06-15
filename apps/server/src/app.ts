@@ -32,6 +32,8 @@ import { registerVoiceRoutes } from './voice/voiceRoutes'
 import { usageRoutes } from './usage/usageRoutes'
 import { UsageClient } from './usage/usageClient'
 import { terminalRoutes } from './terminal/terminalRoutes'
+import { workspaceRoutes } from './terminal/workspaceRoutes'
+import { WorkspaceStore } from './terminal/workspaceStore'
 import { resolveTerminalCwdAvailable } from './terminal/terminalRoots'
 import { registerCronRoutes } from './cron/cronRoutes'
 import { CronClient } from './cron/cronClient'
@@ -516,6 +518,17 @@ export async function buildApp(
     // cwd_available is FALSE when no workspace root resolves (and $HOME isn't
     // opted in) — so the UI shows a calm panel before the real-shell consent.
     cwdAvailable: () => resolveTerminalCwdAvailable(filesService),
+  })
+  // Terminal WORKSPACES: server-persisted, cross-device named pane grids
+  // (CRUD + the security-hardened cwd picker), sharing the SAME prefix and the
+  // SAME derived workspace roots the terminal cwd gate consults, so the picker
+  // never widens what dirs are reachable beyond the existing roots policy.
+  await app.register(workspaceRoutes, {
+    prefix: '/api/agent-deck/terminal',
+    store: new WorkspaceStore(),
+    roots: async () =>
+      (await filesService.listRoots()).map((r) => ({ name: r.label, path: r.path })),
+    allowHome: config.terminalAllowHome,
   })
 
   // PRODUCTION (single-process) serving: when a built web client is configured,

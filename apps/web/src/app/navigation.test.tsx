@@ -63,6 +63,8 @@ describe('NAV registry', () => {
       'jobs',
       'kanban',
       'terminal',
+      'workspaces',
+      'workspace-detail',
       'profiles',
       'tools',
       'connections',
@@ -77,6 +79,9 @@ describe('NAV registry', () => {
     // The per-agent hub (/profiles/:name) is routed but hidden — reached from the
     // Agents list / chip, not a rail link. (Memory/Soul + Skills folded into it.)
     expect(NAV.find((i) => i.key === 'agent-detail')?.hidden).toBe(true)
+    // A single workspace (/workspaces/:id) is routed but hidden — reached from the
+    // Workspaces list, not a rail link (mirror of the dynamic sessions route).
+    expect(NAV.find((i) => i.key === 'workspace-detail')?.hidden).toBe(true)
     expect(NAV.find((i) => i.key === 'memory')).toBeUndefined()
     // Skills retired as a standalone surface — folded into the agent hub.
     expect(NAV.find((i) => i.key === 'skills')).toBeUndefined()
@@ -159,10 +164,12 @@ describe('NAV registry', () => {
       'tools',
       'connections',
     ])
-    // Workspace = the daily work surfaces (ex-Advanced Files + Terminal).
+    // Workspace = the daily work surfaces (Files, Terminal, Workspaces). The
+    // dynamic single-workspace route (workspace-detail) is hidden, so excluded.
     expect(grouped.find((g) => g.group === 'workspace')!.items.map((i) => i.key)).toEqual([
       'files',
       'terminal',
+      'workspaces',
     ])
     // Activity = the agent's ongoing work (Tasks, Board) plus the System recovery
     // surface (after Board, just above the pinned bottom). Usage moved to the

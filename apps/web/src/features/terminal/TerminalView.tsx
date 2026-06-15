@@ -105,6 +105,12 @@ export interface TerminalViewProps {
    */
   cli?: string
   /**
+   * Working directory the shell opens in. Forwarded to `terminal.start` so the
+   * server spawns the pty there (it re-validates containment against the
+   * allowlist roots). Absent = the server default cwd.
+   */
+  cwd?: string
+  /**
    * Stable session id. Forwarded to `terminal.start` so the server parks this
    * shell on disconnect and reattaches (replaying scrollback) on a refresh /
    * another machine — the SAME shell resumes. Absent = a non-resumable shell.
@@ -163,6 +169,7 @@ export function TerminalView({
   socket,
   url,
   cli,
+  cwd,
   sessionId,
   attach,
   expectResume,
@@ -228,10 +235,11 @@ export function TerminalView({
   const onClearReadyRef = useRef(onClearReady)
   const onPersistentChangeRef = useRef(onPersistentChange)
   const onCloseSessionReadyRef = useRef(onCloseSessionReady)
-  // `cli` + `sessionId` + `attach` are read once on mount (the route remounts to
-  // switch presets). Refs keep them out of the mount-once effect's deps without
-  // going stale.
+  // `cli` + `cwd` + `sessionId` + `attach` are read once on mount (the route
+  // remounts to switch presets). Refs keep them out of the mount-once effect's
+  // deps without going stale.
   const cliRef = useRef(cli)
+  const cwdRef = useRef(cwd)
   const sessionIdRef = useRef(sessionId)
   const attachRef = useRef(attach)
   useEffect(() => {
@@ -240,6 +248,7 @@ export function TerminalView({
     onPersistentChangeRef.current = onPersistentChange
     onCloseSessionReadyRef.current = onCloseSessionReady
     cliRef.current = cli
+    cwdRef.current = cwd
     sessionIdRef.current = sessionId
     attachRef.current = attach
   })
@@ -335,6 +344,7 @@ export function TerminalView({
         term.start({
           cols: geo.cols,
           rows: geo.rows,
+          ...(cwdRef.current ? { cwd: cwdRef.current } : {}),
           ...(cliRef.current && !attachRef.current ? { cli: cliRef.current } : {}),
           ...(attachRef.current
             ? { attach: attachRef.current }

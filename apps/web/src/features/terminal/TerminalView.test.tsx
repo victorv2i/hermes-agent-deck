@@ -95,6 +95,26 @@ describe('TerminalView', () => {
     expect(starts[0]!.args[0]).toEqual({ cols: 80, rows: 24 })
   })
 
+  it('forwards the pane cwd into the start payload so the shell opens there', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    render(
+      <TerminalView
+        engineFactory={async () => engine}
+        socket={socket}
+        cwd="/home/me/Projects/app"
+      />,
+    )
+
+    await waitFor(() => expect(socket.emitsFor('terminal.start')).toHaveLength(1))
+    const starts = socket.emitsFor('terminal.start')
+    expect(starts[0]!.args[0]).toEqual({
+      cols: 80,
+      rows: 24,
+      cwd: '/home/me/Projects/app',
+    })
+  })
+
   it('defers the initial fit until after a frame (real container dimensions)', async () => {
     const engine = new FakeEngine()
     const socket = new FakeSocket()
