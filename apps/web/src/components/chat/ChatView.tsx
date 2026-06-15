@@ -931,7 +931,7 @@ function EmptyHero({
             type="button"
             disabled={disabled}
             onClick={() => onPick(text)}
-            className="ad-surface ad-surface-hover group/prompt flex flex-col gap-2 rounded-xl bg-surface-1 px-3.5 py-3 text-left transition-colors hover:bg-surface-2 focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50"
+            className="ad-surface ad-raised ad-surface-hover group/prompt flex flex-col gap-2 rounded-xl bg-surface-1 px-3.5 py-3 text-left transition-colors hover:bg-surface-2 focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon
               className="size-4 text-foreground-tertiary transition-colors group-hover/prompt:text-muted-foreground"

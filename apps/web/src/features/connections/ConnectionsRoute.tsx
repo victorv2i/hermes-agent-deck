@@ -136,7 +136,7 @@ export function ConnectionsRoute() {
           aria-label="Connections"
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
-          className="ad-surface flex w-full flex-col gap-1 rounded-md bg-surface-1 p-1 sm:inline-flex sm:w-auto sm:max-w-full sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
+          className="ad-surface ad-raised flex w-full flex-col gap-1 rounded-md bg-surface-1 p-1 sm:inline-flex sm:w-auto sm:max-w-full sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
         >
           {CONNECTIONS_TAB_CLUSTERS.map((cluster, index) => (
             <Fragment key={cluster.id}>

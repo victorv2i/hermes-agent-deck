@@ -117,11 +117,17 @@ export function KanbanPage(props: KanbanPageProps) {
   // without clipped fixed-width columns.
   const lane =
     columns.length === 0 ? (
-      <EmptyState
-        icon={KanbanSquare}
-        title="No tasks yet"
-        description="When your agent creates and claims tasks, they’ll flow across these columns here in real time."
-      />
+      // Center the crafted empty state in the board's full height (the scroller is
+      // tall) so an empty board reads as a calm, waiting place rather than a card
+      // stranded at the top.
+      <div className="grid min-h-full place-items-center py-6">
+        <EmptyState
+          icon={KanbanSquare}
+          title="No tasks yet"
+          description="When your agent creates and claims tasks, they’ll flow across these columns here in real time."
+          className="max-w-sm"
+        />
+      </div>
     ) : (
       <ResponsiveBoard
         columns={columns}
@@ -183,18 +189,24 @@ export function KanbanPage(props: KanbanPageProps) {
 
       <BoardScroller>
         {error ? (
-          <ErrorState
-            icon={KanbanSquare}
-            title="Couldn’t load the board"
-            description="The task board couldn’t load. Your agent may be offline; retry when it’s reachable."
-            onRetry={onRetry}
-          />
+          <div className="grid min-h-full place-items-center py-6">
+            <ErrorState
+              icon={KanbanSquare}
+              title="Couldn’t load the board"
+              description="The task board couldn’t load. Your agent may be offline; retry when it’s reachable."
+              onRetry={onRetry}
+              className="max-w-sm"
+            />
+          </div>
         ) : !available ? (
-          <EmptyState
-            icon={KanbanSquare}
-            title="Task tracking isn’t enabled yet"
-            description="Enable task tracking on your agent. The Board will show your tasks here."
-          />
+          <div className="grid min-h-full place-items-center py-6">
+            <EmptyState
+              icon={KanbanSquare}
+              title="Task tracking isn’t enabled yet"
+              description="Enable task tracking on your agent. The Board will show your tasks here."
+              className="max-w-sm"
+            />
+          </div>
         ) : isLoading ? (
           <BoardSkeleton />
         ) : (

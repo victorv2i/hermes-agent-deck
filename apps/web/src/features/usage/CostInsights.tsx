@@ -120,7 +120,7 @@ function PlanUsageCard({
 }) {
   const provider = typeof providerLabel === 'string' ? providerLabel.trim() : ''
   return (
-    <Card data-testid="plan-usage-card">
+    <Card className="ad-raised" data-testid="plan-usage-card">
       <CardHeader>
         <CardTitle>Plan usage</CardTitle>
       </CardHeader>
@@ -148,7 +148,7 @@ function SpendTrend({ daily, average }: { daily: UsageDailyPoint[]; average: num
 
   if (points.length === 0 || max <= 0) {
     return (
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <CardTitle>Spend trend</CardTitle>
         </CardHeader>
@@ -170,7 +170,7 @@ function SpendTrend({ daily, average }: { daily: UsageDailyPoint[]; average: num
   const midIdx = Math.floor(lastIdx / 2)
 
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader className="flex-row items-center justify-between gap-4">
         <CardTitle>Spend trend</CardTitle>
         {avgLabel ? (
@@ -229,7 +229,7 @@ function SpendTrend({ daily, average }: { daily: UsageDailyPoint[]; average: num
 /** Cost share by model — ordered by spend, each row showing its % of the bill. */
 function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader>
         <CardTitle>Cost by model</CardTitle>
       </CardHeader>

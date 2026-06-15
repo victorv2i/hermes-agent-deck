@@ -74,7 +74,7 @@ export function SystemStatsCard({
 }) {
   return (
     <section role="region" aria-label="System stats">
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <div className="flex items-center gap-3">
             <span
@@ -216,7 +216,7 @@ export function CuratorCard({
 
   return (
     <section role="region" aria-label="Curator">
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ export function ProviderValidateCard({
 
   return (
     <section role="region" aria-label="Provider key validation">
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <div className="flex items-center gap-3">
             <span

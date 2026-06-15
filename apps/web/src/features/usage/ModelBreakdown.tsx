@@ -64,7 +64,7 @@ export function ModelBreakdown({ byModel }: ModelBreakdownProps) {
   }, [byModel])
 
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader>
         <CardTitle>By model</CardTitle>
       </CardHeader>

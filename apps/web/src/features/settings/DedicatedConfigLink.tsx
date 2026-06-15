@@ -28,7 +28,7 @@ export function DedicatedConfigLink({
   linkLabel: string
 }) {
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span

@@ -31,7 +31,9 @@ export function StudioLaunchpad({ status, onStartChat }: StudioLaunchpadProps) {
   return (
     <section
       aria-label="Studio launchpad"
-      className="ad-surface flex min-h-12 flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-card px-4 py-2.5 text-sm"
+      // Raised + the elevated surface step so the "Connected / watching ..."
+      // strip reads as a present bar with real depth, not a flat sliver.
+      className="ad-surface ad-raised flex min-h-13 flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-surface-elevated px-4 py-3 text-sm"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {status ? (

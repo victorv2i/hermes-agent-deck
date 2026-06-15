@@ -34,7 +34,7 @@ export function DensityControl() {
   const { density, setDensity } = useDensity()
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="font-heading text-base leading-snug font-medium text-foreground">

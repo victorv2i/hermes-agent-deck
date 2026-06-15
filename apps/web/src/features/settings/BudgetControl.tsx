@@ -24,7 +24,7 @@ export function BudgetControl() {
   const monthlyId = useId()
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <CardContent className="flex flex-col gap-5 p-5">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 font-heading text-base leading-snug font-medium text-foreground">

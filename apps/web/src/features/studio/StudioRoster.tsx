@@ -108,15 +108,20 @@ function RosterCard({
       aria-current={isSelected ? 'true' : undefined}
       onClick={onSelect}
       className={cn(
-        'ad-surface flex w-full items-center gap-3 rounded-xl bg-card px-3.5 py-3 text-left transition-colors',
+        'ad-surface ad-raised flex w-full items-center gap-3 rounded-xl bg-card px-3.5 py-3 text-left transition-[background-color,border-color,box-shadow] duration-150',
         'focus-visible:ad-focus',
-        isSelected ? 'border-[var(--border-strong)] bg-surface-2' : 'hover:bg-surface-1',
+        // Selected: a restrained current state — the elevated surface step plus a
+        // quiet accent edge (a thin --primary ring at low alpha, the sanctioned
+        // accent use), so the open agent reads as current without shouting.
+        isSelected
+          ? 'border-[var(--border-strong)] bg-surface-elevated ring-1 ring-[color-mix(in_oklch,var(--primary)_32%,transparent)]'
+          : 'hover:border-[var(--border-strong)] hover:bg-surface-1',
       )}
     >
-      <Avatar avatarId={resolveAvatar(profile)} name={profile.name} size={44} />
+      <Avatar avatarId={resolveAvatar(profile)} name={profile.name} size={56} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="truncate font-heading text-sm font-medium text-foreground">
+          <span className="truncate font-heading text-sm font-semibold text-foreground">
             {friendlyName}
           </span>
           {profile.isDefault && (

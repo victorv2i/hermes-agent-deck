@@ -36,7 +36,7 @@ export function ProviderBreakdown({ byModel }: ProviderBreakdownProps) {
   const rows = useMemo(() => groupByProvider(byModel), [byModel])
 
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader>
         <CardTitle>By provider</CardTitle>
       </CardHeader>

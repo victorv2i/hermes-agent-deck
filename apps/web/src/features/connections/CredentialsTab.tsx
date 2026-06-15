@@ -180,7 +180,7 @@ interface ProviderSectionProps {
 
 function ProviderSection({ provider, onRemove, removingKey }: ProviderSectionProps) {
   return (
-    <div className="ad-surface rounded-xl bg-card">
+    <div className="ad-surface ad-raised rounded-xl bg-card">
       <div className="border-b border-border px-4 py-2.5">
         <h3 className="text-sm font-semibold capitalize">{provider.provider}</h3>
       </div>

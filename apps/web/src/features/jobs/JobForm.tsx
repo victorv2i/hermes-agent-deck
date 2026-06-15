@@ -99,7 +99,7 @@ export function JobForm({
 
   return (
     <form
-      className="ad-surface flex flex-col gap-3 rounded-xl bg-card p-4"
+      className="ad-surface ad-raised flex flex-col gap-3 rounded-xl bg-card p-4"
       onSubmit={(e) => {
         e.preventDefault()
         submit()

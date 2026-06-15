@@ -99,7 +99,7 @@ export function SessionBreakdown({
     typeof fetchLimit === 'number' && Array.isArray(sessions) && sessions.length >= fetchLimit
 
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader>
         <CardTitle>By session</CardTitle>
       </CardHeader>

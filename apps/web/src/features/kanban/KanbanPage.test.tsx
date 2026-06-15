@@ -68,7 +68,7 @@ describe('KanbanPage', () => {
     ])
     expect(screen.getByText('Draft the spec')).toBeInTheDocument()
     expect(screen.getByText('Land the BFF')).toBeInTheDocument()
-    expect(screen.getByText('Incoming has no cards yet.')).toBeInTheDocument()
+    expect(screen.getByText('Nothing in Incoming yet')).toBeInTheDocument()
     // The lane lives in the affordance-carrying scroller (resting scrollbar + fades).
     const scroller = screen.getByTestId('kanban-board-scroller')
     expect(within(scroller).getByTestId('kanban-board')).toBeInTheDocument()

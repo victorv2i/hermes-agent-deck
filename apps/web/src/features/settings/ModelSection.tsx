@@ -23,7 +23,7 @@ export function ModelSection() {
       {/* A subtle container so the embedded picker reads as a real section card
           rather than floating loose under the header (matches the other Settings
           surfaces' ad-surface treatment, kept quieter on surface-1). */}
-      <div className="ad-surface rounded-xl bg-surface-1 p-4">
+      <div className="ad-surface ad-raised rounded-xl bg-surface-1 p-4">
         <ModelsRoute embedded />
       </div>
     </section>

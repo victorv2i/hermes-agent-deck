@@ -645,7 +645,7 @@ function DockCard({
   const titleId = useId()
   return (
     <section aria-labelledby={titleId} role="region" aria-label={regionLabel}>
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">

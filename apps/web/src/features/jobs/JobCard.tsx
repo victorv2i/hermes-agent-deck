@@ -71,7 +71,7 @@ export function JobCard({
 
   return (
     <li
-      className="ad-surface group/job flex flex-col gap-2 rounded-xl bg-card p-4"
+      className="ad-surface ad-raised group/job flex flex-col gap-2 rounded-xl bg-card p-4"
       data-testid={`job-${job.id}`}
       data-paused={job.paused}
     >

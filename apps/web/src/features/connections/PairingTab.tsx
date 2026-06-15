@@ -219,7 +219,7 @@ export function PairingTab() {
               return (
                 <li
                   key={key}
-                  className="ad-surface flex items-start gap-4 rounded-xl bg-card px-4 py-3"
+                  className="ad-surface ad-raised flex items-start gap-4 rounded-xl bg-card px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -279,7 +279,7 @@ export function PairingTab() {
             {approved.map((u) => (
               <li
                 key={userKey(u)}
-                className="ad-surface flex items-start gap-4 rounded-xl bg-card px-4 py-3"
+                className="ad-surface ad-raised flex items-start gap-4 rounded-xl bg-card px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">

@@ -26,7 +26,7 @@ export interface StatCardProps {
 
 export function StatCard({ label, value, sub, icon, info }: StatCardProps) {
   return (
-    <Card className="ad-surface-hover gap-2" size="sm">
+    <Card className="ad-raised ad-surface-hover gap-2" size="sm">
       <CardContent className="flex flex-col gap-2">
         <div className="ad-section-label flex items-center gap-1.5">
           {icon ? <span className="shrink-0 text-muted-foreground/70">{icon}</span> : null}

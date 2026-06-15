@@ -65,7 +65,7 @@ export function UsageTrend({ daily }: UsageTrendProps) {
 
   if (daily.length === 0) {
     return (
-      <Card>
+      <Card className="ad-raised">
         <CardHeader>
           <CardTitle>Token trend</CardTitle>
         </CardHeader>
@@ -83,7 +83,7 @@ export function UsageTrend({ daily }: UsageTrendProps) {
   const gridlines = [1, 0.5, 0]
 
   return (
-    <Card>
+    <Card className="ad-raised">
       <CardHeader className="flex-row items-center justify-between gap-4">
         <CardTitle>Token trend</CardTitle>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">

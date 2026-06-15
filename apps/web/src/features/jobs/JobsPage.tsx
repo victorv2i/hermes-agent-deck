@@ -187,7 +187,7 @@ function JobsSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="ad-surface h-[116px] animate-pulse rounded-xl bg-surface-2/60 motion-reduce:animate-none"
+            className="ad-surface ad-raised h-[116px] animate-pulse rounded-xl bg-surface-2/60 motion-reduce:animate-none"
           />
         ))}
       </div>

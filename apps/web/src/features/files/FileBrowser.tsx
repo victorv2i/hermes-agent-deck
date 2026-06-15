@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   FilePlus2,
+  FolderOpen,
   FolderPlus,
   FolderX,
   HardDrive,
@@ -461,7 +462,15 @@ export function FileBrowser({
             ))}
           </ul>
         ) : entries.length === 0 ? (
-          <div className="px-4 py-6 text-center text-xs text-foreground-tertiary">
+          <div className="flex flex-col items-center px-4 py-8 text-center text-xs text-foreground-tertiary">
+            {/* A quiet glyph tile makes an empty folder read as a considered,
+                ready place rather than a bare line. Neutral tones only. */}
+            <span
+              aria-hidden
+              className="ad-surface mb-3 grid size-9 place-items-center rounded-lg bg-muted/50 text-foreground-tertiary"
+            >
+              <FolderOpen className="size-4" />
+            </span>
             <p className="font-medium text-muted-foreground">This folder is empty</p>
             <p className="mt-1">
               {readOnly

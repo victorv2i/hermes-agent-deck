@@ -311,12 +311,15 @@ function UsageSkeleton() {
         <div className="h-5 w-72 max-w-full animate-pulse rounded-md bg-surface-2/60" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="ad-surface h-[82px] animate-pulse rounded-xl bg-surface-2/60" />
+            <div
+              key={i}
+              className="ad-surface ad-raised h-[82px] animate-pulse rounded-xl bg-surface-2/60"
+            />
           ))}
         </div>
       </div>
-      <div className="ad-surface h-[280px] animate-pulse rounded-xl bg-surface-2/60" />
-      <div className="ad-surface h-[200px] animate-pulse rounded-xl bg-surface-2/60" />
+      <div className="ad-surface ad-raised h-[280px] animate-pulse rounded-xl bg-surface-2/60" />
+      <div className="ad-surface ad-raised h-[200px] animate-pulse rounded-xl bg-surface-2/60" />
     </div>
   )
 }

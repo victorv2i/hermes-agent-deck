@@ -152,7 +152,7 @@ export function SystemRoute() {
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="ad-surface h-28 animate-pulse rounded-xl bg-card motion-reduce:animate-none"
+              className="ad-surface ad-raised h-28 animate-pulse rounded-xl bg-card motion-reduce:animate-none"
             />
           ))}
         </div>

@@ -10,10 +10,39 @@
  * `onMoveCard` so the column itself carries no write logic.
  */
 import { useId } from 'react'
-import type { KanbanColumn, KanbanMoveTarget } from '@agent-deck/protocol'
+import {
+  Inbox,
+  ListTodo,
+  CalendarClock,
+  CircleCheck,
+  Loader,
+  Ban,
+  Eye,
+  CheckCheck,
+  Archive,
+  type LucideIcon,
+} from 'lucide-react'
+import type { KanbanColumn, KanbanColumnName, KanbanMoveTarget } from '@agent-deck/protocol'
 import { cn } from '@/lib/utils'
 import { BoardCard } from './BoardCard'
 import { COLUMN_META, TONE_DOT_CLASS } from './columnMeta'
+
+/**
+ * A quiet line glyph per lane for the crafted empty state, so an empty column
+ * reads as a considered, labelled place ("nothing in To do yet") rather than a
+ * thin header over a black void. Neutral/muted only; never the action accent.
+ */
+const COLUMN_EMPTY_ICON: Record<KanbanColumnName, LucideIcon> = {
+  triage: Inbox,
+  todo: ListTodo,
+  scheduled: CalendarClock,
+  ready: CircleCheck,
+  running: Loader,
+  blocked: Ban,
+  review: Eye,
+  done: CheckCheck,
+  archived: Archive,
+}
 
 export interface BoardColumnProps {
   column: KanbanColumn
@@ -45,13 +74,16 @@ export function BoardColumn({
   const headingId = useId()
   const meta = COLUMN_META[column.name]
   const count = column.cards.length
+  const EmptyIcon = COLUMN_EMPTY_ICON[column.name]
 
   return (
     <section
       aria-labelledby={headingId}
       data-testid={testId}
       data-column={column.name}
-      className={cn('flex w-[272px] shrink-0 flex-col gap-2.5', className)}
+      // self-stretch lets an empty lane fill the board height so its crafted
+      // empty state can sit vertically centered, not pinned under the header.
+      className={cn('flex w-[272px] shrink-0 flex-col gap-2.5 self-stretch', className)}
     >
       <header className="flex items-center gap-2 px-1">
         <span
@@ -82,8 +114,21 @@ export function BoardColumn({
           ))}
         </ul>
       ) : (
-        <div className="rounded-md border border-dashed border-border/70 px-3 py-6 text-center text-[11px] text-foreground-tertiary">
-          {meta.label} has no cards yet.
+        // A crafted, centered empty lane: a quiet glyph tile + a calm line,
+        // vertically centered in the column's height so an empty board reads as
+        // a considered, waiting place rather than a header over a black void. The
+        // hairline+highlight surface (ad-surface) and lifted-but-dashed frame keep
+        // it inviting; neutral tones only, never the action accent.
+        <div className="ad-surface flex min-h-32 flex-1 flex-col items-center justify-center gap-2 rounded-lg border-dashed bg-surface-1/40 px-3 py-6 text-center">
+          <span
+            aria-hidden
+            className="grid size-8 place-items-center rounded-lg bg-muted/50 text-foreground-tertiary"
+          >
+            <EmptyIcon className="size-4" />
+          </span>
+          <p className="text-[11px] leading-snug text-foreground-tertiary">
+            Nothing in {meta.label} yet
+          </p>
         </div>
       )}
     </section>

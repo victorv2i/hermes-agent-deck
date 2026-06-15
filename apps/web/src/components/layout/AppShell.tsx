@@ -530,7 +530,10 @@ export function AppShell({
               (fallbackTitle && (
                 <span
                   data-testid="surface-title"
-                  className="truncate text-sm font-medium text-foreground"
+                  // A clear title step up in the 48px bar: 15px / semibold /
+                  // tight tracking so it reads as a real surface title, not a
+                  // quiet label (still a chrome label, not the page <h1>).
+                  className="truncate font-heading text-[15px] font-semibold tracking-tight text-foreground"
                 >
                   {fallbackTitle}
                 </span>

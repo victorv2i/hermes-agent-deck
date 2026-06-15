@@ -85,7 +85,7 @@ export function NotificationsControl({
   const canRequest = perm === 'default'
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <CardContent className="flex flex-col gap-4 p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">

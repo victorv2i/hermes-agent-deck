@@ -245,7 +245,7 @@ function SettingsSearch({ value, onChange }: { value: string; onChange: (v: stri
  */
 function MaintenanceLink() {
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span
@@ -409,7 +409,7 @@ function SectionCard({ section, searching }: { section: SettingsSection; searchi
   const bodyId = useId()
 
   return (
-    <Card className="gap-0 py-0">
+    <Card className="ad-raised gap-0 py-0">
       <button
         type="button"
         aria-expanded={open}
@@ -566,7 +566,7 @@ function SettingsSkeleton() {
   return (
     <div data-testid="settings-loading" className="flex flex-col gap-6" aria-busy="true">
       {[0, 1, 2].map((i) => (
-        <Card key={i} className="gap-0 py-0">
+        <Card key={i} className="ad-raised gap-0 py-0">
           <div className="flex items-center gap-3 border-b border-border px-5 py-4">
             <div className="size-8 shrink-0 animate-pulse rounded-[8px] bg-muted-foreground/15" />
             <div className="h-4 w-28 animate-pulse rounded bg-muted-foreground/15" />

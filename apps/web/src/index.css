@@ -134,30 +134,40 @@
   */
   --bg-texture: none;
 
-  --background: #16181c;
-  --foreground: #e6e8ec;
+  /*
+    Layered surface scale (visual-polish). A real depth ladder on a near-black
+    cool-slate base: the app base sits a hair above pure black, raised surfaces
+    step up one subtle value at a time, and cards/popovers are the top lit step.
+    The steps are deliberately spaced so a card reads as RAISED off the base, not
+    as a same-value cut-out (the old base #16181c floated everything flat).
+      base #101216  →  surface-1 #181b21  →  surface-2 #21252c  →  elevated #2b303a
+  */
+  --background: #101216;
+  --foreground: #eceef2;
 
-  --surface-1: #1f2228;
-  --surface-2: #282c33;
-  --surface-elevated: #31363f;
+  --surface-1: #181b21;
+  --surface-2: #21252c;
+  --surface-elevated: #2b303a;
 
-  --card: #31363f;
-  --card-foreground: #e6e8ec;
-  --popover: #31363f;
-  --popover-foreground: #e6e8ec;
+  --card: #2b303a;
+  --card-foreground: #eceef2;
+  --popover: #2b303a;
+  --popover-foreground: #eceef2;
 
   --primary: #7ba7d9;
   --primary-foreground: #0b1420;
   --primary-hover: #93b8e4;
 
-  --secondary: #282c33;
-  --secondary-foreground: #e6e8ec;
+  --secondary: #21252c;
+  --secondary-foreground: #eceef2;
 
-  --muted: #282c33;
-  --muted-foreground: #afb5bf;
+  --muted: #21252c;
+  /* Brightened a clear step (was #afb5bf) so secondary/body copy scans easily on
+     the darker base. */
+  --muted-foreground: #c2c8d2;
 
-  --accent: #282c33;
-  --accent-foreground: #e6e8ec;
+  --accent: #21252c;
+  --accent-foreground: #eceef2;
 
   /* Semantic palette — color carries MEANING (status dots/badges only). */
   --destructive: #ff806d;
@@ -165,14 +175,17 @@
   --warning: #d9a03a;
   --info: #6ba8d9;
 
-  --foreground-tertiary: #9ca3b0;
+  /* Tiny uppercase section labels read off this — brightened (was #9ca3b0) so
+     they stay legible-but-quiet on the darker base. */
+  --foreground-tertiary: #aeb4c0;
 
-  /* Hairlines — LIFTED so borders are visible. Default 0.10, elevated/hover
-     0.16. Cards also get a 1px inset top highlight (--card-highlight). */
-  --border: rgba(230, 232, 236, 0.1);
-  --border-strong: rgba(230, 232, 236, 0.16);
-  --card-highlight: rgba(255, 255, 255, 0.04);
-  --input: rgba(230, 232, 236, 0.16);
+  /* Hairlines — LIFTED so borders are visible on the near-black base. Default
+     0.09, elevated/hover 0.16. Cards also get a 1px inset top highlight
+     (--card-highlight, ~0.05) for a crisp lit top edge. */
+  --border: rgba(236, 238, 242, 0.09);
+  --border-strong: rgba(236, 238, 242, 0.16);
+  --card-highlight: rgba(255, 255, 255, 0.05);
+  --input: rgba(236, 238, 242, 0.16);
   --ring: #7ba7d9;
 
   /*
@@ -184,6 +197,14 @@
   */
   --shadow-popover: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
   --shadow-composer: 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+  /*
+    Resting elevation for genuine RAISED panels (visual-polish) — one soft,
+    low-opacity drop so a panel sits off the near-black base instead of reading
+    flat: a tight contact shadow + a soft ambient one. Opt-in via `.ad-surface
+    .ad-raised`, NOT baked into every `.ad-surface`, so only the panels that
+    should float (the Studio roster/workbench/launchpad) get it.
+  */
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
 
   --chart-1: #7ba7d9;
   --chart-2: #4fb58e;
@@ -413,6 +434,23 @@
   .ad-surface {
     border: 1px solid var(--border);
     box-shadow: inset 0 1px 0 0 var(--card-highlight);
+  }
+  /*
+    Resting elevation for a genuine raised panel — composes the 1px top highlight
+    with one soft drop (--shadow-raised) so the panel reads as lifted off the
+    near-black base. Opt-in (the flagship Studio panels), not every surface. The
+    light override keeps the drop a soft slate tint, never a muddy black smear.
+  */
+  .ad-surface.ad-raised {
+    box-shadow:
+      inset 0 1px 0 0 var(--card-highlight),
+      var(--shadow-raised);
+  }
+  [data-theme='light'] .ad-surface.ad-raised {
+    box-shadow:
+      inset 0 1px 0 0 var(--card-highlight),
+      0 1px 2px rgba(15, 23, 42, 0.08),
+      0 8px 24px -6px rgba(15, 23, 42, 0.12);
   }
   .ad-surface-hover {
     transition:

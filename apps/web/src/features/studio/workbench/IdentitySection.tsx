@@ -54,7 +54,7 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h2 className="truncate font-heading text-lg font-medium text-foreground">
+            <h2 className="truncate font-heading text-2xl font-semibold tracking-tight text-foreground">
               {friendlyName}
             </h2>
             {!profile.isDefault && (
@@ -98,7 +98,7 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
       <dl className="grid grid-cols-1 gap-x-6 gap-y-4 border-t border-border pt-4 sm:grid-cols-2">
         <MetaField icon={Layers} label="Model">
           {profile.model ? (
-            <span className="font-mono text-13 text-foreground">{profile.model}</span>
+            <span className="font-mono text-13 font-medium text-foreground">{profile.model}</span>
           ) : (
             <span className="text-13 text-foreground-tertiary">Unknown</span>
           )}
@@ -110,7 +110,7 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
         </MetaField>
 
         <MetaField icon={Sparkles} label="Skills">
-          <span className="text-13 text-foreground">
+          <span className="text-13 font-medium text-foreground">
             {profile.skillCount} {profile.skillCount === 1 ? 'skill' : 'skills'}
           </span>
         </MetaField>
@@ -121,7 +121,10 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
             label={profile.gatewayRunning ? 'Agent running' : 'Agent stopped'}
           />
           <span
-            className={cn('text-13', profile.gatewayRunning ? 'text-success' : 'text-muted-foreground')}
+            className={cn(
+              'text-13 font-medium',
+              profile.gatewayRunning ? 'text-success' : 'text-muted-foreground',
+            )}
           >
             {profile.gatewayRunning ? 'Agent running' : 'Agent stopped'}
           </span>
@@ -129,7 +132,12 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
 
         <MetaField icon={FileKey} label="Environment">
           <StatusDot tone={profile.hasEnv ? 'info' : 'idle'} label={profile.hasEnv ? '.env present' : 'No .env'} />
-          <span className={cn('text-13', profile.hasEnv ? 'text-foreground' : 'text-foreground-tertiary')}>
+          <span
+            className={cn(
+              'text-13 font-medium',
+              profile.hasEnv ? 'text-foreground' : 'text-foreground-tertiary',
+            )}
+          >
             {profile.hasEnv ? '.env present' : 'No .env'}
           </span>
         </MetaField>

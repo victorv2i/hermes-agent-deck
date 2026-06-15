@@ -91,7 +91,7 @@ export function BoardCard({
       data-testid="kanban-card"
       data-card-id={card.id}
       className={cn(
-        'ad-surface ad-surface-hover group/board-card relative w-full cursor-pointer rounded-md bg-card px-3 py-2.5 text-left',
+        'ad-surface ad-raised ad-surface-hover group/board-card relative w-full cursor-pointer rounded-md bg-card px-3 py-2.5 text-left',
         'transition-colors focus-visible:ad-focus',
       )}
     >
