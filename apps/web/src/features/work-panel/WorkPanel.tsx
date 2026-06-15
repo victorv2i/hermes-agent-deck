@@ -160,6 +160,9 @@ function WorkPanelEmpty() {
  * it further. Scripts run IN the opaque-origin sandbox, isolated from Agent Deck.
  */
 function HtmlArtifact({ content, open }: { content: string; open: boolean }) {
+  // White page canvas in BOTH modes: an HTML artifact assumes a white page, so a
+  // naked artifact (no background of its own) must never render dark-on-dark in
+  // dark mode. (The Preview panel differs — live sites paint their own background.)
   return (
     <iframe
       data-testid="work-panel-html-iframe"
@@ -167,7 +170,7 @@ function HtmlArtifact({ content, open }: { content: string; open: boolean }) {
       srcDoc={content}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className={cn('h-full w-full border-0 bg-surface-elevated', !open && 'invisible')}
+      className={cn('h-full w-full border-0 bg-white', !open && 'invisible')}
     />
   )
 }

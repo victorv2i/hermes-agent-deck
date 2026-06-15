@@ -148,8 +148,8 @@ test('New agent dialog opens, accepts a name, and the create button is enabled',
   const dialog = page.getByRole('dialog', { name: /New agent/i })
   await expect(dialog).toBeVisible()
 
-  // Name input is focused (autoFocus).
-  const nameInput = dialog.getByLabel('Name', { exact: true })
+  // Profile ID input is focused (autoFocus).
+  const nameInput = dialog.getByLabel('Profile ID', { exact: true })
   await expect(nameInput).toBeVisible()
   await nameInput.fill('atlas')
 
@@ -172,7 +172,7 @@ test('New agent dialog: reserved name "default" shows an error and disables Crea
   await page.goto('/profiles')
   await page.getByRole('button', { name: /New agent/i }).click()
   const dialog = page.getByRole('dialog', { name: /New agent/i })
-  const nameInput = dialog.getByLabel('Name', { exact: true })
+  const nameInput = dialog.getByLabel('Profile ID', { exact: true })
   await nameInput.fill('default')
 
   // An error message appears.
@@ -197,7 +197,7 @@ test('create agent: POST fires, the new agent card appears in the Agents list', 
   await page.goto('/profiles')
   await page.getByRole('button', { name: /New agent/i }).click()
   const dialog = page.getByRole('dialog', { name: /New agent/i })
-  const nameInput = dialog.getByLabel('Name', { exact: true })
+  const nameInput = dialog.getByLabel('Profile ID', { exact: true })
   await nameInput.fill('atlas')
   await dialog.getByRole('button', { name: /Hatch agent/i }).click()
 
@@ -224,7 +224,7 @@ test('Cancel in New agent dialog closes without creating', async ({ page }) => {
   await page.goto('/profiles')
   await page.getByRole('button', { name: /New agent/i }).click()
   const dialog = page.getByRole('dialog', { name: /New agent/i })
-  await dialog.getByLabel('Name', { exact: true }).fill('throwaway')
+  await dialog.getByLabel('Profile ID', { exact: true }).fill('throwaway')
   await dialog.getByRole('button', { name: /Cancel/i }).click()
 
   // Dialog is closed.
