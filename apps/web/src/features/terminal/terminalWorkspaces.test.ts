@@ -26,8 +26,10 @@ import {
   writeWorkspaceState,
   readLastWorkspaceId,
   writeLastWorkspaceId,
+  panesFromSessions,
   type WorkspaceState,
 } from './terminalWorkspaces'
+import { emptySessions, openSession, openAttachSession, type TerminalSession } from './terminalSessions'
 
 /** Add `n` panes of a given cli to a workspace, returning the final state. */
 function addMany(state: WorkspaceState, n: number, cli: 'hermes' | 'shell' = 'shell') {
@@ -424,5 +426,45 @@ describe('workspace persistence (cache only; server authoritative on load)', () 
     writeLastWorkspaceId(null)
     expect(readLastWorkspaceId()).toBeNull()
     expect(localStorage.getItem(LAST_WORKSPACE_KEY)).toBeNull()
+  })
+})
+
+describe('panesFromSessions (Save-promote)', () => {
+  it("carries each session's cli + label into a pane (no cwd: Scratch has none)", () => {
+    let s = openSession(emptySessions(), 'hermes')
+    s = openSession(s, 'shell')
+    const panes = panesFromSessions(s.sessions)
+    expect(panes).toHaveLength(2)
+    expect(panes.map((p) => p.cli)).toEqual(['hermes', 'shell'])
+    expect(panes.map((p) => p.label)).toEqual(['Hermes 1', 'Shell 2'])
+    // Scratch sessions have no per-pane cwd, so none is sent (server default cwd).
+    expect(panes.every((p) => p.cwd === undefined)).toBe(true)
+  })
+
+  it('promotes a foreign attach session to an attach pane (no cli)', () => {
+    const s = openAttachSession(emptySessions(), 'victors_own')
+    const panes = panesFromSessions(s.sessions)
+    expect(panes).toHaveLength(1)
+    expect(panes[0]!.attach).toBe('victors_own')
+    expect(panes[0]!.cli).toBeUndefined()
+  })
+
+  it('keeps pane ids within the protocol charset', () => {
+    const s = openSession(emptySessions(), 'shell')
+    const panes = panesFromSessions(s.sessions)
+    expect(panes[0]!.id).toMatch(/^[A-Za-z0-9_-]{1,64}$/)
+  })
+
+  it('sanitizes + dedupes ids so two sessions never collide on one pane id', () => {
+    // Two sessions whose ids sanitize to the same value must not collide (a reused
+    // pane id would reattach to the wrong shell given the deterministic sessionId).
+    const sessions: TerminalSession[] = [
+      { id: 'a b', cli: 'shell', title: 'One', epoch: 0 },
+      { id: 'a/b', cli: 'shell', title: 'Two', epoch: 0 },
+    ]
+    const panes = panesFromSessions(sessions)
+    expect(panes).toHaveLength(2)
+    expect(panes[0]!.id).not.toBe(panes[1]!.id)
+    expect(panes.every((p) => /^[A-Za-z0-9_-]{1,64}$/.test(p.id))).toBe(true)
   })
 })

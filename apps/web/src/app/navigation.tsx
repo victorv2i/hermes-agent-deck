@@ -6,7 +6,6 @@ import {
   Library,
   FolderTree,
   SquareTerminal,
-  LayoutGrid,
   IdCard,
   Cable,
   Settings,
@@ -41,14 +40,12 @@ const HistoryRoute = lazy(() =>
 const FilesRoute = lazy(() =>
   import('@/features/files/FilesRoute').then((m) => ({ default: m.FilesRoute })),
 )
-const TerminalRoute = lazy(() =>
-  import('@/features/terminal/TerminalRoute').then((m) => ({ default: m.TerminalRoute })),
-)
-const WorkspacesRoute = lazy(() =>
-  import('@/features/terminal/WorkspacesRoute').then((m) => ({ default: m.WorkspacesRoute })),
-)
-const WorkspaceRoute = lazy(() =>
-  import('@/features/terminal/WorkspaceRoute').then((m) => ({ default: m.WorkspaceRoute })),
+// The Terminal + Workspaces surfaces are UNIFIED into one surface: Terminal is an
+// unnamed workspace ("Scratch"), and saved workspaces live in a switcher inside
+// the same page. One nav entry ("Terminal"); the `/workspaces` + `/workspaces/:id`
+// paths resolve to this same surface via router.tsx aliases.
+const TerminalSurface = lazy(() =>
+  import('@/features/terminal/TerminalSurface').then((m) => ({ default: m.TerminalSurface })),
 )
 const ProfilesPage = lazy(() =>
   import('@/features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })),
@@ -266,37 +263,18 @@ export const NAV: NavItem[] = [
     element: <KanbanRoute />,
   },
   {
+    // Terminal is the UNIFIED surface: the ephemeral quick terminal ("Scratch")
+    // AND the named, server-saved workspaces, in ONE page with a workspace
+    // switcher. The separate Workspaces rail entry is gone (saved sets live in the
+    // switcher); the `/workspaces` + `/workspaces/:id` paths alias to this surface
+    // via router.tsx so existing links and deep links keep working.
     key: 'terminal',
     label: navMessage('navigation.item.terminal.label'),
     labelKey: 'navigation.item.terminal.label',
     path: '/terminal',
     icon: SquareTerminal,
     group: 'workspace',
-    element: <TerminalRoute />,
-  },
-  {
-    // Workspaces — named, server-persisted grids of terminal panes that reattach
-    // the same shells from any device. A sibling of the ad-hoc Terminal surface
-    // (kept as-is); this is the durable, multi-pane home.
-    key: 'workspaces',
-    label: navMessage('navigation.item.workspaces.label'),
-    labelKey: 'navigation.item.workspaces.label',
-    path: '/workspaces',
-    icon: LayoutGrid,
-    group: 'workspace',
-    element: <WorkspacesRoute />,
-  },
-  {
-    // A single workspace's pane grid. Routed but NOT a rail link — you reach it
-    // from the Workspaces list (mirror of the dynamic `/sessions/:id` route).
-    key: 'workspace-detail',
-    label: navMessage('navigation.item.workspaces.label'),
-    labelKey: 'navigation.item.workspaces.label',
-    path: '/workspaces/:id',
-    icon: LayoutGrid,
-    group: 'workspace',
-    element: <WorkspaceRoute />,
-    hidden: true,
+    element: <TerminalSurface />,
   },
   {
     key: 'profiles',
