@@ -234,7 +234,7 @@ function TagsEditor({
             }
           }}
           className={cn(
-            'w-full rounded-[8px] border border-border bg-surface-2/50 px-2.5 py-1.5 text-[13px]',
+            'w-full rounded-[8px] border border-border bg-surface-2/50 px-2.5 py-1.5 text-13',
             'text-foreground placeholder:text-foreground-tertiary',
             'focus-visible:border-ring focus-visible:ad-focus',
           )}
@@ -288,7 +288,7 @@ function RowButton({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
     >
       {Icon && <Icon className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />}
       {children}

@@ -52,7 +52,7 @@ export function MessagingPage({ state, onSetToken, onRestart, restarting }: Mess
               role="status"
               className="ad-surface flex flex-col gap-3 rounded-xl bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
-              <p className="text-[13px] leading-relaxed text-muted-foreground">
+              <p className="text-13 leading-relaxed text-muted-foreground">
                 Your agent is stopped, so platform statuses are paused until it starts again.
               </p>
               <Button variant="outline" size="sm" disabled={restarting} onClick={onRestart}>

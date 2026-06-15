@@ -256,9 +256,9 @@ export function AgentDetailPage() {
           <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <MetaField icon={Layers} label="Model">
               {profile.model ? (
-                <span className="font-mono text-[13px] text-foreground">{profile.model}</span>
+                <span className="font-mono text-13 text-foreground">{profile.model}</span>
               ) : (
-                <span className="text-[13px] text-foreground-tertiary">Unknown</span>
+                <span className="text-13 text-foreground-tertiary">Unknown</span>
               )}
               {profile.provider && (
                 <Badge variant="muted" className="font-mono">
@@ -268,7 +268,7 @@ export function AgentDetailPage() {
             </MetaField>
 
             <MetaField icon={Sparkles} label="Skills">
-              <span className="text-[13px] text-foreground">
+              <span className="text-13 text-foreground">
                 {profile.skillCount} {profile.skillCount === 1 ? 'skill' : 'skills'}
               </span>
             </MetaField>
@@ -280,7 +280,7 @@ export function AgentDetailPage() {
               />
               <span
                 className={cn(
-                  'text-[13px]',
+                  'text-13',
                   profile.gatewayRunning ? 'text-success' : 'text-muted-foreground',
                 )}
               >
@@ -295,7 +295,7 @@ export function AgentDetailPage() {
               />
               <span
                 className={cn(
-                  'text-[13px]',
+                  'text-13',
                   profile.hasEnv ? 'text-foreground' : 'text-foreground-tertiary',
                 )}
               >

@@ -70,7 +70,7 @@ export function MemoryProviderSection({
     <div className="flex flex-col gap-4">
       {/* Section header */}
       <div>
-        <p className="text-[13px] font-medium text-foreground">Memory provider</p>
+        <p className="text-13 font-medium text-foreground">Memory provider</p>
         <p className="mt-0.5 text-[12px] leading-relaxed text-foreground-tertiary">
           Controls where the active agent stores long-term memories. "Configured" means the plugin
           is set up, not necessarily connected. Switching takes effect when your agent restarts.
@@ -94,14 +94,14 @@ export function MemoryProviderSection({
         </div>
       )}
 
-      {error && <p className="text-[13px] text-destructive">{error}</p>}
+      {error && <p className="text-13 text-destructive">{error}</p>}
 
       {memoryStatus && (
         <>
           {/* Active provider chip */}
           <div className="flex items-center gap-2.5">
-            <span className="text-[13px] text-foreground-tertiary">Active:</span>
-            <span className="text-[13px] font-medium text-foreground">
+            <span className="text-13 text-foreground-tertiary">Active:</span>
+            <span className="text-13 font-medium text-foreground">
               {memoryStatus.active ? memoryStatus.active : 'Built-in'}
             </span>
             {switchResult?.restart_required && <Badge variant="warning">Restart to apply</Badge>}
@@ -115,7 +115,7 @@ export function MemoryProviderSection({
                 onClick={() => setShowCatalog((v) => !v)}
                 aria-expanded={showCatalog}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg py-1 text-left text-[13px]',
+                  'flex items-center gap-2 rounded-lg py-1 text-left text-13',
                   'focus-visible:ad-focus',
                 )}
               >
@@ -250,7 +250,7 @@ function ProviderOption({
           {isActive ? <span className="size-2 rounded-full bg-primary" /> : null}
         </span>
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="flex items-center gap-2 text-[13px] font-medium text-foreground">
+          <span className="flex items-center gap-2 text-13 font-medium text-foreground">
             {label}
             {isActive && <Check className="size-3.5 text-success" aria-label="Active" />}
             {!configured && (

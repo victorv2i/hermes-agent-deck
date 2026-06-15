@@ -74,7 +74,7 @@ export function KanbanExpandedShell({
                   aria-keyshortcuts="Escape"
                   data-testid="kanban-collapse"
                   className={cn(
-                    'inline-flex h-11 items-center gap-1.5 rounded-lg border border-border bg-surface-2/60 px-3 text-[13px] text-muted-foreground transition-colors md:h-10',
+                    'inline-flex h-11 items-center gap-1.5 rounded-lg border border-border bg-surface-2/60 px-3 text-13 text-muted-foreground transition-colors md:h-10',
                     'hover:border-border-strong hover:text-foreground',
                     'focus-visible:ad-focus',
                   )}

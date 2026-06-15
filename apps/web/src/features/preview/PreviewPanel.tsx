@@ -145,7 +145,7 @@ export function PreviewPanel({ open = true }: PreviewPanelProps) {
             // Agent Deck itself.
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
             referrerPolicy="no-referrer"
-            className="h-full w-full border-0 bg-white"
+            className="h-full w-full border-0 bg-surface-elevated"
           />
         )}
       </div>

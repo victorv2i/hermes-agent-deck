@@ -189,7 +189,7 @@ function PruneSessionsDialog({
             value={days}
             onChange={(e) => onDaysChange(Number(e.target.value))}
             disabled={busy}
-            className="rounded-md border border-border bg-surface-2 px-2 py-1 text-[13px] text-foreground focus-visible:ad-focus"
+            className="rounded-md border border-border bg-surface-2 px-2 py-1 text-13 text-foreground focus-visible:ad-focus"
           >
             {[7, 14, 30, 60, 90, 180, 365].map((d) => (
               <option key={d} value={d}>

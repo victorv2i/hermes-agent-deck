@@ -66,7 +66,7 @@ export function ProviderBreakdown({ byModel }: ProviderBreakdownProps) {
                         </span>
                         <span
                           data-testid="provider-row-label"
-                          className="truncate text-[13px] text-foreground"
+                          className="truncate text-13 text-foreground"
                           title={label}
                         >
                           {label}

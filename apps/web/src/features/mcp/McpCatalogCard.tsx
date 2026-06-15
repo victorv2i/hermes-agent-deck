@@ -65,7 +65,7 @@ export function McpCatalogCard({ entry }: McpCatalogCardProps) {
         </div>
       </CardHeader>
       <CardContent className="-mt-1 flex flex-col gap-3">
-        <p className="text-[13px] leading-relaxed text-muted-foreground">{entry.description}</p>
+        <p className="text-13 leading-relaxed text-muted-foreground">{entry.description}</p>
 
         {entry.installed ? (
           <p className="text-[12px] text-foreground-tertiary">

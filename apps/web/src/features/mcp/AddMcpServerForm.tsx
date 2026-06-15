@@ -107,7 +107,7 @@ export function AddMcpServerForm({ onAdd, submitting }: AddMcpServerFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>Add a custom tool server</CardTitle>
-        <p className="text-[13px] leading-relaxed text-muted-foreground">
+        <p className="text-13 leading-relaxed text-muted-foreground">
           Use this when you already know the server URL or command. Catalog installs stay in your
           terminal.
         </p>
@@ -158,7 +158,7 @@ export function AddMcpServerForm({ onAdd, submitting }: AddMcpServerFormProps) {
                     onClick={() => setTransport(t)}
                     onKeyDown={(e) => onTransportKeyDown(e, index)}
                     className={cn(
-                      'h-10 flex-1 rounded-lg border px-3 text-[13px] font-medium transition-colors',
+                      'h-10 flex-1 rounded-lg border px-3 text-13 font-medium transition-colors',
                       'focus-visible:ad-focus',
                       selected
                         ? 'border-[var(--border-strong)] bg-primary/10 text-foreground'

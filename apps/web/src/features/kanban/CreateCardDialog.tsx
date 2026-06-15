@@ -99,7 +99,7 @@ export function CreateCardDialog({ open, onOpenChange, board }: CreateCardDialog
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={titleId} className="text-[13px] font-medium text-foreground">
+            <label htmlFor={titleId} className="text-13 font-medium text-foreground">
               Title
             </label>
             <Input
@@ -115,7 +115,7 @@ export function CreateCardDialog({ open, onOpenChange, board }: CreateCardDialog
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={bodyId} className="text-[13px] font-medium text-foreground">
+            <label htmlFor={bodyId} className="text-13 font-medium text-foreground">
               Description <span className="text-foreground-tertiary">(optional)</span>
             </label>
             <textarea
@@ -134,7 +134,7 @@ export function CreateCardDialog({ open, onOpenChange, board }: CreateCardDialog
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={assigneeId} className="text-[13px] font-medium text-foreground">
+            <label htmlFor={assigneeId} className="text-13 font-medium text-foreground">
               Assignee <span className="text-foreground-tertiary">(optional)</span>
             </label>
             <Input

@@ -55,7 +55,7 @@ export function Toaster() {
         classNames: {
           toast:
             // Shared, theme-aware elevation token (P0.3/P0.4) — softer under light themes.
-            'ad-surface !rounded-xl !border !text-[13px] !shadow-popover !font-sans',
+            'ad-surface !rounded-xl !border !text-13 !shadow-popover !font-sans',
           title: '!font-medium',
           description: '!text-muted-foreground',
           closeButton: '!bg-transparent !border-border hover:!bg-muted',

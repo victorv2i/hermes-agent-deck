@@ -136,7 +136,7 @@ export function ConnectionsRoute() {
           aria-label="Connections"
           aria-orientation="horizontal"
           onKeyDown={onKeyDown}
-          className="ad-surface flex w-full flex-col gap-1 rounded-[10px] bg-surface-1 p-1 sm:inline-flex sm:w-auto sm:max-w-full sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
+          className="ad-surface flex w-full flex-col gap-1 rounded-md bg-surface-1 p-1 sm:inline-flex sm:w-auto sm:max-w-full sm:flex-row sm:items-center sm:gap-1 sm:overflow-x-auto"
         >
           {CONNECTIONS_TAB_CLUSTERS.map((cluster, index) => (
             <Fragment key={cluster.id}>
@@ -171,7 +171,7 @@ export function ConnectionsRoute() {
                         tabIndex={selected ? 0 : -1}
                         onClick={() => selectTab(t.id)}
                         className={cn(
-                          'inline-flex min-h-11 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-[7px] px-2 py-1.5 text-[13px] font-medium transition-colors sm:gap-2 sm:px-3.5',
+                          'inline-flex min-h-11 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-[7px] px-2 py-1.5 text-13 font-medium transition-colors sm:gap-2 sm:px-3.5',
                           'focus-visible:ad-focus',
                           selected
                             ? 'bg-primary/12 text-primary'

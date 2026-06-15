@@ -62,7 +62,7 @@ export function ChatImage({
           loading="lazy"
           onError={() => setBroken(true)}
           className={cn(
-            'h-auto max-h-80 max-w-full rounded-[10px] border border-border object-contain',
+            'h-auto max-h-80 max-w-full rounded-md border border-border object-contain',
             className,
           )}
         />

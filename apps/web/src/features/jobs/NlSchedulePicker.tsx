@@ -28,7 +28,7 @@ export interface NlSchedulePickerProps {
 }
 
 const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
+  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-13 text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
 
 /** Format a fire time as a short, human, locale-aware "Mon, Jun 1, 8:00 AM". */
 function formatRun(d: Date): string {

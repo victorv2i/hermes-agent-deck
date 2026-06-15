@@ -30,7 +30,7 @@ export function BoardSelector({ boards, value, onChange, disabled }: BoardSelect
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          'min-h-11 rounded-[9px] border border-border bg-surface-2/60 px-2.5 py-1.5 text-xs font-medium text-foreground md:min-h-0',
+          'min-h-11 rounded-md border border-border bg-surface-2/60 px-2.5 py-1.5 text-xs font-medium text-foreground md:min-h-0',
           'focus-visible:ad-focus',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )}

@@ -318,7 +318,7 @@ function ContinueBar({
   return (
     <div className="shrink-0 border-t border-border px-6 py-3.5">
       <div className="mx-auto flex w-full max-w-[720px] items-center justify-between gap-4">
-        <p className="min-w-0 text-[13px] leading-relaxed text-foreground-tertiary">
+        <p className="min-w-0 text-13 leading-relaxed text-foreground-tertiary">
           Picks up right here. Your next message continues this session.
         </p>
         <Button

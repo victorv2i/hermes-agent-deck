@@ -38,7 +38,7 @@ export interface JobFormProps {
 }
 
 const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
+  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-3 text-13 text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
 
 const SELECT_CLASS = `${INPUT_CLASS} appearance-none pr-7`
 

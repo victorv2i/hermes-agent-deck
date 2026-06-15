@@ -47,7 +47,7 @@ export function EditableConfigField({ field }: { field: SettingsField }) {
   // so a mis-wire degrades to a plain read rather than crashing the page.
   if (!spec) {
     return (
-      <span className="font-mono text-[13px] break-words text-foreground/90">
+      <span className="font-mono text-13 break-words text-foreground/90">
         {field.value === null || field.value === '' ? UNSET : String(field.value)}
       </span>
     )
@@ -80,7 +80,7 @@ export function EditableConfigField({ field }: { field: SettingsField }) {
       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
         <span
           className={cn(
-            'font-mono text-[13px] leading-relaxed break-words sm:text-right',
+            'font-mono text-13 leading-relaxed break-words sm:text-right',
             currentDisplay === UNSET ? 'text-foreground-tertiary italic' : 'text-foreground/90',
           )}
           title={currentDisplay}
@@ -124,7 +124,7 @@ export function EditableConfigField({ field }: { field: SettingsField }) {
             }
           }}
           className={cn(
-            'ad-surface h-9 w-full min-w-0 rounded-[10px] bg-surface-1 px-3 font-mono text-[13px] text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus sm:max-w-[16rem]',
+            'ad-surface h-9 w-full min-w-0 rounded-md bg-surface-1 px-3 font-mono text-13 text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus sm:max-w-[16rem]',
             mutation.isError && 'border-destructive/50',
           )}
         />

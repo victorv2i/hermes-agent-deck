@@ -288,7 +288,7 @@ export function AgentMemoryTabs({
           // Mobile (~375px): a 5-up grid so all five short labels fit the row
           // without horizontal overflow; >=sm it relaxes to the natural inline
           // strip. Mirrors the Connections tab strip's responsive pattern.
-          className="ad-surface grid w-full grid-cols-5 rounded-[10px] bg-surface-1 p-1 sm:inline-flex sm:w-auto"
+          className="ad-surface grid w-full grid-cols-5 rounded-md bg-surface-1 p-1 sm:inline-flex sm:w-auto"
         >
           {HUB_TABS.map((t) => {
             const selected = t.kind === tab
@@ -305,7 +305,7 @@ export function AgentMemoryTabs({
                 className={cn(
                   // min-h-11 keeps the tap target >=44px (WCAG 2.5.8) on phones;
                   // truncate guards the longest label inside a narrow column.
-                  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-[7px] px-1.5 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0 sm:px-3.5',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center rounded-[7px] px-1.5 py-1.5 text-13 font-medium transition-colors sm:min-h-0 sm:px-3.5',
                   'focus-visible:ad-focus',
                   selected
                     ? 'bg-primary/12 text-primary'

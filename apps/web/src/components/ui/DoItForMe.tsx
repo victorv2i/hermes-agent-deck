@@ -87,7 +87,7 @@ export function DoItForMe({ label, op, description, className }: DoItForMeProps)
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       {description ? (
-        <p className="text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+        <p className="text-13 leading-relaxed text-muted-foreground">{description}</p>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-3">

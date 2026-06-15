@@ -2,7 +2,7 @@ import type React from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export interface SegmentedOption<T extends string = string> {
+export interface SegmentedOption<T extends string | number = string> {
   value: T
   label: string
   icon?: LucideIcon
@@ -10,7 +10,7 @@ export interface SegmentedOption<T extends string = string> {
   hint?: string
 }
 
-export interface SegmentedControlProps<T extends string = string> {
+export interface SegmentedControlProps<T extends string | number = string> {
   value: T
   onValueChange: (value: T) => void
   options: SegmentedOption<T>[]
@@ -30,7 +30,7 @@ export interface SegmentedControlProps<T extends string = string> {
  * is neutral. Roving arrow-key navigation (a real WAI-ARIA radiogroup), a 44px
  * touch target on mobile (WCAG 2.5.5), and the one canonical `.ad-focus` ring.
  */
-export function SegmentedControl<T extends string = string>({
+export function SegmentedControl<T extends string | number = string>({
   value,
   onValueChange,
   options,

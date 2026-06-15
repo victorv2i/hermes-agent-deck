@@ -601,9 +601,7 @@ function RecentCard({
       </span>
 
       {showSnippet ? (
-        <span className="line-clamp-1 text-[13px] leading-snug text-muted-foreground">
-          {snippet}
-        </span>
+        <span className="line-clamp-1 text-13 leading-snug text-muted-foreground">{snippet}</span>
       ) : null}
 
       <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-foreground-tertiary">
@@ -700,7 +698,7 @@ const STARTER_PROMPTS: StarterPrompt[] = [
 function StarterPrompts({ onStartChat }: { onStartChat: (prompt?: string) => void }) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="max-w-[60ch] text-[13px] leading-relaxed text-muted-foreground">
+      <p className="max-w-[60ch] text-13 leading-relaxed text-muted-foreground">
         New here? Talk to Hermes in plain language. It can reason with you, inspect local work when
         you ask, and pause for your OK before risky actions; that approval keeps you in control.
       </p>
@@ -943,9 +941,7 @@ function WhatsNew({ defaultOpen = false }: { defaultOpen?: boolean }) {
                   {formatChangelogDate(entry.date)}
                 </span>
               </div>
-              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                {entry.detail}
-              </p>
+              <p className="mt-1 text-13 leading-relaxed text-muted-foreground">{entry.detail}</p>
             </li>
           ))}
         </ul>

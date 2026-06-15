@@ -419,10 +419,10 @@ export function FileBrowser({
                 }
               }}
               // §2(c) — the SAME search-box pattern as the sessions rail's search
-              // (rounded-[9px], surface-2 fill, hover border, focus ring), so the
+              // (rounded-md, surface-2 fill, hover border, focus ring), so the
               // two surfaces share one search vocabulary.
               className={cn(
-                'w-full rounded-[9px] border border-border bg-surface-2/50 py-2 pl-8 pr-2.5 text-[13px]',
+                'w-full rounded-md border border-border bg-surface-2/50 py-2 pl-8 pr-2.5 text-13',
                 'text-foreground placeholder:text-foreground-tertiary',
                 'transition-colors hover:border-border-strong',
                 'focus-visible:border-ring focus-visible:ad-focus',
@@ -537,7 +537,7 @@ export function FileBrowser({
                     aria-current={isSelected ? true : undefined}
                     title={blocked ? `Hidden (${entry.reason ?? 'restricted'})` : entry.path}
                     className={cn(
-                      'relative flex w-full items-center gap-2.5 rounded-md py-2 pr-16 pl-3 text-left text-[13px] transition-colors focus-visible:ad-focus',
+                      'relative flex w-full items-center gap-2.5 rounded-md py-2 pr-16 pl-3 text-left text-13 transition-colors focus-visible:ad-focus',
                       !blocked && !readOnly && 'pr-24 md:pr-16',
                       // Active row mirrors the rail's active-nav pattern: a 3px
                       // amber accent bar on the leading edge + a faint amber tint.
@@ -697,7 +697,7 @@ function RootCrumb({
                   }}
                   title={root.description}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors focus-visible:ad-focus',
+                    'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 transition-colors focus-visible:ad-focus',
                     isActive
                       ? 'bg-primary/[0.08] font-medium text-foreground'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground',

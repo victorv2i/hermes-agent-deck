@@ -82,7 +82,7 @@ export function BoardColumn({
           ))}
         </ul>
       ) : (
-        <div className="rounded-[10px] border border-dashed border-border/70 px-3 py-6 text-center text-[11px] text-foreground-tertiary">
+        <div className="rounded-md border border-dashed border-border/70 px-3 py-6 text-center text-[11px] text-foreground-tertiary">
           {meta.label} has no cards yet.
         </div>
       )}

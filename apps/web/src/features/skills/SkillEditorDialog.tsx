@@ -87,7 +87,7 @@ export function SkillEditorDialog({
         {body.data?.hasExtraFiles && (
           <p
             role="note"
-            className="flex items-start gap-2 rounded-[10px] bg-surface-1/40 px-3 py-2 text-xs leading-relaxed text-foreground-tertiary"
+            className="flex items-start gap-2 rounded-md bg-surface-1/40 px-3 py-2 text-xs leading-relaxed text-foreground-tertiary"
           >
             <FileWarning aria-hidden className="mt-0.5 size-3.5 shrink-0" />
             <span>
@@ -98,12 +98,12 @@ export function SkillEditorDialog({
         )}
 
         {saveError && (
-          <p className="rounded-[10px] bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          <p className="rounded-md bg-destructive/5 px-3 py-2 text-xs text-destructive">
             {saveError}
           </p>
         )}
 
-        <div className="max-h-[52vh] min-h-[200px] overflow-auto rounded-[10px] border border-border">
+        <div className="max-h-[52vh] min-h-[200px] overflow-auto rounded-md border border-border">
           {body.isLoading ? (
             <div className="flex items-center justify-center py-12 text-foreground-tertiary">
               <Loader2 className="size-5 animate-spin" />

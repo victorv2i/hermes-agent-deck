@@ -34,7 +34,7 @@ export function PageHeader({ icon: Icon, title, subtitle, actions, className }: 
       <div className="flex w-full min-w-0 flex-1 items-start gap-3">
         <span
           aria-hidden
-          className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+          className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
         >
           <Icon className="size-[18px]" />
         </span>

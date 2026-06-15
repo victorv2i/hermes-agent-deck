@@ -32,13 +32,13 @@ export function VoiceNotesList({ notes, truncated }: VoiceNotesListProps) {
             <div className="flex min-w-0 items-center gap-3">
               <span
                 aria-hidden
-                className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+                className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
               >
                 <AudioLines className="size-[18px]" aria-hidden />
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <CardTitle>Recent voice notes</CardTitle>
-                <p className="text-[13px] text-muted-foreground">
+                <p className="text-13 text-muted-foreground">
                   Audio your agent has spoken, cached on this machine.
                 </p>
               </div>
@@ -122,7 +122,7 @@ function NoteRow({ note }: { note: AudioNote }) {
     <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-col">
-          <span className="truncate font-mono text-[13px] text-foreground">{note.name}</span>
+          <span className="truncate font-mono text-13 text-foreground">{note.name}</span>
           <span className="text-[11px] text-foreground-tertiary">
             {note.ext.toUpperCase()} · {formatBytes(note.size)} · {formatWhen(note.modifiedAt)}
           </span>

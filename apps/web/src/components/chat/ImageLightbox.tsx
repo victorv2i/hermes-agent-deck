@@ -40,7 +40,7 @@ export function ImageLightbox({
         onClick={() => setOpen(true)}
         aria-label={`Enlarge image: ${title}`}
         aria-haspopup="dialog"
-        className="block max-w-full cursor-zoom-in rounded-[10px] focus-visible:ad-focus"
+        className="block max-w-full cursor-zoom-in rounded-md focus-visible:ad-focus"
       >
         {trigger}
       </button>

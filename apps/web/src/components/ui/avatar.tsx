@@ -31,7 +31,7 @@ export type AvatarSize = 24 | 28 | 32 | 44 | 56
 const SIZE_CLASS: Record<AvatarSize, string> = {
   24: 'size-6 text-[11px]',
   28: 'size-7 text-xs',
-  32: 'size-8 text-[13px]',
+  32: 'size-8 text-13',
   44: 'size-11 text-base',
   56: 'size-14 text-lg',
 }

@@ -237,7 +237,7 @@ function SoulPresetPicker({
             aria-checked={selected}
             onClick={() => onChange(preset.id)}
             className={cn(
-              'flex flex-col gap-0.5 rounded-[10px] border px-3 py-2.5 text-left transition-colors motion-reduce:transition-none',
+              'flex flex-col gap-0.5 rounded-md border px-3 py-2.5 text-left transition-colors motion-reduce:transition-none',
               'focus-visible:ad-focus',
               selected
                 ? 'border-[var(--border-strong)] bg-muted/50'

@@ -121,7 +121,7 @@ export function SessionBreakdown({
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full border-separate border-spacing-0 text-[13px]">
+              <table className="w-full border-separate border-spacing-0 text-13">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground">
                     <th scope="col" className="pb-2 pr-3 font-medium">

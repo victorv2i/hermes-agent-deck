@@ -264,7 +264,7 @@ function MaintenanceLink() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             to="/system"
-            className="ad-surface ad-surface-hover inline-flex items-center gap-1.5 rounded-[10px] bg-card px-3 py-2 text-[13px] font-medium text-foreground transition-colors focus-visible:ad-focus"
+            className="ad-surface ad-surface-hover inline-flex items-center gap-1.5 rounded-md bg-card px-3 py-2 text-13 font-medium text-foreground transition-colors focus-visible:ad-focus"
           >
             <Wrench className="size-3.5" aria-hidden />
             System
@@ -272,7 +272,7 @@ function MaintenanceLink() {
           </Link>
           <Link
             to="/logs"
-            className="ad-surface ad-surface-hover inline-flex items-center gap-1.5 rounded-[10px] bg-card px-3 py-2 text-[13px] font-medium text-foreground transition-colors focus-visible:ad-focus"
+            className="ad-surface ad-surface-hover inline-flex items-center gap-1.5 rounded-md bg-card px-3 py-2 text-13 font-medium text-foreground transition-colors focus-visible:ad-focus"
           >
             <ScrollText className="size-3.5" aria-hidden />
             Logs
@@ -303,7 +303,7 @@ function GroupHeader({ title, description }: { title: string; description: strin
  */
 function AgentConfigNotice() {
   return (
-    <div className="mb-6 flex items-start gap-2.5 rounded-[10px] bg-surface-1 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
+    <div className="mb-6 flex items-start gap-2.5 rounded-md bg-surface-1 px-3.5 py-3 text-xs leading-relaxed text-muted-foreground">
       <Lock className="mt-px size-3.5 shrink-0 text-foreground-tertiary" aria-hidden />
       <p>
         Fields with an <span className="font-medium text-foreground">Edit</span> button can be
@@ -532,7 +532,7 @@ function FieldValue({
       )}
 
       {unset ? (
-        <span className="text-[13px] text-foreground-tertiary italic">{UNSET}</span>
+        <span className="text-13 text-foreground-tertiary italic">{UNSET}</span>
       ) : chips.length > 0 ? (
         <div className="flex flex-wrap gap-1.5 sm:justify-end">
           {chips.map((item, i) => (
@@ -552,7 +552,7 @@ function FieldValue({
         </pre>
       ) : (
         <span
-          className="font-mono text-[13px] leading-relaxed break-words text-foreground/90 sm:text-right"
+          className="font-mono text-13 leading-relaxed break-words text-foreground/90 sm:text-right"
           title={display}
         >
           {display}

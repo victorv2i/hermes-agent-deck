@@ -60,15 +60,13 @@ export function VoicePage({
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+                  className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
                 >
                   <Volume2 className="size-[18px]" aria-hidden />
                 </span>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <CardTitle>Behavior</CardTitle>
-                  <p className="text-[13px] text-muted-foreground">
-                    How and when your agent speaks.
-                  </p>
+                  <p className="text-13 text-muted-foreground">How and when your agent speaks.</p>
                 </div>
               </div>
             </CardHeader>

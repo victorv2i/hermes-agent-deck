@@ -198,7 +198,7 @@ function ProjectFilterRow({
       onClick={onSelect}
       {...dropProps}
       className={cn(
-        'group/proj relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors',
+        'group/proj relative flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-13 transition-colors',
         'hover:bg-primary/[0.06] focus-visible:ad-focus',
         'before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-0 before:transition-opacity',
         selected && 'bg-primary/10 before:opacity-100',

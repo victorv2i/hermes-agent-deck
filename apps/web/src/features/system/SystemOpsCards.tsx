@@ -79,7 +79,7 @@ export function SystemStatsCard({
           <div className="flex items-center gap-3">
             <span
               aria-hidden
-              className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+              className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
             >
               <Activity className="size-[18px]" />
             </span>
@@ -87,7 +87,7 @@ export function SystemStatsCard({
           </div>
         </CardHeader>
         <CardContent>
-          <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mb-3 text-13 leading-relaxed text-muted-foreground">
             Live host snapshot from Hermes. Read-only.
             {stats && !stats.psutil && (
               <span className="ml-1 italic">
@@ -101,9 +101,9 @@ export function SystemStatsCard({
               Loading system stats...
             </div>
           ) : error ? (
-            <p className="text-[13px] text-destructive">{error}</p>
+            <p className="text-13 text-destructive">{error}</p>
           ) : stats ? (
-            <dl className="grid grid-cols-2 gap-2 text-[13px] sm:grid-cols-3">
+            <dl className="grid grid-cols-2 gap-2 text-13 sm:grid-cols-3">
               {stats.os && (
                 <StatItem label="OS" value={stats.os} icon={<Server className="size-3.5" />} />
               )}
@@ -222,7 +222,7 @@ export function CuratorCard({
             <div className="flex items-center gap-3">
               <span
                 aria-hidden
-                className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+                className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
               >
                 <RefreshCw className="size-[18px]" />
               </span>
@@ -299,12 +299,12 @@ export function CuratorCard({
           </div>
         </CardHeader>
         <CardContent className="-mt-1">
-          <p className="text-[13px] leading-relaxed text-muted-foreground">
+          <p className="text-13 leading-relaxed text-muted-foreground">
             The curator periodically reviews skills, archiving stale ones and pinning active ones.
             Pausing it stops automatic reviews; "Run now" triggers one immediately (backgrounded).
           </p>
           {error && (
-            <p className="mt-2 text-[13px] text-destructive" role="alert">
+            <p className="mt-2 text-13 text-destructive" role="alert">
               {error}
             </p>
           )}
@@ -352,7 +352,7 @@ export function ProviderValidateCard({
           <div className="flex items-center gap-3">
             <span
               aria-hidden
-              className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+              className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
             >
               <CheckCircle className="size-[18px]" />
             </span>
@@ -360,7 +360,7 @@ export function ProviderValidateCard({
           </div>
         </CardHeader>
         <CardContent className="-mt-1">
-          <p className="mb-3 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mb-3 text-13 leading-relaxed text-muted-foreground">
             Live-probe a provider API key before saving it. Hermes verifies the key against the
             provider directly.
           </p>
@@ -375,7 +375,7 @@ export function ProviderValidateCard({
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
                 placeholder="e.g. OPENAI_API_KEY"
-                className="ad-surface rounded-[10px] border border-border bg-surface-1 px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus"
+                className="ad-surface rounded-md border border-border bg-surface-1 px-3 py-2 font-mono text-13 text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus"
                 autoComplete="off"
                 spellCheck={false}
               />
@@ -390,7 +390,7 @@ export function ProviderValidateCard({
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="sk-..."
-                className="ad-surface rounded-[10px] border border-border bg-surface-1 px-3 py-2 font-mono text-[13px] text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus"
+                className="ad-surface rounded-md border border-border bg-surface-1 px-3 py-2 font-mono text-13 text-foreground placeholder:text-foreground-tertiary focus-visible:ad-focus"
                 autoComplete="new-password"
                 spellCheck={false}
               />
@@ -421,7 +421,7 @@ function ValidateResult({ result }: { result: ProviderValidateResult }) {
   if (result.ok && result.reachable) {
     return (
       <div
-        className="mt-3 flex items-start gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-[13px] text-success"
+        className="mt-3 flex items-start gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-13 text-success"
         role="status"
       >
         <CheckCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -432,7 +432,7 @@ function ValidateResult({ result }: { result: ProviderValidateResult }) {
   if (!result.ok && result.reachable) {
     return (
       <div
-        className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive"
+        className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 px-3 py-2.5 text-13 text-destructive"
         role="alert"
       >
         <XCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -443,7 +443,7 @@ function ValidateResult({ result }: { result: ProviderValidateResult }) {
   if (!result.reachable) {
     return (
       <div
-        className="mt-3 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2.5 text-[13px] text-warning"
+        className="mt-3 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2.5 text-13 text-warning"
         role="status"
       >
         <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />

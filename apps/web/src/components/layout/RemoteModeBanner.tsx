@@ -17,7 +17,7 @@ export function RemoteModeBanner() {
     <div
       role="alert"
       data-testid="remote-mode-banner"
-      className="flex items-center justify-center gap-2 border-b border-destructive/30 bg-destructive/10 px-4 py-1.5 text-center text-[13px] leading-snug text-destructive"
+      className="flex items-center justify-center gap-2 border-b border-destructive/30 bg-destructive/10 px-4 py-1.5 text-center text-13 leading-snug text-destructive"
     >
       <TriangleAlert className="size-3.5 shrink-0" aria-hidden />
       <span>

@@ -105,12 +105,12 @@ export function MentionPicker({
       )}
     >
       {loading && (
-        <div className="px-2 py-1.5 text-[13px] text-muted-foreground" role="status">
+        <div className="px-2 py-1.5 text-13 text-muted-foreground" role="status">
           Searching files...
         </div>
       )}
       {empty && (
-        <div className="px-2 py-1.5 text-[13px] text-muted-foreground">
+        <div className="px-2 py-1.5 text-13 text-muted-foreground">
           {query ? `No files match "${query}"` : 'Type to search files'}
         </div>
       )}
@@ -127,7 +127,7 @@ export function MentionPicker({
             onMouseEnter={() => setActiveIndex(i)}
             onClick={() => onSelect(file.path)}
             className={cn(
-              'flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition-colors focus-visible:outline-none sm:min-h-10',
+              'flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 transition-colors focus-visible:outline-none sm:min-h-10',
               active ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted',
             )}
           >

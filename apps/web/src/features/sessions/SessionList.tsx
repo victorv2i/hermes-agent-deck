@@ -1166,9 +1166,7 @@ function NewChatRow() {
       )}
     >
       <PencilLine className="size-3.5 shrink-0 text-primary" aria-hidden />
-      <span className="truncate text-[13px] leading-snug font-medium text-foreground">
-        New chat
-      </span>
+      <span className="truncate text-13 leading-snug font-medium text-foreground">New chat</span>
     </div>
   )
 }
@@ -1188,7 +1186,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          'w-full rounded-[9px] border border-border bg-surface-2/50 py-2 pl-8 pr-7 text-[13px]',
+          'w-full rounded-md border border-border bg-surface-2/50 py-2 pl-8 pr-7 text-13',
           'text-foreground placeholder:text-foreground-tertiary',
           'transition-colors hover:border-border-strong',
           'focus-visible:border-ring focus-visible:ad-focus',
@@ -1430,7 +1428,7 @@ function SessionRow({
               distinguishing content when sessions share a long prefix. */}
           <span
             className={cn(
-              'line-clamp-2 min-w-0 flex-1 text-[13px] leading-snug',
+              'line-clamp-2 min-w-0 flex-1 text-13 leading-snug',
               selected ? 'font-medium text-foreground' : 'text-foreground/90',
               localLabel && 'italic',
             )}
@@ -1604,7 +1602,7 @@ function RowOverflowMenu({
                 setOpen(false)
                 onStartInlineRename(sessionId)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
             >
               <PencilLine className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Rename</span>
@@ -1618,7 +1616,7 @@ function RowOverflowMenu({
                 setOpen(false)
                 onArchive(sessionId)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
             >
               <Archive className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Archive</span>
@@ -1632,7 +1630,7 @@ function RowOverflowMenu({
                 setOpen(false)
                 onRename(sessionId)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
             >
               <PencilLine className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Label session</span>
@@ -1647,7 +1645,7 @@ function RowOverflowMenu({
                 setOpen(false)
                 onViewTranscript(sessionId)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
             >
               <ScrollText className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">View transcript</span>
@@ -1822,7 +1820,7 @@ function InlineRenameRow({
           disabled={busy}
           maxLength={120}
           className={cn(
-            'min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-[13px] text-foreground',
+            'min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-13 text-foreground',
             'focus-visible:border-ring focus-visible:ad-focus',
             'disabled:opacity-60',
             error && 'border-destructive/50',
@@ -2049,7 +2047,7 @@ function SearchResultRow({
     >
       <span
         className={cn(
-          'line-clamp-1 w-full text-[13px] leading-snug',
+          'line-clamp-1 w-full text-13 leading-snug',
           selected ? 'font-medium text-foreground' : 'font-medium text-foreground/90',
         )}
       >
@@ -2116,7 +2114,7 @@ function Skeletons() {
 function EmptyState() {
   return (
     <div className="px-2 py-6 text-center">
-      <p className="text-[13px] text-foreground-tertiary">No sessions yet.</p>
+      <p className="text-13 text-foreground-tertiary">No sessions yet.</p>
       <p className="mt-1 text-[11px] leading-relaxed text-foreground-tertiary">
         Start a chat to see it here.
       </p>
@@ -2161,7 +2159,7 @@ function RailError({ onRetry }: { onRetry?: () => void }) {
 function FilteredEmptyState({ onClear }: { onClear: () => void }) {
   return (
     <div role="status" className="px-2 py-6 text-center">
-      <p className="text-[13px] text-foreground-tertiary">No sessions match this filter.</p>
+      <p className="text-13 text-foreground-tertiary">No sessions match this filter.</p>
       <button
         type="button"
         onClick={onClear}

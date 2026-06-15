@@ -58,11 +58,11 @@ export function GatewayRestartCard({
     <div
       role="status"
       className={cn(
-        'ad-surface flex flex-col gap-2 rounded-[10px] bg-surface-1 px-3 py-2.5 text-left',
+        'ad-surface flex flex-col gap-2 rounded-md bg-surface-1 px-3 py-2.5 text-left',
         className,
       )}
     >
-      <p className="text-[13px] leading-relaxed text-foreground">{message}</p>
+      <p className="text-13 leading-relaxed text-foreground">{message}</p>
       {note && <p className="text-xs leading-relaxed text-foreground-tertiary">{note}</p>}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <Button

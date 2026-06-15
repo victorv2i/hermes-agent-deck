@@ -196,7 +196,7 @@ function PermissionStatus({
         <button
           type="button"
           onClick={onEnable}
-          className="ad-surface ad-surface-hover inline-flex shrink-0 items-center gap-1.5 rounded-[10px] bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors focus-visible:ad-focus"
+          className="ad-surface ad-surface-hover inline-flex shrink-0 items-center gap-1.5 rounded-md bg-card px-3 py-1.5 text-13 font-medium text-foreground transition-colors focus-visible:ad-focus"
         >
           <Bell className="size-3.5" aria-hidden />
           Enable browser notifications

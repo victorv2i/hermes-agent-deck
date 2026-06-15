@@ -614,7 +614,7 @@ export function Composer({
           <div
             data-testid="composer-drop-overlay"
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-40 grid place-items-center rounded-xl border-2 border-dashed border-primary/60 bg-primary/5 text-[13px] font-medium text-primary"
+            className="pointer-events-none absolute inset-0 z-40 grid place-items-center rounded-xl border-2 border-dashed border-primary/60 bg-primary/5 text-13 font-medium text-primary"
           >
             Drop image to attach
           </div>
@@ -1026,7 +1026,7 @@ function SlashMenu({
               />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-center gap-2">
-                  <span className="text-[13px] font-medium">{cmd.label}</span>
+                  <span className="text-13 font-medium">{cmd.label}</span>
                   <span className="font-mono text-[11px] text-foreground-tertiary">
                     {cmd.command}
                   </span>

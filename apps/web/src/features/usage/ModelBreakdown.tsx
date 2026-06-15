@@ -88,10 +88,7 @@ export function ModelBreakdown({ byModel }: ModelBreakdownProps) {
                       >
                         <ProviderBrandIcon provider={vendorFromModel(m.model)} size={13} />
                       </span>
-                      <span
-                        className="truncate font-mono text-[13px] text-foreground"
-                        title={m.model}
-                      >
+                      <span className="truncate font-mono text-13 text-foreground" title={m.model}>
                         {m.model}
                       </span>
                     </span>

@@ -341,7 +341,7 @@ function ModelSearch({
           aria-label="Search models"
           spellCheck={false}
           autoComplete="off"
-          className="h-9 w-full min-w-0 rounded-[10px] border border-border bg-card pr-9 pl-9 text-sm text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus"
+          className="h-9 w-full min-w-0 rounded-md border border-border bg-card pr-9 pl-9 text-sm text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus"
         />
         {query && (
           <button
@@ -558,7 +558,7 @@ function ModelRow({
       data-active={model.active ? 'true' : 'false'}
       className={cn(
         // active rows carry a 3px left amber accent bar via ::before
-        'relative flex items-center justify-between gap-3 overflow-hidden rounded-[10px] px-4 py-3 transition-colors',
+        'relative flex items-center justify-between gap-3 overflow-hidden rounded-md px-4 py-3 transition-colors',
         model.active
           ? "bg-primary/[0.07] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-primary before:content-['']"
           : 'ad-surface ad-surface-hover bg-card',
@@ -738,7 +738,7 @@ function LoadingSkeleton() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="h-[56px] animate-pulse rounded-[10px] bg-foreground/[0.06] ring-1 ring-border"
+                  className="h-[56px] animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border"
                 />
               ))}
             </div>

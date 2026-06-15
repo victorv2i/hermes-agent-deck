@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
  */
 
 const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
+  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-13 text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
 
 export interface VoiceKeyFieldProps {
   field: VoiceKeyFieldShape
@@ -31,7 +31,7 @@ export function VoiceKeyField({ field, onSetKey, disabled }: VoiceKeyFieldProps)
   // Local provider — no credential to fill. Honest, calm line.
   if (field.envVar === null) {
     return (
-      <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-13 text-muted-foreground">
         <Check className="size-3.5 shrink-0 text-success" aria-hidden />
         No key needed: this provider runs on your machine.
       </p>

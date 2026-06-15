@@ -47,7 +47,7 @@ export function SurfaceHeader({
     >
       <span
         aria-hidden
-        className="ad-surface grid size-8 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+        className="ad-surface grid size-8 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
       >
         <Icon className="size-[18px]" />
       </span>

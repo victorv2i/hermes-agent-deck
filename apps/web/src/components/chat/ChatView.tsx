@@ -498,7 +498,7 @@ export function ChatView({
           <div
             data-testid="fork-banner"
             role="status"
-            className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-surface-1 px-3 py-2 text-[13px] leading-snug text-muted-foreground"
+            className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-surface-1 px-3 py-2 text-13 leading-snug text-muted-foreground"
           >
             <GitBranch className="size-3.5 shrink-0 text-foreground-tertiary" aria-hidden />
             <span className="min-w-0 flex-1">{forkBanner}</span>
@@ -507,7 +507,7 @@ export function ChatView({
                 type="button"
                 onClick={onReturnToOriginal}
                 data-testid="fork-return"
-                className="shrink-0 rounded px-1.5 py-0.5 text-[13px] font-medium text-foreground underline-offset-2 hover:underline focus-visible:ad-focus"
+                className="shrink-0 rounded px-1.5 py-0.5 text-13 font-medium text-foreground underline-offset-2 hover:underline focus-visible:ad-focus"
               >
                 Return to original chat
               </button>
@@ -828,7 +828,7 @@ function ChatBlockedNotice({
     <div
       data-testid="chat-blocked-notice"
       role="status"
-      className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-1 px-3 py-2 text-[13px] leading-snug text-muted-foreground"
+      className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface-1 px-3 py-2 text-13 leading-snug text-muted-foreground"
     >
       <Icon className="size-3.5 shrink-0 text-foreground-tertiary" aria-hidden />
       <span className="min-w-0 flex-1">
@@ -845,7 +845,7 @@ function ChatBlockedNotice({
           type="button"
           onClick={onConnectModel}
           data-testid="chat-blocked-connect"
-          className="shrink-0 rounded px-1.5 py-0.5 text-[13px] font-medium text-foreground underline-offset-2 hover:underline focus-visible:ad-focus"
+          className="shrink-0 rounded px-1.5 py-0.5 text-13 font-medium text-foreground underline-offset-2 hover:underline focus-visible:ad-focus"
         >
           Connect a model
         </button>
@@ -901,7 +901,7 @@ function EmptyHero({
           {showOrientation && (
             <p
               data-testid="chat-orientation"
-              className="mx-auto max-w-md text-[13px] leading-relaxed text-foreground-tertiary"
+              className="mx-auto max-w-md text-13 leading-relaxed text-foreground-tertiary"
             >
               Replies stream in live. You can stop or steer at any time.
               {/* The shortcut sentence is keyboard-only guidance: hidden on
@@ -927,7 +927,7 @@ function EmptyHero({
               className="size-4 text-foreground-tertiary transition-colors group-hover/prompt:text-muted-foreground"
               aria-hidden
             />
-            <span className="text-[13px] leading-snug text-muted-foreground transition-colors group-hover/prompt:text-foreground">
+            <span className="text-13 leading-snug text-muted-foreground transition-colors group-hover/prompt:text-foreground">
               {text}
             </span>
           </button>

@@ -83,7 +83,7 @@ function CapField({ id, label, unit, value, onChange }: CapFieldProps) {
       <label htmlFor={id} className="text-sm text-foreground">
         {label}
       </label>
-      <div className="ad-surface inline-flex h-9 shrink-0 items-center rounded-[10px] bg-surface-1 pr-3 pl-3 focus-within:ring-2 focus-within:ring-ring/50">
+      <div className="ad-surface inline-flex h-9 shrink-0 items-center rounded-md bg-surface-1 pr-3 pl-3 focus-within:ring-2 focus-within:ring-ring/50">
         <span className="text-sm text-foreground-tertiary" aria-hidden>
           $
         </span>

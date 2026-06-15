@@ -40,7 +40,7 @@ import { hasBrandMark, platformIcon } from './platformIcons'
  */
 
 const INPUT_CLASS =
-  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-[13px] text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
+  'h-10 w-full min-w-0 rounded-md border border-border bg-background px-2.5 text-13 text-foreground outline-none transition-colors placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ad-focus'
 
 export interface PlatformTileProps {
   /** The platform's registry metadata fused with its live state + token shape. */
@@ -89,7 +89,7 @@ export function PlatformTile({
       >
         <span
           className={cn(
-            'grid size-9 shrink-0 place-items-center rounded-[10px]',
+            'grid size-9 shrink-0 place-items-center rounded-md',
             // Branded marks paint their own SVG colors on a neutral plate; the
             // neutral fallback glyph (email/unknown) inherits the surface fg.
             branded ? 'bg-muted/60' : 'ad-surface bg-muted text-foreground-tertiary',
@@ -123,13 +123,13 @@ export function PlatformTile({
       {open ? (
         <div id={panelId} className="flex flex-col gap-4 border-t border-border px-3.5 pb-4 pt-3.5">
           {state.connection === 'error' && state.errorMessage ? (
-            <p className="flex items-start gap-1.5 text-[13px] text-destructive" role="alert">
+            <p className="flex items-start gap-1.5 text-13 text-destructive" role="alert">
               <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
               <span>{state.errorMessage}</span>
             </p>
           ) : null}
 
-          <p className="text-[13px] leading-relaxed text-muted-foreground">
+          <p className="text-13 leading-relaxed text-muted-foreground">
             You create the bot in{' '}
             <span className="font-medium text-foreground">{platform.label}</span>; Agent Deck stores
             its token and Hermes handles replies after a restart. Agent Deck can&apos;t create the
@@ -137,7 +137,7 @@ export function PlatformTile({
           </p>
 
           {platform.steps.length > 0 ? (
-            <ol className="flex flex-col gap-1.5 text-[13px] text-muted-foreground">
+            <ol className="flex flex-col gap-1.5 text-13 text-muted-foreground">
               {platform.steps.map((step, i) => (
                 <li key={i} className="flex gap-2">
                   <span
@@ -157,7 +157,7 @@ export function PlatformTile({
               href={platform.setupUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-foreground underline-offset-4 transition-colors hover:underline"
+              className="inline-flex w-fit items-center gap-1 text-13 font-medium text-foreground underline-offset-4 transition-colors hover:underline"
             >
               Create your bot
               <ExternalLink className="size-3.5" aria-hidden />

@@ -98,7 +98,7 @@ export function FindInConversation({
         onKeyDown={handleKeyDown}
         placeholder="Find in conversation..."
         aria-label="Find in conversation"
-        className="h-11 w-44 min-w-0 flex-1 bg-transparent px-1 text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none sm:h-7"
+        className="h-11 w-44 min-w-0 flex-1 bg-transparent px-1 text-13 text-foreground placeholder:text-muted-foreground focus:outline-none sm:h-7"
       />
       <span
         aria-live="polite"

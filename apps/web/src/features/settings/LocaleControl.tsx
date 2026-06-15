@@ -51,7 +51,7 @@ export function LocaleControl() {
         <div
           role="radiogroup"
           aria-label={t('settings.locale.title')}
-          className="ad-surface inline-flex shrink-0 rounded-[10px] bg-surface-1 p-1"
+          className="ad-surface inline-flex shrink-0 rounded-md bg-surface-1 p-1"
         >
           {LOCALES.map((code) => {
             const checked = locale === code
@@ -65,7 +65,7 @@ export function LocaleControl() {
                 className={cn(
                   // min-h-11 keeps a 44px touch target on mobile, relaxed to the
                   // compact density on sm+ (touch-manipulation drops tap delay).
-                  'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0',
+                  'inline-flex min-h-11 touch-manipulation items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-13 font-medium transition-colors sm:min-h-0',
                   'focus-visible:ad-focus',
                   checked
                     ? 'bg-primary/10 text-primary'

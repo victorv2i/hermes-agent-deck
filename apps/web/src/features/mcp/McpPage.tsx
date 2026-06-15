@@ -112,7 +112,7 @@ export function McpPage({
               Ready-to-use integrations
             </h2>
           </div>
-          <p className="-mt-2 max-w-[60ch] text-[13px] leading-relaxed text-muted-foreground">
+          <p className="-mt-2 max-w-[60ch] text-13 leading-relaxed text-muted-foreground">
             Ready-to-use integrations that come with Hermes. To install one, copy the command and
             run it in your terminal. Sign-in and setup steps happen there, not here.
           </p>

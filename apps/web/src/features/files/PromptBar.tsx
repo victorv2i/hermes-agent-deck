@@ -64,7 +64,7 @@ export function PromptBar({
               onCancel()
             }
           }}
-          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-[13px] text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ad-focus sm:h-7"
+          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-13 text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ad-focus sm:h-7"
         />
         <Button
           size="xs"

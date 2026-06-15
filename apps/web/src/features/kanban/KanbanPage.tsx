@@ -430,7 +430,7 @@ function BoardSkeleton() {
         <div key={col} className="flex w-[272px] shrink-0 flex-col gap-2">
           <div className="h-4 w-24 animate-pulse rounded bg-surface-2/60" />
           {Array.from({ length: 3 }).map((__, card) => (
-            <div key={card} className="h-20 animate-pulse rounded-[10px] bg-surface-2/60" />
+            <div key={card} className="h-20 animate-pulse rounded-md bg-surface-2/60" />
           ))}
         </div>
       ))}

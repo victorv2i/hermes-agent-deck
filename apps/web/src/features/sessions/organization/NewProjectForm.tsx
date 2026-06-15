@@ -49,7 +49,7 @@ export function NewProjectForm({
           }
         }}
         className={cn(
-          'w-full rounded-[8px] border border-border bg-surface-2/50 px-2.5 py-1.5 text-[13px]',
+          'w-full rounded-[8px] border border-border bg-surface-2/50 px-2.5 py-1.5 text-13',
           'text-foreground placeholder:text-foreground-tertiary',
           'focus-visible:border-ring focus-visible:ad-focus',
         )}

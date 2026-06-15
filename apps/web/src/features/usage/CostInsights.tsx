@@ -241,7 +241,7 @@ function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
             return (
               <li key={m.model} className="flex flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="truncate font-mono text-[13px] text-foreground" title={m.model}>
+                  <span className="truncate font-mono text-13 text-foreground" title={m.model}>
                     {m.model}
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">

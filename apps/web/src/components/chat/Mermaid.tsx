@@ -43,10 +43,7 @@ export function Mermaid({ source }: { source: string }) {
         <div className="flex h-9 items-center border-b border-border bg-muted/60 px-3">
           <span className="font-mono text-xs text-foreground-tertiary">mermaid</span>
         </div>
-        <pre
-          data-testid="mermaid-fallback"
-          className="overflow-x-auto p-4 text-[13px] leading-relaxed"
-        >
+        <pre data-testid="mermaid-fallback" className="overflow-x-auto p-4 text-13 leading-relaxed">
           <code className="font-mono">{source}</code>
         </pre>
       </div>

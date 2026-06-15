@@ -70,7 +70,7 @@ export function TranscriptImportMenu({
           aria-label="Import transcript"
           title="Import transcript"
           className={cn(
-            'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface-2/60 px-2 text-[13px] text-muted-foreground transition-colors',
+            'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-surface-2/60 px-2 text-13 text-muted-foreground transition-colors',
             'hover:border-border-strong hover:text-foreground',
             'focus-visible:ad-focus',
           )}
@@ -88,7 +88,7 @@ export function TranscriptImportMenu({
         >
           <div className="flex flex-col gap-2.5">
             <div>
-              <p className="text-[13px] font-medium text-foreground">Import a transcript</p>
+              <p className="text-13 font-medium text-foreground">Import a transcript</p>
               <p className="mt-0.5 text-[12px] leading-relaxed text-foreground-tertiary">
                 Open an exported transcript (JSON or Markdown) as a local read-only view. Nothing is
                 written to hermes.
@@ -99,7 +99,7 @@ export function TranscriptImportMenu({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2/60 px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground focus-visible:ad-focus"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2/60 px-2 py-1.5 text-13 text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground focus-visible:ad-focus"
               >
                 <Upload className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
                 Choose a file
@@ -148,7 +148,7 @@ export function TranscriptImportMenu({
               type="button"
               onClick={() => commit(text)}
               disabled={text.trim() === ''}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-2 py-1.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-2 py-1.5 text-13 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50"
             >
               Open read-only
             </button>

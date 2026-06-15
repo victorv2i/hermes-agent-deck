@@ -60,7 +60,7 @@ export function MediaEmbed({ href, children }: { href?: string; children: ReactN
       preload="metadata"
       playsInline
       src={href}
-      className="my-2 max-h-80 w-full max-w-xl rounded-[10px] border border-border"
+      className="my-2 max-h-80 w-full max-w-xl rounded-md border border-border"
       aria-label={linkText(children) || 'Video clip'}
     />
   )

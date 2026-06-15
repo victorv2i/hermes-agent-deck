@@ -183,7 +183,7 @@ function MenuItem({
       onClick={onSelect}
       disabled={disabled}
       title={title}
-      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
     >
       <Icon className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
       <span className="min-w-0 flex-1 truncate">{label}</span>

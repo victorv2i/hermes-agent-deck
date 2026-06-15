@@ -155,13 +155,13 @@ export function CodeBlock({
         <div
           data-testid="shiki"
           className={cn(
-            'overflow-x-auto p-4 text-[13px] leading-relaxed',
+            'overflow-x-auto p-4 text-13 leading-relaxed',
             '[&_pre]:!bg-transparent [&_pre]:!m-0 [&_code]:font-mono',
           )}
           dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
-        <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed">
+        <pre className="overflow-x-auto p-4 text-13 leading-relaxed">
           <code className="font-mono">{code}</code>
         </pre>
       )}

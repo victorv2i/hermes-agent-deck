@@ -282,7 +282,7 @@ function HermesUpdateCard({
     >
       <ChannelChooser channels={channels} selected={channel} onSelect={setChannel} />
       {action.error ? (
-        <p className="px-4 text-[13px] text-destructive" role="alert">
+        <p className="px-4 text-13 text-destructive" role="alert">
           {action.error}
         </p>
       ) : null}
@@ -372,7 +372,7 @@ function UpdateResultLog({ result }: { result: HermesUpdateApplyResult }) {
         aria-expanded={open}
         aria-controls={panelId}
         className={cn(
-          'group/log flex w-full items-center gap-2 rounded-lg py-1 text-left text-[13px]',
+          'group/log flex w-full items-center gap-2 rounded-lg py-1 text-left text-13',
           'focus-visible:ad-focus',
         )}
       >
@@ -471,7 +471,7 @@ function DoctorCard({ action }: { action: DoctorActionState }) {
       }
     >
       {action.error ? (
-        <p className="px-4 text-[13px] text-destructive" role="alert">
+        <p className="px-4 text-13 text-destructive" role="alert">
           {action.error}
         </p>
       ) : null}
@@ -484,7 +484,7 @@ function DoctorCard({ action }: { action: DoctorActionState }) {
 function DoctorResult({ report }: { report: HermesDoctorReport }) {
   if (report.status === 'unavailable') {
     return (
-      <p className="px-4 text-[13px] leading-relaxed text-muted-foreground">
+      <p className="px-4 text-13 leading-relaxed text-muted-foreground">
         The health check is unavailable. <code className="font-mono">hermes doctor</code> couldn't
         run on this machine. This doesn't affect chatting.
       </p>
@@ -494,7 +494,7 @@ function DoctorResult({ report }: { report: HermesDoctorReport }) {
   return (
     <div className="flex flex-col gap-3 px-4">
       {report.summary.length > 0 ? (
-        <ul className="flex flex-col gap-1 text-[13px] text-muted-foreground">
+        <ul className="flex flex-col gap-1 text-13 text-muted-foreground">
           {report.summary.map((line, i) => (
             <li key={i} className="flex gap-2">
               <span aria-hidden className="text-foreground-tertiary">
@@ -535,7 +535,7 @@ function DoctorSections({ sections }: { sections: HermesDoctorReport['sections']
         aria-expanded={open}
         aria-controls={panelId}
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg py-1 text-left text-[13px]',
+          'flex w-full items-center gap-2 rounded-lg py-1 text-left text-13',
           'focus-visible:ad-focus',
         )}
       >
@@ -555,7 +555,7 @@ function DoctorSections({ sections }: { sections: HermesDoctorReport['sections']
           {sections.map((s) => (
             <li
               key={s.title}
-              className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-[13px]"
+              className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-13"
             >
               <span className="min-w-0 truncate text-foreground">{s.title}</span>
               <span className="flex shrink-0 items-center gap-2 font-mono text-[11px]">
@@ -651,7 +651,7 @@ function DockCard({
             <div className="flex min-w-0 items-center gap-3">
               <span
                 aria-hidden
-                className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+                className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
               >
                 <Icon className="size-[18px]" />
               </span>
@@ -664,7 +664,7 @@ function DockCard({
           </div>
         </CardHeader>
         <CardContent className="-mt-1">
-          <p className="text-[13px] leading-relaxed text-muted-foreground">{description}</p>
+          <p className="text-13 leading-relaxed text-muted-foreground">{description}</p>
         </CardContent>
         {children}
       </Card>

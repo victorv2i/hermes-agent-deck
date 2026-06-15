@@ -154,7 +154,7 @@ function PaletteTile({
       aria-checked={checked}
       onClick={onSelect}
       className={cn(
-        'ad-surface group relative flex items-center gap-3 rounded-[10px] bg-surface-1 p-3 text-left transition-colors',
+        'ad-surface group relative flex items-center gap-3 rounded-md bg-surface-1 p-3 text-left transition-colors',
         'focus-visible:ad-focus',
         // A persistent SELECTION ring must be neutral border-strong, never amber
         // (focus-visible rings stay --ring; only those are amber). §2.
@@ -178,7 +178,7 @@ function PaletteTile({
 
       <span className="min-w-0 flex-1">
         {/* The theme NAME owns its own line so it's never truncated/covered. */}
-        <span className="block text-[13px] font-medium text-foreground">{palette.label}</span>
+        <span className="block text-13 font-medium text-foreground">{palette.label}</span>
         {/* The recommended/default badge sits BELOW the name — smaller + muted, a
             governed (never-accent) tone — so it can't crowd out the name. */}
         {(palette.isRecommended || palette.isDefault) && (

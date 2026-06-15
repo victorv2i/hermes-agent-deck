@@ -20,7 +20,7 @@ export function DmAuthPanel() {
           <div className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden
-              className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+              className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
             >
               <ShieldCheck className="size-[18px]" />
             </span>
@@ -28,7 +28,7 @@ export function DmAuthPanel() {
           </div>
         </CardHeader>
         <CardContent className="-mt-1 flex flex-col gap-4">
-          <p className="text-[13px] leading-relaxed text-muted-foreground">
+          <p className="text-13 leading-relaxed text-muted-foreground">
             When someone messages your agent for the first time, your agent gives them a pairing
             code. Review and approve those requests on the Pairing tab. Only you, the owner, can
             approve a request. There&apos;s no auto-approve on purpose.

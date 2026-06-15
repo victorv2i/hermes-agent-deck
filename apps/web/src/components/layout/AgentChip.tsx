@@ -61,7 +61,7 @@ export function AgentChip() {
           {restartHint && <RestartMarker />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[13px] font-medium text-foreground">{friendly}</span>
+          <span className="truncate text-13 font-medium text-foreground">{friendly}</span>
           <span className="truncate font-mono text-[11px] text-foreground-tertiary">{model}</span>
         </span>
         {restartHint && (

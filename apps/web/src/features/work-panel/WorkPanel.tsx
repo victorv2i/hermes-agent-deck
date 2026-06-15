@@ -167,7 +167,7 @@ function HtmlArtifact({ content, open }: { content: string; open: boolean }) {
       srcDoc={content}
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
-      className={cn('h-full w-full border-0 bg-white', !open && 'invisible')}
+      className={cn('h-full w-full border-0 bg-surface-elevated', !open && 'invisible')}
     />
   )
 }

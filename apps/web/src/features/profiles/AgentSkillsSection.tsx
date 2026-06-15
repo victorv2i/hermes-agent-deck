@@ -44,7 +44,7 @@ export function AgentSkillsSection({ isActive }: { isActive: boolean }) {
       <div
         role="group"
         aria-label="Skills source"
-        className="ad-surface inline-flex self-start rounded-[10px] bg-surface-1 p-1"
+        className="ad-surface inline-flex self-start rounded-md bg-surface-1 p-1"
       >
         <ViewButton selected={view === 'local'} onClick={() => setView('local')}>
           Your skills
@@ -74,7 +74,7 @@ function ViewButton({
       aria-pressed={selected}
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-11 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-[13px] font-medium transition-colors sm:min-h-0',
+        'inline-flex min-h-11 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-13 font-medium transition-colors sm:min-h-0',
         'focus-visible:ad-focus',
         selected ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
       )}
@@ -289,7 +289,7 @@ function Loaded({
             explain the toggles are disabled until you switch. */}
         <div
           role="note"
-          className="ad-surface flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 rounded-[10px] bg-surface-1/40 px-3.5 py-2.5 text-xs leading-relaxed text-foreground-tertiary"
+          className="ad-surface flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-surface-1/40 px-3.5 py-2.5 text-xs leading-relaxed text-foreground-tertiary"
         >
           {isActive ? (
             <span>
@@ -358,7 +358,7 @@ function SkillRow({
     <li
       data-testid={`agent-skill-row-${skill.name}`}
       data-enabled={skill.enabled ? 'true' : 'false'}
-      className={cn('ad-surface rounded-[10px] bg-card', !skill.enabled && 'opacity-80')}
+      className={cn('ad-surface rounded-md bg-card', !skill.enabled && 'opacity-80')}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
         {/* The whole header is the expand/collapse control (click-to-expand). */}
@@ -485,7 +485,7 @@ function SkillsSkeleton() {
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className="h-[46px] animate-pulse rounded-[10px] bg-foreground/[0.06] ring-1 ring-border"
+          className="h-[46px] animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border"
         />
       ))}
     </div>

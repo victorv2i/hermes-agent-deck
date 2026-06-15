@@ -77,7 +77,7 @@ export function LogFilters({
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="Search log lines…"
           className={cn(
-            'h-8 w-full rounded-[9px] border border-border bg-surface-2/40 px-3 text-xs',
+            'h-8 w-full rounded-md border border-border bg-surface-2/40 px-3 text-xs',
             'text-foreground placeholder:text-foreground-tertiary',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}

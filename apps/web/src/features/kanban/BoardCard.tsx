@@ -91,7 +91,7 @@ export function BoardCard({
       data-testid="kanban-card"
       data-card-id={card.id}
       className={cn(
-        'ad-surface ad-surface-hover group/board-card relative w-full cursor-pointer rounded-[10px] bg-card px-3 py-2.5 text-left',
+        'ad-surface ad-surface-hover group/board-card relative w-full cursor-pointer rounded-md bg-card px-3 py-2.5 text-left',
         'transition-colors focus-visible:ad-focus',
       )}
     >
@@ -117,7 +117,7 @@ export function BoardCard({
         data-testid="kanban-card-title"
         title={card.title}
         className={cn(
-          'line-clamp-2 text-[13px] font-medium leading-snug text-foreground',
+          'line-clamp-2 text-13 font-medium leading-snug text-foreground',
           onMove && 'pr-12 md:pr-7',
         )}
       >

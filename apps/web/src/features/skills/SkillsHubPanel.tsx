@@ -157,7 +157,7 @@ export function SkillsHubPanel() {
             placeholder="Search skills hub..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="ad-surface min-h-11 w-full rounded-[10px] bg-card pr-3 pl-9 text-sm text-foreground placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10 sm:min-h-0"
+            className="ad-surface min-h-11 w-full rounded-md bg-card pr-3 pl-9 text-sm text-foreground placeholder:text-foreground-tertiary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10 sm:min-h-0"
           />
           {searching && (
             <Loader2
@@ -234,7 +234,7 @@ function HubResultRow({
   const failed = action?.status === 'error'
 
   return (
-    <li className="ad-surface flex flex-col gap-2 rounded-[10px] bg-card px-3.5 py-3">
+    <li className="ad-surface flex flex-col gap-2 rounded-md bg-card px-3.5 py-3">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">

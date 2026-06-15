@@ -41,13 +41,13 @@ export function SttCard({ state, onUpdate, onSetKey, saving }: SttCardProps) {
           <div className="flex min-w-0 items-center gap-3">
             <span
               aria-hidden
-              className="ad-surface grid size-9 shrink-0 place-items-center rounded-[10px] bg-muted text-foreground-tertiary"
+              className="ad-surface grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground-tertiary"
             >
               <Mic className="size-[18px]" aria-hidden />
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <CardTitle id={titleId}>Speech to text</CardTitle>
-              <p className="text-[13px] text-muted-foreground">
+              <p className="text-13 text-muted-foreground">
                 How your agent transcribes voice notes you send it.
               </p>
             </div>
