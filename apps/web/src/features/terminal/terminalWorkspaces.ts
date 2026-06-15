@@ -86,11 +86,7 @@ export function paneSessionId(workspaceId: string, paneId: string, epoch: number
 }
 
 /** A fresh, empty workspace state (no panes), defaulting to tab view. */
-export function emptyWorkspace(
-  id: string,
-  name: string,
-  viewMode: ViewMode = 'tab',
-): WorkspaceState {
+export function emptyWorkspace(id: string, name: string, viewMode: ViewMode = 'tab'): WorkspaceState {
   return { id, name, panes: [], activePane: null, viewMode }
 }
 

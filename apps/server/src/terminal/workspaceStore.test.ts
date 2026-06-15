@@ -82,9 +82,7 @@ describe('WorkspaceStore CRUD', () => {
   it('upsert replaces an existing workspace by id', async () => {
     const store = new WorkspaceStore(storePath)
     await store.upsertWorkspace(def({ name: 'Alpha' }))
-    await store.upsertWorkspace(
-      def({ name: 'Renamed', lastModifiedAt: '2026-06-15T00:00:00.000Z' }),
-    )
+    await store.upsertWorkspace(def({ name: 'Renamed', lastModifiedAt: '2026-06-15T00:00:00.000Z' }))
     const got = await store.getWorkspace('ws_a')
     expect(got?.name).toBe('Renamed')
     expect((await store.listWorkspaces()).length).toBe(1)

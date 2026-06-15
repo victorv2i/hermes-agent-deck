@@ -30,13 +30,11 @@ afterEach(async () => {
 })
 
 /** Build the plugin with an injected store + roots resolver (mirrors terminalRoutes.test). */
-async function build(
-  opts: {
-    roots?: () => Promise<WorkspaceRoot[]>
-    allowHome?: boolean
-    home?: string
-  } = {},
-): Promise<FastifyInstance> {
+async function build(opts: {
+  roots?: () => Promise<WorkspaceRoot[]>
+  allowHome?: boolean
+  home?: string
+} = {}): Promise<FastifyInstance> {
   app = Fastify({ logger: false })
   await app.register(workspaceRoutes, {
     prefix: PREFIX,
@@ -288,18 +286,12 @@ describe('workspaceRoutes GET /roots', () => {
     const home = await mkdtemp(join(tmpdir(), 'adk-ws-home-'))
     try {
       const off = await build({ roots: async () => [], allowHome: false, home })
-      expect(
-        RootsResponseSchema.parse(
-          (await off.inject({ method: 'GET', url: `${PREFIX}/roots` })).json(),
-        ).roots,
-      ).toEqual([])
+      expect(RootsResponseSchema.parse((await off.inject({ method: 'GET', url: `${PREFIX}/roots` })).json()).roots).toEqual([])
       await off.close()
 
       const on = await build({ roots: async () => [], allowHome: true, home })
       const realHome = await realpath(home)
-      const roots = RootsResponseSchema.parse(
-        (await on.inject({ method: 'GET', url: `${PREFIX}/roots` })).json(),
-      ).roots
+      const roots = RootsResponseSchema.parse((await on.inject({ method: 'GET', url: `${PREFIX}/roots` })).json()).roots
       expect(roots.some((r) => r.path === realHome || r.path === home)).toBe(true)
     } finally {
       await rm(home, { recursive: true, force: true })
@@ -319,10 +311,7 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
 
   it('lists immediate SUBDIRECTORIES of an allowlisted dir (files excluded)', async () => {
     const { a, root } = await buildWithProjects()
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent(root)}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(root)}` })
     expect(res.statusCode).toBe(200)
     const body = DirListResponseSchema.parse(res.json())
     expect(body.entries.map((e) => e.name).sort()).toEqual(['repo-a', 'repo-b'])
@@ -332,17 +321,13 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
   it('omits parent when listing a root, includes it when listing a subdir', async () => {
     const { a, root } = await buildWithProjects()
     const atRoot = DirListResponseSchema.parse(
-      (
-        await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(root)}` })
-      ).json(),
+      (await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(root)}` })).json(),
     )
     expect(atRoot.parent).toBeUndefined()
 
     const sub = join(root, 'repo-a')
     const atSub = DirListResponseSchema.parse(
-      (
-        await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(sub)}` })
-      ).json(),
+      (await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(sub)}` })).json(),
     )
     expect(atSub.parent).toBe(root)
   })
@@ -359,10 +344,7 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
   it('rejects ../ path traversal (400, never clamps)', async () => {
     const { a, root } = await buildWithProjects()
     const escape = join(root, '..', '..', 'etc')
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent(escape)}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(escape)}` })
     expect(res.statusCode).toBe(400)
   })
 
@@ -373,10 +355,7 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
     await mkdir(secret, { recursive: true })
     const link = join(root, 'escape-link')
     await symlink(secret, link, 'dir')
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent(link)}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(link)}` })
     expect(res.statusCode).toBe(400)
   })
 
@@ -387,38 +366,26 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
     await mkdir(evil, { recursive: true })
     const a = await build({ roots: async () => [{ name: 'Projects', path: root }] })
     // `Projects-evil` shares a textual prefix with `Projects` but is NOT inside it.
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent(evil)}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(evil)}` })
     expect(res.statusCode).toBe(400)
   })
 
   it('rejects an absolute path fully outside any allowlisted root (400)', async () => {
     const { a } = await buildWithProjects()
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent('/etc')}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent('/etc')}` })
     expect(res.statusCode).toBe(400)
   })
 
   it('rejects a non-existent path under a root (400, not a 500)', async () => {
     const { a, root } = await buildWithProjects()
     const ghost = join(root, 'does-not-exist')
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent(ghost)}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent(ghost)}` })
     expect(res.statusCode).toBe(400)
   })
 
   it('returns 400 (not 500) when there are no roots at all', async () => {
     const a = await build({ roots: async () => [] })
-    const res = await a.inject({
-      method: 'GET',
-      url: `${PREFIX}/dirs?path=${encodeURIComponent('/tmp')}`,
-    })
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/dirs?path=${encodeURIComponent('/tmp')}` })
     expect(res.statusCode).toBe(400)
   })
 })
