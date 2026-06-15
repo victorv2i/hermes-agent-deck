@@ -160,7 +160,9 @@ function SectionPanel({
     case 'skills':
       // Per-agent: the scoped hooks read/toggle THIS agent's skills (the route
       // threads ?profile=), so any agent's skills can be changed without switching.
-      return <SkillsPanel agent={agent} />
+      // Authoring (create/edit/delete + hub) is active-profile only, so the panel
+      // gates those on `profile.isActive`.
+      return <SkillsPanel agent={agent} isActive={profile.isActive} />
     case 'env':
       return <EnvPanel agent={agent} />
   }
@@ -287,7 +289,7 @@ function MemoryPanel({ agent, isActiveAgent }: { agent: string; isActiveAgent: b
   )
 }
 
-function SkillsPanel({ agent }: { agent: string }) {
+function SkillsPanel({ agent, isActive }: { agent: string; isActive: boolean }) {
   const skills = useStudioSkills(agent)
   const toggle = useToggleStudioSkill(agent)
   // Track which skills have a toggle in flight so only those switches lock.
@@ -319,6 +321,8 @@ function SkillsPanel({ agent }: { agent: string }) {
 
   return (
     <SkillsSection
+      agent={agent}
+      isActive={isActive}
       skills={skills.data}
       isLoading={skills.isLoading}
       error={errMsg(skills.isError, skills.error, "Couldn't load skills.")}

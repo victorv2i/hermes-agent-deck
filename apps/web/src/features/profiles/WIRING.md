@@ -1,49 +1,35 @@
-# Wiring: Profiles surface
+# Wiring: Profiles data layer (now behind the Agent Studio)
 
-Profiles page: lists every Hermes profile (the built-in `default` =
+The profiles BFF lists every Hermes profile (the built-in `default` =
 `~/.hermes`, plus any named profiles under `~/.hermes/profiles/<name>/`), showing
 model/provider, gateway status, skill count, `.env` presence, the sticky active
 profile, and Agent Deck's avatar sidecar. Switching is real but honest: it only
 updates Hermes' sticky `active_profile` pointer and tells the user to restart the
 gateway.
 
-## NAV entry (apps/web/src/app/navigation.tsx)
+## Frontend: there is no standalone Profiles page
 
-Append to the `NAV` array. Profiles is a system-level surface:
+The dedicated `ProfilesPage` at `/profiles` was RETIRED. The Agents roster and the
+per-agent hub it carried folded into the Agent Studio, which is now Home (`/`).
+The roster, launchpad, and per-agent workbench (Identity, Soul, Model, Tools,
+Memory, Skills, Env) all live in `apps/web/src/features/studio/*`. There is no
+`profiles` entry in the `NAV` array.
 
-```tsx
-import { IdCard } from 'lucide-react'
-import { ProfilesPage } from '@/features/profiles/ProfilesPage'
-
-// ...inside NAV:
-{
-  key: 'profiles',
-  label: 'Profiles',
-  path: '/profiles',
-  icon: IdCard,
-  group: 'system',
-  element: <ProfilesPage />,
-},
-```
-
-- key: `profiles`
-- label: `Profiles`
-- route path: `/profiles`
-- lucide icon: `IdCard` (verified present in lucide-react@1.17.0; fallback
-  `CircleUser` if ever needed)
-- group: `system`
-
-## React route element
-
-- Element: `<ProfilesPage />`
-- Import: `import { ProfilesPage } from '@/features/profiles/ProfilesPage'`
-- The router (apps/web/src/app/router.tsx) already derives routes from `NAV`
-  1:1, so adding the NAV entry above is sufficient; `/profiles` maps to a child
-  route rendering `<ProfilesPage />` in the App Outlet. No router edit needed
-  beyond the NAV append.
-- `ProfilesPage` reads its data via the `useProfiles` hook, now on the single
-  app-wide `@tanstack/react-query` client (`apps/web/src/main.tsx`, configured in
-  `@/lib/queryClient`), through the shared `@/lib/apiFetch`.
+- The old paths survive as REDIRECTS (apps/web/src/app/router.tsx): `/profiles`
+  → `/` (the Studio roster) and `/profiles/:name` → `/?agent=<name>` (Studio with
+  that agent open). So existing links and the command palette still land.
+- This `features/profiles` folder is still LIVE as the profiles data + identity
+  layer the Studio consumes: `useProfiles` (the roster query), `types.ts`
+  (`ProfileSummary`, with the `isActive` flag the Studio gates on), the
+  `avatarForProfile` sidecar, and the agent lifecycle dialogs/buttons
+  (`NewAgentDialog`, `RenameAgentDialog`, `SwitchAgentButton`, `HatchCeremony`,
+  `GatewayRestartCard`, `EditAvatarDialog`, `mutations.ts`).
+- `useProfiles` reads `GET /api/agent-deck/profiles` via the shared
+  `@/lib/apiFetch`, on the single app-wide `@tanstack/react-query` client
+  (`apps/web/src/main.tsx`, configured in `@/lib/queryClient`).
+- Per-agent authoring (config, model, soul, skills, env) goes through the
+  separate profile-SCOPED Studio data layer (`features/studio/data/api.ts` +
+  `features/studio/hooks.ts`), not this folder.
 
 ## Fastify route plugin (apps/server)
 
