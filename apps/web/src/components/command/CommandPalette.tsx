@@ -481,14 +481,7 @@ export function CommandPaletteView({
           </CommandGroup>
         ) : (
           <CommandGroup heading={t('commandPalette.group.sessions')}>
-            <CommandItem
-              value={sessionLabels.empty}
-              keywords={[sessionLabels.empty, 'sessions', 'history', 'empty']}
-              disabled
-            >
-              <MessagesSquare />
-              <CommandRowLabel>{sessionLabels.empty}</CommandRowLabel>
-            </CommandItem>
+            <p className="px-2 py-3 text-xs text-muted-foreground">{sessionLabels.empty}</p>
           </CommandGroup>
         )}
       </CommandList>

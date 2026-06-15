@@ -146,12 +146,12 @@ export function NewAgentDialog({
           }}
           className="grid gap-5"
         >
-          {/* Name → live-derived face. The preview answers "what will this be?" */}
+          {/* Profile ID → live-derived face. The preview answers "what will this be?" */}
           <div className="flex items-center gap-3.5">
             <Avatar avatarId={previewAvatar} name={trimmed || 'A'} size={56} />
             <div className="grid flex-1 gap-1.5">
               <label htmlFor={nameId} className="ad-section-label">
-                Name
+                Profile ID
               </label>
               <Input
                 id={nameId}
@@ -162,8 +162,14 @@ export function NewAgentDialog({
                 autoComplete="off"
                 spellCheck={false}
                 aria-invalid={showError || undefined}
-                aria-describedby={showError ? errId : undefined}
+                aria-describedby={showError ? errId : `${errId}-hint`}
               />
+              {!showError && (
+                <p id={`${errId}-hint`} className="text-xs text-foreground-tertiary">
+                  Unique id (letters, numbers, - or _; saved lowercase). Set a friendly display name
+                  below.
+                </p>
+              )}
             </div>
           </div>
 
@@ -174,7 +180,7 @@ export function NewAgentDialog({
               ) : (
                 <>
                   Use letters, numbers, <code className="font-mono">-</code> or{' '}
-                  <code className="font-mono">_</code> (start with a letter or number). Names save
+                  <code className="font-mono">_</code> (start with a letter or number). Saved
                   lowercase.
                 </>
               )}

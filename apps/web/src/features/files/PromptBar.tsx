@@ -64,11 +64,11 @@ export function PromptBar({
               onCancel()
             }
           }}
-          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-13 text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ad-focus sm:h-7"
+          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-2 font-mono text-13 text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ad-focus md:h-9"
         />
         <Button
           size="xs"
-          className="min-h-11 sm:min-h-6"
+          className="min-h-11 md:min-h-9"
           onClick={() => onSubmit(value)}
           disabled={busy || value.trim() === ''}
         >
@@ -78,7 +78,7 @@ export function PromptBar({
         <Button
           variant="ghost"
           size="xs"
-          className="min-h-11 sm:min-h-6"
+          className="min-h-11 md:min-h-9"
           onClick={onCancel}
           disabled={busy}
         >

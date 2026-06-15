@@ -15,6 +15,7 @@ import { Markdown } from '@/components/chat/Markdown'
 import { normalizeLang } from '@/components/chat/lib/highlight'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { CodeView } from './CodeView'
 import {
   downloadFile,
@@ -347,8 +348,11 @@ export function FilePreview({
         ) : editing ? (
           <Suspense
             fallback={
-              <div className="flex h-full items-center justify-center text-foreground-tertiary">
-                <Loader2 className="size-5 animate-spin" />
+              <div className="space-y-2.5 px-6 py-5" aria-hidden>
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
               </div>
             }
           >

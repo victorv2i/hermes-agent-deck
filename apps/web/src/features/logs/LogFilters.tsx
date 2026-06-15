@@ -40,8 +40,8 @@ export function LogFilters({
   refreshing,
 }: LogFiltersProps) {
   return (
-    <div className="flex flex-wrap items-end gap-3 border-b border-border px-6 py-3">
-      <div className="flex max-w-full min-w-0 flex-col gap-1">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+      <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto">
         <span className="text-[11px] font-medium text-foreground-tertiary">Log</span>
         <div className="max-w-full overflow-x-auto pb-0.5">
           <SegmentedControl<LogFile>
@@ -53,7 +53,7 @@ export function LogFilters({
         </div>
       </div>
 
-      <div className="flex max-w-full min-w-0 flex-col gap-1">
+      <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto">
         <span className="text-[11px] font-medium text-foreground-tertiary">Minimum level</span>
         <div className="max-w-full overflow-x-auto pb-0.5">
           <SegmentedControl<LevelOption>
@@ -68,7 +68,7 @@ export function LogFilters({
         </div>
       </div>
 
-      <label className="relative flex min-w-[180px] flex-1 flex-col gap-1">
+      <label className="relative flex w-full min-w-0 flex-col gap-1 sm:min-w-[180px] sm:flex-1">
         <span className="text-[11px] font-medium text-foreground-tertiary">Search lines</span>
         <input
           type="search"
@@ -77,14 +77,14 @@ export function LogFilters({
           onChange={(e) => onKeywordChange(e.target.value)}
           placeholder="Search log lines…"
           className={cn(
-            'h-8 w-full rounded-md border border-border bg-surface-2/40 px-3 text-xs',
+            'h-11 w-full rounded-md border border-border bg-surface-2/40 px-3 text-xs md:h-9',
             'text-foreground placeholder:text-foreground-tertiary',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
         />
       </label>
 
-      <label className="flex h-8 cursor-pointer items-center gap-2 text-xs text-muted-foreground select-none">
+      <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs text-muted-foreground select-none md:min-h-9">
         <input
           type="checkbox"
           checked={autoRefresh}
@@ -97,6 +97,7 @@ export function LogFilters({
       <Button
         variant="outline"
         size="sm"
+        className="min-h-11 md:min-h-9"
         onClick={onRefresh}
         aria-label="Refresh logs"
         title="Refresh logs"

@@ -1040,10 +1040,11 @@ describe('Composer', () => {
       }
     })
 
-    it('the STOP icon button rings on the neutral border, not amber', async () => {
+    it('the STOP icon button uses the canonical ad-focus ring, not amber', async () => {
       render(<Composer onSend={() => {}} onStop={() => {}} running />)
       const stop = await screen.findByTestId('composer-stop')
-      expect(stop.className).toContain('focus-visible:ring-[var(--border-strong)]')
+      // Canonical focus ring (ad-focus replaces the old bespoke ring-[var(--border-strong)])
+      expect(stop.className).toContain('focus-visible:ad-focus')
       expect(stop.className).not.toContain('ring-ring')
     })
 

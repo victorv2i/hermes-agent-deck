@@ -424,6 +424,7 @@ function LiveDot({ status }: { status: KanbanLiveStatus }) {
 }
 
 function BoardSkeleton() {
+  // Fixed 5-column / 3-card shape is a deliberate approximation; real column count is not available before the board loads.
   return (
     <div className="flex items-start gap-4" aria-hidden data-testid="kanban-skeleton">
       {Array.from({ length: 5 }).map((_, col) => (

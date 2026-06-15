@@ -361,14 +361,15 @@ describe('CommandPaletteView', () => {
     expect(document.querySelector('img[src*="/avatars/"]')).not.toBeNull()
   })
 
-  it('shows sessions loading and empty states as disabled, non-selectable rows', () => {
+  it('shows sessions loading state as a disabled row and empty state as calm text', () => {
     renderPalette({ sessions: [], sessionsLoading: true })
     const loading = screen.getByRole('option', { name: /loading recent sessions/i })
     expect(loading).toHaveAttribute('aria-disabled', 'true')
 
     renderPalette({ sessions: [], sessionsLoading: false })
-    const empty = screen.getAllByRole('option', { name: /no recent sessions/i })[0]!
-    expect(empty).toHaveAttribute('aria-disabled', 'true')
+    // Empty state is rendered as a plain paragraph, not a selectable option.
+    expect(screen.getByText(/no recent sessions/i)).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /no recent sessions/i })).not.toBeInTheDocument()
   })
 })
 

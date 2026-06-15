@@ -135,7 +135,7 @@ function ProfileRow({ profile, reduceMotion }: { profile: ProfileSummary; reduce
                 </Badge>
               )}
               {profile.isActive && (
-                <Badge variant="active" className="gap-1">
+                <Badge variant="outline" className="gap-1">
                   <CircleDot className="size-3" aria-hidden />
                   Active
                 </Badge>

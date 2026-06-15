@@ -93,9 +93,10 @@ export function ToolCard({
         data-testid="toolcard-trigger"
         className={cn(
           'group/tool inline-flex max-w-full items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[11.5px] transition-colors',
-          'hover:border-border hover:bg-surface-2/60 focus-visible:ad-focus',
-          'data-[state=open]:border-border data-[state=open]:bg-surface-2/60',
+          'hover:border-border hover:bg-surface-2/60 hover:opacity-100 focus-visible:ad-focus focus-visible:bg-surface-2/40',
+          'data-[state=open]:border-border data-[state=open]:bg-surface-2/60 data-[state=open]:opacity-100',
           failed ? 'text-destructive' : 'text-foreground-tertiary',
+          !isOpen && !running && !failed && 'opacity-60',
         )}
       >
         <ChevronRight

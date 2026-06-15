@@ -180,12 +180,10 @@ export function AgentDetailPage() {
           Agents
         </Link>
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
-        <span className="min-w-0 truncate text-foreground-tertiary" aria-current="page">
-          {friendlyName}
-        </span>
+        <span className="min-w-0 truncate text-foreground-tertiary">{friendlyName}</span>
       </nav>
 
-      <Card className="gap-0">
+      <Card className="sticky top-0 z-10 gap-0">
         {/* Identity header — the face you tend, then the facts. */}
         <div className="flex flex-col gap-4 px-5 pt-5 sm:flex-row sm:items-start">
           <button
@@ -230,7 +228,7 @@ export function AgentDetailPage() {
                 </Badge>
               )}
               {profile.isActive && (
-                <Badge variant="active" className="gap-1">
+                <Badge variant="outline" className="gap-1">
                   <CircleDot className="size-3" aria-hidden />
                   Active
                 </Badge>

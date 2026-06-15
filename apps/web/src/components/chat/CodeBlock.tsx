@@ -124,7 +124,7 @@ export function CodeBlock({
               type="button"
               onClick={onOpenInPanel}
               aria-label="Open in panel"
-              className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ad-focus sm:min-h-7 sm:px-1.5"
+              className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ad-focus focus-visible:bg-surface-2/40 sm:min-h-7 sm:px-1.5"
             >
               <PanelRight className="size-3.5" />
               <span className="hidden sm:inline">Open in panel</span>
@@ -134,7 +134,7 @@ export function CodeBlock({
             type="button"
             onClick={onCopy}
             aria-label={copied ? 'Copied' : 'Copy code'}
-            className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ad-focus sm:min-h-7 sm:px-1.5"
+            className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ad-focus focus-visible:bg-surface-2/40 sm:min-h-7 sm:px-1.5"
           >
             {copied ? (
               <>

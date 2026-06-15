@@ -37,7 +37,7 @@ export function SendStopButton({ running, canSend, onSend, onStop, reduce }: Sen
           animate={{ opacity: 1, scale: 1 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
           transition={{ duration, ease: 'easeOut' }}
-          className="grid size-11 shrink-0 place-items-center rounded-lg bg-foreground/10 text-foreground transition-[transform,background-color] hover:bg-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] active:scale-95 sm:size-10"
+          className="grid size-11 shrink-0 place-items-center rounded-lg bg-foreground/10 text-foreground transition-[transform,background-color] hover:bg-foreground/15 focus-visible:ad-focus active:scale-95 sm:size-10"
         >
           <Square className="size-3.5 fill-current" aria-hidden />
         </motion.button>

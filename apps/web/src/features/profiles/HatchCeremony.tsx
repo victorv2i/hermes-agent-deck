@@ -25,7 +25,7 @@ const PARTICLE_COUNT = 22
 // dialog auto-advances — 1600ms cut it off mid-bloom, so the ceremony never got to
 // breathe. Reduced-motion skips the burst entirely, so it can dismiss much sooner.
 const HOLD_MS = 2400
-const HOLD_MS_REDUCED = 900
+const HOLD_MS_REDUCED = 400
 
 export interface HatchCeremonyProps {
   name: string

@@ -58,7 +58,7 @@ export function ReasoningBlock({
       </Collapsible.Trigger>
 
       <Collapsible.Content data-testid="reasoning-content" className="data-[state=closed]:hidden">
-        <div className="mt-1 max-w-[640px] space-y-2 rounded-lg border border-border border-l-2 border-l-border-strong bg-surface-1 px-3 py-2.5 text-13 leading-relaxed text-muted-foreground">
+        <div className="mt-1 max-w-[640px] space-y-2 rounded-lg border border-border border-l-2 border-l-border bg-surface-1 px-3 py-2.5 text-13 leading-relaxed text-muted-foreground">
           {segments.map((seg, i) => (
             <p key={i} className="whitespace-pre-wrap">
               {seg}

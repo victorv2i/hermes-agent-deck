@@ -34,7 +34,7 @@ describe('NewAgentDialog ceremony', () => {
     const create = screen.getByRole('button', { name: /hatch agent/i })
     expect(create).toBeDisabled()
 
-    const input = screen.getByLabelText('Name')
+    const input = screen.getByLabelText('Profile ID')
     // A space keeps Create disabled and shows an error.
     await user.type(input, 'Bad Name')
     expect(create).toBeDisabled()
@@ -56,7 +56,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'Researcher')
+    await user.type(screen.getByLabelText('Profile ID'), 'Researcher')
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
 
     await waitFor(() =>
@@ -72,7 +72,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'Default')
+    await user.type(screen.getByLabelText('Profile ID'), 'Default')
 
     expect(screen.getByRole('button', { name: /hatch agent/i })).toBeDisabled()
     expect(screen.getByRole('alert')).toHaveTextContent(/built-in agent/i)
@@ -84,7 +84,7 @@ describe('NewAgentDialog ceremony', () => {
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
     // A radiogroup of faces is present; the preview Avatar img reflects a built-in.
     expect(screen.getByRole('radiogroup', { name: /choose a face/i })).toBeInTheDocument()
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     // The preview face is one of the served built-in webps (an <img>, not amber svg).
     const imgs = screen.getAllByRole('img', { hidden: true })
     expect(imgs.some((i) => (i as HTMLImageElement).src.includes('/avatars/'))).toBe(true)
@@ -100,7 +100,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
 
     await waitFor(() =>
@@ -121,7 +121,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     // "atlas" derives v1 by default, so pick a DIFFERENT face (v2) to prove an
     // explicit choice — clicking the already-selected default radio is a no-op.
     await user.click(screen.getByRole('radio', { name: /face 2 of 6/i }))
@@ -142,7 +142,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     await user.type(screen.getByLabelText(/display name/i), 'Mercury')
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
 
@@ -169,7 +169,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
 
     await waitFor(() => expect(navigate).toHaveBeenCalled())
@@ -221,7 +221,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     const group = screen.getByRole('radiogroup', { name: /choose a starting soul/i })
     await user.click(within(group).getByRole('radio', { name: /coder/i }))
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
@@ -244,7 +244,7 @@ describe('NewAgentDialog ceremony', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     renderDialog(<NewAgentDialog open onOpenChange={() => {}} />)
-    await user.type(screen.getByLabelText('Name'), 'atlas')
+    await user.type(screen.getByLabelText('Profile ID'), 'atlas')
     await user.click(screen.getByRole('button', { name: /hatch agent/i }))
 
     const { toast } = await import('@/lib/toast')

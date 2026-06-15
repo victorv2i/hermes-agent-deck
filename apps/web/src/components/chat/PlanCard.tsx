@@ -16,7 +16,7 @@ export function PlanCard({ segments }: { segments: string[] }) {
     <div
       data-testid="plan-card"
       aria-label="Agent plan"
-      className="not-prose my-1.5 rounded-lg border border-border border-l-2 border-l-border-strong bg-surface-1 px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground"
+      className="not-prose my-1.5 rounded-lg border border-border border-l-2 border-l-border bg-surface-1 px-3 py-2.5 text-[12.5px] leading-relaxed text-muted-foreground"
     >
       <div className="mb-1.5 flex items-center gap-1.5">
         <Brain className="size-3 shrink-0 text-foreground-tertiary" aria-hidden />
