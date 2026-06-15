@@ -5,6 +5,7 @@
  * with a governed-amber "New task" action, an optional inline create/edit form, and
  * the job list (or a skeleton / empty / error state).
  */
+import { useEffect, useRef } from 'react'
 import { CalendarClock, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
@@ -68,6 +69,14 @@ export function JobsPage(props: JobsPageProps) {
 
   const editingJob = formMode && formMode !== 'create' ? formMode.editing : undefined
 
+  // When an edit opens INLINE (in place of its card, possibly far down the list),
+  // bring it into view so it never opens off-screen — the bug where clicking edit
+  // low in the list "did nothing" until you scrolled all the way back to the top.
+  const editFormRef = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    if (editingJob) editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [editingJob])
+
   // Keep the raw internal error (e.g. "session-token request failed: fetch
   // failed") available for diagnostics, but never render it: the user sees a
   // calm human sentence (below), the developer sees the plumbing in the console.
@@ -99,15 +108,17 @@ export function JobsPage(props: JobsPageProps) {
         className="mb-0"
       />
 
-      {formMode ? (
+      {/* CREATE opens a form here at the top. EDIT renders the form INLINE in the
+          list below (in place of the edited card), so it opens right where you
+          clicked rather than off-screen at the top. */}
+      {formMode === 'create' ? (
         <JobForm
-          job={editingJob}
           busy={formBusy}
           error={formError}
           profiles={profiles}
           deliverTargets={deliverTargets}
           onSubmitCreate={onSubmitCreate}
-          onSubmitEdit={(input) => editingJob && onSubmitEdit(editingJob.id, input)}
+          onSubmitEdit={() => {}}
           onCancel={onCloseForm}
         />
       ) : null}
@@ -123,18 +134,33 @@ export function JobsPage(props: JobsPageProps) {
         <JobsSkeleton />
       ) : jobs && jobs.length > 0 ? (
         <ul className="flex flex-col gap-3">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              pendingAction={pending?.id === job.id ? pending.action : null}
-              actionError={actionError?.id === job.id ? actionError.message : null}
-              onEdit={onOpenEdit}
-              onToggle={onToggle}
-              onTrigger={onTrigger}
-              onDelete={onDelete}
-            />
-          ))}
+          {jobs.map((job) =>
+            editingJob?.id === job.id ? (
+              <li key={job.id} ref={editFormRef}>
+                <JobForm
+                  job={job}
+                  busy={formBusy}
+                  error={formError}
+                  profiles={profiles}
+                  deliverTargets={deliverTargets}
+                  onSubmitCreate={onSubmitCreate}
+                  onSubmitEdit={(input) => onSubmitEdit(job.id, input)}
+                  onCancel={onCloseForm}
+                />
+              </li>
+            ) : (
+              <JobCard
+                key={job.id}
+                job={job}
+                pendingAction={pending?.id === job.id ? pending.action : null}
+                actionError={actionError?.id === job.id ? actionError.message : null}
+                onEdit={onOpenEdit}
+                onToggle={onToggle}
+                onTrigger={onTrigger}
+                onDelete={onDelete}
+              />
+            ),
+          )}
         </ul>
       ) : (
         <EmptyState
