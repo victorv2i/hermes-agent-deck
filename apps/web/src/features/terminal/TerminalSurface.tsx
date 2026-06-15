@@ -208,7 +208,11 @@ export function TerminalSurface({
           body: JSON.stringify(req),
         })
         if (!res.ok) throw new Error(`create failed (${res.status})`)
-        return (await res.json()) as WorkspaceDefinition
+        // Defend the same way the switcher list does: a 200 with a malformed body
+        // (no id) must not slip through and send onSave to `/workspaces/undefined`.
+        const def = (await res.json()) as WorkspaceDefinition
+        if (!def?.id) throw new Error('create response missing a workspace id')
+        return def
       }
       return apiPost<WorkspaceDefinition>(path, req)
     },
@@ -736,7 +740,13 @@ function WorkspaceBody({
       fetchImpl
         ? (fetchImpl(`/api/agent-deck${path}`).then((r) => {
             if (!r.ok) throw new Error(`request failed (${r.status})`)
-            return r.json() as Promise<WorkspaceDefinition>
+            return r.json().then((body) => {
+              // A 200 with a malformed body (no id) would otherwise reach the pane
+              // controller as a broken definition; fail calmly instead of crashing.
+              const def = body as WorkspaceDefinition
+              if (!def?.id) throw new Error('workspace response missing an id')
+              return def
+            })
           }) as Promise<WorkspaceDefinition>)
         : apiFetch<WorkspaceDefinition>(path),
     [fetchImpl],

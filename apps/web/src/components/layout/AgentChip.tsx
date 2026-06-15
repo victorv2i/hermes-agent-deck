@@ -52,7 +52,7 @@ export function AgentChip() {
         onClick={() => setOpen(true)}
         aria-label={label}
         className={cn(
-          'ad-surface flex w-full items-center gap-2 rounded-lg bg-surface-1 px-2.5 py-1.5 text-left transition-colors',
+          'ad-surface flex w-full items-center gap-2 rounded-lg bg-surface-1 px-2.5 py-1.5 text-left transition-colors max-sm:min-h-11',
           'hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         )}
       >

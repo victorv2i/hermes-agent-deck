@@ -34,24 +34,6 @@ describe('ChatHeader', () => {
     expect(screen.queryByTestId('chat-header-model')).not.toBeInTheDocument()
   })
 
-  it('renders the live run-state chip slot when supplied, and stays quiet without it', () => {
-    const { rerender } = renderHeader(
-      <ChatHeader
-        title="My session"
-        model={null}
-        contextTokens={0}
-        statusChip={<span data-testid="fake-chip">Working</span>}
-      />,
-    )
-    expect(screen.getByTestId('fake-chip')).toBeInTheDocument()
-    rerender(
-      <MemoryRouter>
-        <ChatHeader title="My session" model={null} contextTokens={0} />
-      </MemoryRouter>,
-    )
-    expect(screen.queryByTestId('fake-chip')).not.toBeInTheDocument()
-  })
-
   it('offers a "Past chats" link into /history — the MOBILE way into History', () => {
     // The History rail link folded into Chat; on mobile (no sessions pane) this
     // button is the way to past conversations. It carries the accessible name

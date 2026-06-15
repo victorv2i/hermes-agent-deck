@@ -25,7 +25,6 @@ export function ChatHeader({
   contextLimit,
   agentName,
   agentAvatarId,
-  statusChip,
 }: {
   /** Session title, or null for a new chat (rendered as "New chat"). */
   title: string | null
@@ -40,10 +39,6 @@ export function ChatHeader({
   agentName?: string
   /** The active agent's resolved avatar id — the face beside the name. */
   agentAvatarId?: AvatarId
-  /** The honest live run-state chip (see {@link LiveRunStateChip}) — rendered
-   * between the model chip and the context ring. Omitted/null when idle, so the
-   * header stays quiet between runs. */
-  statusChip?: React.ReactNode
 }) {
   const shown = title?.trim() || 'New chat'
   const hasAgent = !!agentName && !!agentAvatarId
@@ -92,7 +87,6 @@ export function ChatHeader({
           {shortModel(model)}
         </span>
       )}
-      {statusChip}
       <ContextRing tokens={contextTokens} limit={contextLimit} className="shrink-0" />
 
       {/* "Past chats" — the MOBILE way into History. On desktop (>=lg, 1024px) the
