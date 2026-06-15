@@ -399,13 +399,9 @@ export function ChatRoute() {
         contextLimit={contextLimit}
         agentName={agent?.isNamed ? agent.friendlyName : undefined}
         agentAvatarId={agent?.isNamed ? agent.avatarId : undefined}
-        // The honest live run-state chip. Self-contained (it subscribes to the
-        // chat store and ticks itself), so the header memo only needs the
-        // connection it derives offline from.
-        statusChip={<LiveRunStateChip connection={connection} />}
       />
     ),
-    [sessionTitle, headerModel, contextTokens, contextLimit, agent, connection],
+    [sessionTitle, headerModel, contextTokens, contextLimit, agent],
   )
   useHeaderSlot(header)
 
@@ -423,6 +419,9 @@ export function ChatRoute() {
       <ChatView
         turns={turns}
         runStatus={runStatus}
+        // The live run-state moved OUT of the top bar to the chat's bottom (above
+        // the composer), where the reply streams. Null when idle.
+        runStateIndicator={<LiveRunStateChip connection={connection} />}
         pendingApproval={pendingApproval}
         error={error}
         // The active agent's identity drives the first-person empty-state greeting

@@ -52,12 +52,12 @@ export function AgentChip() {
         onClick={() => setOpen(true)}
         aria-label={label}
         className={cn(
-          'ad-surface flex w-full items-center gap-2.5 rounded-lg bg-surface-1 px-2.5 py-2 text-left transition-colors',
+          'ad-surface flex w-full items-center gap-2 rounded-lg bg-surface-1 px-2.5 py-1.5 text-left transition-colors',
           'hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         )}
       >
         <span className="relative shrink-0">
-          <Avatar avatarId={resolveAvatar(active)} name={friendly} size={28} />
+          <Avatar avatarId={resolveAvatar(active)} name={friendly} size={24} />
           {restartHint && <RestartMarker />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">

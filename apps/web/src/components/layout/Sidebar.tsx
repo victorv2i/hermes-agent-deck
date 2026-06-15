@@ -41,12 +41,11 @@ export function Sidebar({
   const { id } = useParams<{ id: string }>()
 
   return (
-    <div className="flex h-full flex-col gap-3 p-3">
-      <div className="px-1 pt-1">
-        {/* The rail (nav bar) carries the brand larger than the default lockup, and
-            nudged up a touch so the mark sits optically centered against the
-            "AGENT DECK" wordmark (the mobile header keeps the default). */}
-        <Wordmark className="[&_img]:-mt-1 [&_img]:h-8" />
+    <div className="flex h-full flex-col gap-2 p-2">
+      <div className="px-1 pt-0.5">
+        {/* Compact brand: a tight lockup keeps the rail's top quiet so the focus is
+            the agent + New chat, not the wordmark. */}
+        <Wordmark className="[&_img]:h-6" />
       </div>
 
       {/* Agent presence — the active agent's face + name, under the brand. */}
@@ -58,7 +57,7 @@ export function Sidebar({
         onClick={onNewChat}
         // "New chat" is the rail's KEY action → the sanctioned faint-amber action
         // affordance (amber border + tint + amber glyph), not a muted neutral row.
-        className="h-11 w-full justify-start gap-2 border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        className="h-9 w-full justify-start gap-2 border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary max-sm:h-11"
       >
         <SquarePen className="size-4 text-primary" />
         New chat
@@ -66,7 +65,7 @@ export function Sidebar({
 
       <nav
         aria-label="Main navigation"
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto"
       >
         {/* Pinned-TOP surfaces (Home) — standalone items ABOVE the grouped nav,
             not under any section header (Home is the front door, not a group
@@ -81,7 +80,7 @@ export function Sidebar({
 
         {groups.map(({ group, label, items }) => (
           <div key={group} className="flex flex-col gap-0.5">
-            <div className="mb-1 px-2.5">
+            <div className="mb-0.5 px-2.5 pt-0.5">
               <span className="ad-section-label">{label}</span>
             </div>
             {items.map((item) => (
@@ -146,12 +145,13 @@ function RailLink({ item }: { item: NavItem }) {
           // over a FAINT amber-tinted bg (`bg-primary/10`); hover stays a quiet
           // neutral wash (hover is not active). The bar is a 3px inset pseudo so
           // it never shifts the row's content.
-          // min-h-11 keeps the row a 44px touch target without bloating the rail.
-          'relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors',
-          'min-h-11 touch-manipulation',
+          // Rows are a tight ~36px on desktop, relaxing to a 44px touch target on
+          // mobile (max-sm:min-h-11) — Claude-tight without losing thumb reach.
+          'relative flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
+          'min-h-9 max-sm:min-h-11 touch-manipulation',
           'text-muted-foreground hover:bg-muted hover:text-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-          'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-[2px] before:bg-primary before:opacity-0 before:transition-opacity',
+          'before:absolute before:top-1/2 before:left-0 before:h-4 before:w-[3px] before:-translate-y-1/2 before:rounded-[2px] before:bg-primary before:opacity-0 before:transition-opacity',
           isActive && 'bg-primary/10 font-medium text-foreground before:opacity-100',
         )
       }

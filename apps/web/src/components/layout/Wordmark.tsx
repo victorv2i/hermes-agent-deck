@@ -22,7 +22,7 @@ export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex select-none items-center gap-2', className)}>
       <BrandMark />
-      <span className="font-wordmark text-[17px] uppercase tracking-[0.06em] text-foreground">
+      <span className="font-wordmark text-[17px] leading-none uppercase tracking-[0.06em] text-foreground">
         Agent Deck
       </span>
     </span>

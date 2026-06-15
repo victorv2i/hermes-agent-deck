@@ -518,10 +518,11 @@ export function AppShell({
               shadows the page's landmark for assistive tech. */}
           <div
             data-testid="header-slot"
-            className={cn(
-              'flex min-w-0 flex-1 items-center gap-2',
-              headerContent != null ? 'justify-center' : 'justify-start',
-            )}
+            // Left-anchored, NOT centered: a centered header re-centers and slides
+            // while the right panel (terminal dock / preview / canvas) docks in-flow
+            // and shrinks this column, a visible "glitch" on open. Anchoring left
+            // keeps it stable through that animation, and reads cleaner.
+            className="flex min-w-0 flex-1 items-center gap-2 justify-start"
           >
             {headerContent ??
               (fallbackTitle && (

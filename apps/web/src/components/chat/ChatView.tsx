@@ -125,6 +125,9 @@ export interface ChatViewProps {
   onNewChat?: () => void
   onClearChat?: () => void
   onToggleTheme?: () => void
+  /** The live run-state indicator (the LiveRunStateChip), rendered at the BOTTOM
+   * above the composer instead of in the top bar. Null when idle. */
+  runStateIndicator?: React.ReactNode
 }
 
 export function ChatView({
@@ -158,6 +161,7 @@ export function ChatView({
   onNewChat,
   onClearChat,
   onToggleTheme,
+  runStateIndicator,
 }: ChatViewProps) {
   const reduce = usePrefersReducedMotion()
   // Newcomer-only onboarding affordances (orientation line + composer hint) are
@@ -520,6 +524,12 @@ export function ChatView({
           onConnectModel={onConnectModel}
           startAgentAction={startAgentAction}
         />
+
+        {/* Live run-state at the BOTTOM, where the reply streams, so "working /
+            thinking" reads right where you're watching rather than in the top bar.
+            The LiveRunStateChip renders null when idle; empty:hidden keeps this slot
+            from leaving a gap between runs. */}
+        <div className="flex justify-start px-1 pb-1 empty:hidden">{runStateIndicator}</div>
 
         <Composer
           onSend={onSend}
