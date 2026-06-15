@@ -323,7 +323,13 @@ export function PaneGrid({
       ) : null}
 
       {panes.length === 0 ? (
-        <EmptyPanes atCap={atCap} clis={clis} addLabel={addLabel} addMenuLabel={addMenuLabel} onAdd={onAddPane} />
+        <EmptyPanes
+          atCap={atCap}
+          clis={clis}
+          addLabel={addLabel}
+          addMenuLabel={addMenuLabel}
+          onAdd={onAddPane}
+        />
       ) : viewMode === 'tab' ? (
         <TabPanels
           panes={panes}
@@ -1102,7 +1108,10 @@ function GridPanels({
               <span className="min-w-0 flex-1 truncate text-xs text-foreground-tertiary">
                 {pane.label}
               </span>
-              <PersistenceBadge persistent={persistence[pane.id]} foreign={pane.attach !== undefined} />
+              <PersistenceBadge
+                persistent={persistence[pane.id]}
+                foreign={pane.attach !== undefined}
+              />
               {status ? <TerminalStatusIndicator status={status} /> : null}
               <button
                 type="button"

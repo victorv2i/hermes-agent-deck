@@ -134,7 +134,11 @@ describe('WorkspacePaneController', () => {
       const body = patch.body as { panes: Array<{ id: string; label: string; cli?: string }> }
       // The durable body now carries BOTH panes (the seeded shell + the added one).
       expect(body.panes).toHaveLength(2)
-      expect(body.panes[0]).toMatchObject({ id: 'shell-1-aaa11111', label: 'Shell 1', cli: 'shell' })
+      expect(body.panes[0]).toMatchObject({
+        id: 'shell-1-aaa11111',
+        label: 'Shell 1',
+        cli: 'shell',
+      })
       expect(body.panes[1]).toMatchObject({ label: 'Shell 2', cli: 'shell' })
     })
 

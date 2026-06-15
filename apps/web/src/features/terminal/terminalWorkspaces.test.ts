@@ -29,7 +29,12 @@ import {
   panesFromSessions,
   type WorkspaceState,
 } from './terminalWorkspaces'
-import { emptySessions, openSession, openAttachSession, type TerminalSession } from './terminalSessions'
+import {
+  emptySessions,
+  openSession,
+  openAttachSession,
+  type TerminalSession,
+} from './terminalSessions'
 
 /** Add `n` panes of a given cli to a workspace, returning the final state. */
 function addMany(state: WorkspaceState, n: number, cli: 'hermes' | 'shell' = 'shell') {

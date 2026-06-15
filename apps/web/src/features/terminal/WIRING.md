@@ -151,8 +151,9 @@ surface element so the old Workspaces links and deep links keep working:
 `useTerminalStatus` → `@tanstack/react-query` on the single app-wide client
 (`apps/web/src/main.tsx`), then (once a controller mounts) **lazy-loads**
 `TerminalView` (which in turn dynamically imports `@xterm/xterm` + `@xterm/addon-fit`
-+ `@xterm/addon-web-links` and the xterm CSS) so the heavy terminal engine stays out
-of the initial bundle.
+
+- `@xterm/addon-web-links` and the xterm CSS) so the heavy terminal engine stays out
+  of the initial bundle.
 
 ## Fastify route plugin (REST status probe)
 

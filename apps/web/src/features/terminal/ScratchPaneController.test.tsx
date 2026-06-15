@@ -133,7 +133,10 @@ describe('ScratchPaneController parity', () => {
         initialCli="shell"
         recoverOnly
         viewComponent={StubView}
-        serverSessions={{ tmuxAvailable: true, sessions: [{ name: 'adk_lost-1', deckOwned: true }] }}
+        serverSessions={{
+          tmuxAvailable: true,
+          sessions: [{ name: 'adk_lost-1', deckOwned: true }],
+        }}
       />,
     )
     expect(screen.getAllByRole('tab')).toHaveLength(1)
@@ -191,7 +194,10 @@ describe('ScratchPaneController parity', () => {
         initialCli="shell"
         recoverOnly
         viewComponent={ResumeRecordingStub}
-        serverSessions={{ tmuxAvailable: true, sessions: [{ name: 'adk_lost-2', deckOwned: true }] }}
+        serverSessions={{
+          tmuxAvailable: true,
+          sessions: [{ name: 'adk_lost-2', deckOwned: true }],
+        }}
       />,
     )
     expect(resumeMounts).toHaveLength(1)

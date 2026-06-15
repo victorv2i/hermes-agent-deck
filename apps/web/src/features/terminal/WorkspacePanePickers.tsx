@@ -261,7 +261,9 @@ export function CwdPicker({ value, fetchImpl, onChange }: CwdPickerProps) {
               {dir?.phase === 'ready' ? dir.data.path : path}
             </p>
           ) : (
-            <p className="px-2 pt-1 pb-1.5 text-xs text-foreground-tertiary">Choose a starting folder</p>
+            <p className="px-2 pt-1 pb-1.5 text-xs text-foreground-tertiary">
+              Choose a starting folder
+            </p>
           )}
 
           <div className="min-h-0 flex-1 overflow-y-auto" role="menu" aria-label="Folders">
@@ -338,13 +340,7 @@ function RootList({
   )
 }
 
-function DirEntries({
-  data,
-  onOpen,
-}: {
-  data: DirListResponse
-  onOpen: (path: string) => void
-}) {
+function DirEntries({ data, onOpen }: { data: DirListResponse; onOpen: (path: string) => void }) {
   return (
     <div className="flex flex-col gap-0.5">
       {data.parent !== undefined ? (

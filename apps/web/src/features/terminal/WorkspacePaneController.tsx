@@ -113,7 +113,9 @@ export function WorkspacePaneController({
     const cached = readWorkspaceState(d.id)
     const ids = new Set(base.panes.map((p) => p.id))
     const activePane =
-      cached && cached.activePane && ids.has(cached.activePane) ? cached.activePane : base.activePane
+      cached && cached.activePane && ids.has(cached.activePane)
+        ? cached.activePane
+        : base.activePane
     // Phones default to tab view; otherwise honor the cached preference.
     const viewMode: ViewMode = phone ? 'tab' : (cached?.viewMode ?? base.viewMode)
     return { ...base, activePane, viewMode }

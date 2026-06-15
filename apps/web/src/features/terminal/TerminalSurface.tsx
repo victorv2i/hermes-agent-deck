@@ -88,7 +88,11 @@ export interface TerminalSurfaceProps {
   ackStorage?: AckStorage | null
 }
 
-export function TerminalSurface({ fetchImpl, viewComponent, ackStorage }: TerminalSurfaceProps = {}) {
+export function TerminalSurface({
+  fetchImpl,
+  viewComponent,
+  ackStorage,
+}: TerminalSurfaceProps = {}) {
   const navigate = useNavigate()
   // The selected workspace id from the route (`/workspaces/:id`). Absent on the
   // bare `/terminal` and `/workspaces` paths -> SCRATCH is active.
@@ -109,7 +113,9 @@ export function TerminalSurface({ fetchImpl, viewComponent, ackStorage }: Termin
 
   // The switcher's saved-workspace list (the server is authoritative; the
   // localStorage cache paints instantly, then the fetch revalidates).
-  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>(() => readWorkspacesCache() ?? [])
+  const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>(
+    () => readWorkspacesCache() ?? [],
+  )
   const getJson = useCallback(
     <T,>(path: string): Promise<T> =>
       fetchImpl
@@ -125,8 +131,14 @@ export function TerminalSurface({ fetchImpl, viewComponent, ackStorage }: Termin
     void getJson<ListWorkspacesResponse>('/terminal/workspaces')
       .then((res) => {
         if (cancelled) return
-        setWorkspaces(res.workspaces)
-        writeWorkspacesCache(res.workspaces)
+        // Defend against a 200 carrying a malformed/empty body (a proxy or a
+        // mid-deploy gateway can answer with {} and no `workspaces` array); the
+        // .catch below only fires on a rejected fetch, so a resolved-but-shapeless
+        // response would otherwise hand the switcher `undefined` and crash its
+        // `.map()`. Never give the switcher a non-array.
+        const list = res.workspaces ?? []
+        setWorkspaces(list)
+        writeWorkspacesCache(list)
       })
       .catch(() => {
         // Keep the cached list visible; the switcher still works for Scratch +
@@ -181,10 +193,7 @@ export function TerminalSurface({ fetchImpl, viewComponent, ackStorage }: Termin
   const keyboardInset = useVisualViewportInset()
 
   const onSelectScratch = useCallback(() => navigate('/terminal'), [navigate])
-  const onSelectWorkspace = useCallback(
-    (id: string) => navigate(`/workspaces/${id}`),
-    [navigate],
-  )
+  const onSelectWorkspace = useCallback((id: string) => navigate(`/workspaces/${id}`), [navigate])
 
   // Save: promote the current Scratch panes into a new server workspace, then
   // switch to it. Scratch is left intact (we navigate by id; the Scratch
@@ -411,11 +420,7 @@ function SwitcherBar({
           aria-label="Workspaces"
           className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
         >
-          <SwitcherPill
-            label="Scratch"
-            selected={selectedId === null}
-            onClick={onSelectScratch}
-          />
+          <SwitcherPill label="Scratch" selected={selectedId === null} onClick={onSelectScratch} />
           {workspaces.map((ws) => (
             <SwitcherPill
               key={ws.id}
@@ -548,7 +553,11 @@ function WorkspaceDropdown({
           className="ad-surface z-50 max-h-[min(60vh,22rem)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto rounded-lg bg-popover p-1 shadow-md data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           <div role="menu" aria-label="Workspaces" className="flex flex-col gap-0.5">
-            <DropdownItem label="Scratch" selected={selectedId === null} onClick={() => pick(onSelectScratch)} />
+            <DropdownItem
+              label="Scratch"
+              selected={selectedId === null}
+              onClick={() => pick(onSelectScratch)}
+            />
             {workspaces.map((ws) => (
               <DropdownItem
                 key={ws.id}
@@ -815,7 +824,13 @@ function CreateWorkspaceDialog({
       // A brand-new workspace starts with one neutral shell pane, ready to use.
       const def = await onCreate({
         name: trimmed,
-        panes: [{ id: `shell-1-${Math.random().toString(36).slice(2, 10)}`, label: 'Shell 1', cli: 'shell' }],
+        panes: [
+          {
+            id: `shell-1-${Math.random().toString(36).slice(2, 10)}`,
+            label: 'Shell 1',
+            cli: 'shell',
+          },
+        ],
       })
       onCreated(def)
     } catch (err) {
@@ -1107,7 +1122,12 @@ function AcknowledgeGate({ onAcknowledge }: { onAcknowledge: () => void }) {
           own account, just like a terminal on that machine. There&apos;s no sandbox, so take the
           same care you would there. Most people never need this and can just chat.
         </p>
-        <Button variant="outline" size="sm" className="mt-4 min-h-11 md:min-h-7" onClick={onAcknowledge}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4 min-h-11 md:min-h-7"
+          onClick={onAcknowledge}
+        >
           Got it, open the terminal
         </Button>
       </div>
@@ -1127,7 +1147,9 @@ function Panel({ title, body, tone }: { title: string; body: string; tone: 'erro
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-4">
       <div className="ad-surface max-w-sm rounded-xl bg-card p-6 text-center">
-        <p className={`text-sm font-medium ${tone === 'error' ? 'text-destructive' : 'text-foreground'}`}>
+        <p
+          className={`text-sm font-medium ${tone === 'error' ? 'text-destructive' : 'text-foreground'}`}
+        >
           {title}
         </p>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{body}</p>

@@ -54,11 +54,25 @@ function deckFetch(
     if (typeof url === 'string') {
       if (init?.method === 'POST' && url.includes('/terminal/workspaces')) {
         const body = init.body ? JSON.parse(init.body as string) : {}
-        return jsonResponse(onCreate ? onCreate(body) : { id: 'new-ws-1', name: body.name, panes: body.panes ?? [], createdAt: 'x', lastModifiedAt: 'x' })
+        return jsonResponse(
+          onCreate
+            ? onCreate(body)
+            : {
+                id: 'new-ws-1',
+                name: body.name,
+                panes: body.panes ?? [],
+                createdAt: 'x',
+                lastModifiedAt: 'x',
+              },
+        )
       }
       const wsMatch = url.match(/\/terminal\/workspaces\/([^/?]+)/)
       if (wsMatch && (!init || init.method === undefined || init.method === 'GET')) {
-        return jsonResponse(workspace ? workspace(decodeURIComponent(wsMatch[1]!)) : { id: wsMatch[1], name: 'WS', panes: [], createdAt: 'x', lastModifiedAt: 'x' })
+        return jsonResponse(
+          workspace
+            ? workspace(decodeURIComponent(wsMatch[1]!))
+            : { id: wsMatch[1], name: 'WS', panes: [], createdAt: 'x', lastModifiedAt: 'x' },
+        )
       }
       if (url.includes('/terminal/workspaces')) return jsonResponse(workspaces)
       if (url.includes('/clis')) return jsonResponse(clis)
@@ -97,7 +111,11 @@ function WiringStubView({ onStatusChange, onClearReady }: TerminalViewProps) {
 /** Render the surface at `initial` behind the real three-path router. */
 function renderAt(
   initial: string,
-  props: { fetchImpl?: typeof fetch; viewComponent?: ComponentType<TerminalViewProps>; ackStorage?: AckStorage } = {},
+  props: {
+    fetchImpl?: typeof fetch
+    viewComponent?: ComponentType<TerminalViewProps>
+    ackStorage?: AckStorage
+  } = {},
 ) {
   const element = <TerminalSurface {...props} />
   const routes: RouteObject[] = [
@@ -126,14 +144,22 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
   })
 
   it('mounts the terminal after the user picks a launcher preset (already acknowledged)', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     await launchRawShell()
     expect(await screen.findByTestId('terminal-view')).toBeInTheDocument()
     expect(screen.getByText('A real shell on the host')).toBeInTheDocument()
   })
 
   it('shows the launcher (only installed CLIs actionable) before any session', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     expect(await screen.findByRole('button', { name: /launch the hermes cli/i })).toBeEnabled()
     expect(screen.queryByRole('button', { name: /launch the claude code/i })).toBeNull()
     expect(screen.queryByTestId('terminal-view')).not.toBeInTheDocument()
@@ -148,7 +174,11 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
       }, [])
       return <div data-testid="terminal-view">live</div>
     }
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: CapturingView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: CapturingView,
+      ackStorage: ackedStorage(),
+    })
     fireEvent.click(await screen.findByRole('button', { name: /launch the hermes cli/i }))
     await screen.findByTestId('terminal-view')
     expect(seenCli).toContain('hermes')
@@ -156,7 +186,11 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
 
   it('shows an honest unavailable panel with the backend reason', async () => {
     const fetchImpl = deckFetch({
-      status: { available: false, cwd_available: false, reason: 'node-pty is not available on this host.' },
+      status: {
+        available: false,
+        cwd_available: false,
+        reason: 'node-pty is not available on this host.',
+      },
     })
     renderAt('/terminal', { fetchImpl, viewComponent: StubView })
     expect(await screen.findByText('Terminal unavailable')).toBeInTheDocument()
@@ -166,12 +200,18 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
 
   it('shows the calm no-workspace panel BEFORE the consent gate when cwd_available is false', async () => {
     const fetchImpl = deckFetch({
-      status: { available: true, cwd_available: false, reason: 'No workspace directory to open the terminal in.' },
+      status: {
+        available: true,
+        cwd_available: false,
+        reason: 'No workspace directory to open the terminal in.',
+      },
     })
     renderAt('/terminal', { fetchImpl, viewComponent: StubView, ackStorage: freshStorage() })
     expect(await screen.findByText('Terminal unavailable')).toBeInTheDocument()
     expect(screen.getByText(/no workspace directory/i)).toBeInTheDocument()
-    expect(screen.queryByRole('alertdialog', { name: /real shell warning/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('alertdialog', { name: /real shell warning/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('shows a reachability error when the status probe fails', async () => {
@@ -182,19 +222,31 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
   })
 
   it('renders the surface header', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     expect(await screen.findByRole('heading', { name: 'Terminal' })).toBeInTheDocument()
   })
 
   it('renders exactly ONE header for the surface (no double header)', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     await launchRawShell()
     await screen.findByTestId('terminal-view')
     expect(screen.getAllByRole('heading', { name: 'Terminal' })).toHaveLength(1)
   })
 
   it('folds the live connection status into the header actions', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: WiringStubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: WiringStubView,
+      ackStorage: ackedStorage(),
+    })
     await launchRawShell()
     await screen.findByTestId('terminal-view')
     expect(await screen.findByText('Connected')).toBeInTheDocument()
@@ -202,7 +254,11 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
 
   it('Clear button in the header invokes the engine clear handle', async () => {
     stubClear.mockClear()
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: WiringStubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: WiringStubView,
+      ackStorage: ackedStorage(),
+    })
     await launchRawShell()
     await screen.findByTestId('terminal-view')
     const clear = await screen.findByRole('button', { name: /clear/i })
@@ -213,7 +269,11 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
 
   it('Restart button remounts the view for an in-place reconnect', async () => {
     stubMounts = 0
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: WiringStubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: WiringStubView,
+      ackStorage: ackedStorage(),
+    })
     await launchRawShell()
     await screen.findByTestId('terminal-view')
     expect(stubMounts).toBe(1)
@@ -231,14 +291,22 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
         seq: 1,
       }),
     )
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     expect(await screen.findByTestId('terminal-view')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /launch the raw shell/i })).toBeNull()
   })
 
   describe('first-open real-shell acknowledge gate', () => {
     it('shows the real-shell warning and does NOT mount the view until acknowledged', async () => {
-      renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: WiringStubView, ackStorage: freshStorage() })
+      renderAt('/terminal', {
+        fetchImpl: deckFetch(),
+        viewComponent: WiringStubView,
+        ackStorage: freshStorage(),
+      })
       const gate = await screen.findByRole('alertdialog', { name: /real shell warning/i })
       expect(within(gate).getByText(/a quick heads-up first/i)).toBeInTheDocument()
       expect(within(gate).getByText(/there's no sandbox/i)).toBeInTheDocument()
@@ -246,12 +314,18 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
     })
 
     it('shows the launcher after the user acknowledges (then mounts on select)', async () => {
-      renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: freshStorage() })
+      renderAt('/terminal', {
+        fetchImpl: deckFetch(),
+        viewComponent: StubView,
+        ackStorage: freshStorage(),
+      })
       const ack = await screen.findByRole('button', { name: /open the terminal/i })
       fireEvent.click(ack)
       await launchRawShell()
       expect(await screen.findByTestId('terminal-view')).toBeInTheDocument()
-      expect(screen.queryByRole('alertdialog', { name: /real shell warning/i })).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('alertdialog', { name: /real shell warning/i }),
+      ).not.toBeInTheDocument()
     })
   })
 
@@ -273,7 +347,14 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
           tmux: {
             tmuxAvailable: true,
             sessions: [
-              { name: 'adk_lost-1', deckOwned: true, attachedCount: 0, createdEpoch: 1765000000, lastActivityEpoch: 1765000100, persistent: true },
+              {
+                name: 'adk_lost-1',
+                deckOwned: true,
+                attachedCount: 0,
+                createdEpoch: 1765000000,
+                lastActivityEpoch: 1765000100,
+                persistent: true,
+              },
             ],
           },
         }),
@@ -351,7 +432,10 @@ describe('TerminalSurface: the workspace switcher + routing', () => {
     // The Beta pill is selected (not Scratch), and Beta's pane renders.
     const switcher = await screen.findByRole('tablist', { name: /workspaces/i })
     await waitFor(() =>
-      expect(within(switcher).getByRole('tab', { name: 'Beta' })).toHaveAttribute('aria-selected', 'true'),
+      expect(within(switcher).getByRole('tab', { name: 'Beta' })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      ),
     )
     expect(await screen.findByRole('tab', { name: /server/i })).toBeInTheDocument()
   })
@@ -363,7 +447,10 @@ describe('TerminalSurface: the workspace switcher + routing', () => {
       ackStorage: ackedStorage(),
     })
     const switcher = await screen.findByRole('tablist', { name: /workspaces/i })
-    expect(within(switcher).getByRole('tab', { name: 'Scratch' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(switcher).getByRole('tab', { name: 'Scratch' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
     // Scratch shows its launcher (no live session yet).
     expect(await screen.findByRole('button', { name: /launch the raw shell/i })).toBeInTheDocument()
   })
@@ -404,7 +491,13 @@ describe('TerminalSurface: Save-promote', () => {
     const fetchImpl = deckFetch({
       onCreate: (body) => {
         posted = body as typeof posted
-        return { id: 'saved-1', name: (body as { name: string }).name, panes: (body as { panes: unknown[] }).panes, createdAt: 'x', lastModifiedAt: 'x' }
+        return {
+          id: 'saved-1',
+          name: (body as { name: string }).name,
+          panes: (body as { panes: unknown[] }).panes,
+          createdAt: 'x',
+          lastModifiedAt: 'x',
+        }
       },
       // After the save, the surface fetches the new workspace definition.
       workspace: (id) => ({
@@ -415,7 +508,11 @@ describe('TerminalSurface: Save-promote', () => {
         lastModifiedAt: 'x',
       }),
     })
-    const { router } = renderAt('/terminal', { fetchImpl, viewComponent: StubView, ackStorage: ackedStorage() })
+    const { router } = renderAt('/terminal', {
+      fetchImpl,
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
 
     // The Save action appears once Scratch has a pane.
     const save = await screen.findByRole('button', { name: /^save$/i })
@@ -434,7 +531,11 @@ describe('TerminalSurface: Save-promote', () => {
   })
 
   it('does not show Save when Scratch has no panes (launcher state)', async () => {
-    renderAt('/terminal', { fetchImpl: deckFetch(), viewComponent: StubView, ackStorage: ackedStorage() })
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: StubView,
+      ackStorage: ackedStorage(),
+    })
     // The launcher is up (no live session), so there is nothing to save yet.
     await screen.findByRole('button', { name: /launch the raw shell/i })
     expect(screen.queryByRole('button', { name: /^save$/i })).toBeNull()
@@ -463,7 +564,9 @@ describe('TerminalSurface: deleting a saved workspace', () => {
       if (typeof url === 'string' && /\/terminal\/workspaces(\?|$)/.test(url)) {
         const deleted = calls.some((c) => c.method === 'DELETE')
         return jsonResponse(
-          deleted ? { workspaces: TWO_WORKSPACES.workspaces.filter((w) => w.id !== 'ws-a') } : TWO_WORKSPACES,
+          deleted
+            ? { workspaces: TWO_WORKSPACES.workspaces.filter((w) => w.id !== 'ws-a') }
+            : TWO_WORKSPACES,
         )
       }
       return (base as unknown as (u: string, i?: RequestInit) => Promise<Response>)(url, init)
@@ -479,14 +582,12 @@ describe('TerminalSurface: deleting a saved workspace', () => {
 
     // The DELETE hit the right endpoint...
     await waitFor(() =>
-      expect(calls.some((c) => c.method === 'DELETE' && c.url.includes('/terminal/workspaces/ws-a'))).toBe(
-        true,
-      ),
+      expect(
+        calls.some((c) => c.method === 'DELETE' && c.url.includes('/terminal/workspaces/ws-a')),
+      ).toBe(true),
     )
     // ...and Alpha is gone from the switcher after the revalidation.
-    await waitFor(() =>
-      expect(within(switcher).queryByRole('tab', { name: 'Alpha' })).toBeNull(),
-    )
+    await waitFor(() => expect(within(switcher).queryByRole('tab', { name: 'Alpha' })).toBeNull())
     expect(within(switcher).getByRole('tab', { name: 'Beta' })).toBeInTheDocument()
   })
 
@@ -502,7 +603,9 @@ describe('TerminalSurface: deleting a saved workspace', () => {
       if (typeof url === 'string' && /\/terminal\/workspaces(\?|$)/.test(url)) {
         const deleted = calls.some((c) => c.method === 'DELETE')
         return jsonResponse(
-          deleted ? { workspaces: TWO_WORKSPACES.workspaces.filter((w) => w.id !== 'ws-a') } : TWO_WORKSPACES,
+          deleted
+            ? { workspaces: TWO_WORKSPACES.workspaces.filter((w) => w.id !== 'ws-a') }
+            : TWO_WORKSPACES,
         )
       }
       return (base as unknown as (u: string, i?: RequestInit) => Promise<Response>)(url, init)
@@ -521,9 +624,9 @@ describe('TerminalSurface: deleting a saved workspace', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }))
 
     await waitFor(() =>
-      expect(calls.some((c) => c.method === 'DELETE' && c.url.includes('/terminal/workspaces/ws-a'))).toBe(
-        true,
-      ),
+      expect(
+        calls.some((c) => c.method === 'DELETE' && c.url.includes('/terminal/workspaces/ws-a')),
+      ).toBe(true),
     )
     // Deleting the active workspace navigates back to Scratch.
     await waitFor(() => expect(router.state.location.pathname).toBe('/terminal'))
