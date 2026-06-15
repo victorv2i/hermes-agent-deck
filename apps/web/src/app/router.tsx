@@ -3,6 +3,11 @@ import App from '@/App'
 import { NotFound } from '@/components/system/NotFound'
 import { CHAT_PATH, NAV } from './navigation'
 
+// The unified Terminal surface element (from its NAV entry), reused for the
+// `/workspaces` + `/workspaces/:id` aliases below so all three paths render ONE
+// surface without a second lazy import.
+const terminalElement = NAV.find((item) => item.key === 'terminal')?.element
+
 /**
  * The app router. The {@link App} layout owns the chrome (rail · header) and
  * renders the active surface in its content Outlet. Surfaces are
@@ -27,7 +32,7 @@ import { CHAT_PATH, NAV } from './navigation'
  *  - the catch-all `*` renders {@link NotFound} inside the shell, so an unknown
  *    URL shows a calm "not found" (with a link home) rather than a blank page.
  */
-const routes: RouteObject[] = [
+export const routes: RouteObject[] = [
   {
     path: '/',
     element: <App />,
@@ -43,6 +48,13 @@ const routes: RouteObject[] = [
           : { path: item.path === CHAT_PATH ? 'chat/:id?' : item.path.replace(/^\//, '') }),
         element: item.element,
       })),
+      // Terminal + Workspaces UNIFIED into one surface: the `terminal` NAV entry
+      // owns `/terminal`, and these two aliases resolve `/workspaces` (Scratch
+      // active) and `/workspaces/:id` (that workspace active, a cross-device deep
+      // link) to the SAME surface element, so existing links and muscle memory do
+      // not break after collapsing the two pages into one.
+      { path: 'workspaces', element: terminalElement },
+      { path: 'workspaces/:id', element: terminalElement },
       // Retired surfaces — keep the routes as redirects so old links survive.
       { path: 'memory', element: <Navigate to="/profiles" replace /> },
       { path: 'skills', element: <Navigate to="/profiles" replace /> },

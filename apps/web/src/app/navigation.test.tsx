@@ -63,8 +63,6 @@ describe('NAV registry', () => {
       'jobs',
       'kanban',
       'terminal',
-      'workspaces',
-      'workspace-detail',
       'profiles',
       'tools',
       'connections',
@@ -79,9 +77,12 @@ describe('NAV registry', () => {
     // The per-agent hub (/profiles/:name) is routed but hidden — reached from the
     // Agents list / chip, not a rail link. (Memory/Soul + Skills folded into it.)
     expect(NAV.find((i) => i.key === 'agent-detail')?.hidden).toBe(true)
-    // A single workspace (/workspaces/:id) is routed but hidden — reached from the
-    // Workspaces list, not a rail link (mirror of the dynamic sessions route).
-    expect(NAV.find((i) => i.key === 'workspace-detail')?.hidden).toBe(true)
+    // Terminal + Workspaces UNIFIED into one surface: the separate Workspaces rail
+    // entry and the standalone single-workspace route are gone (saved sets live in
+    // a switcher inside the Terminal surface; the `/workspaces` + `/workspaces/:id`
+    // paths alias to it via router.tsx).
+    expect(NAV.find((i) => i.key === 'workspaces')).toBeUndefined()
+    expect(NAV.find((i) => i.key === 'workspace-detail')).toBeUndefined()
     expect(NAV.find((i) => i.key === 'memory')).toBeUndefined()
     // Skills retired as a standalone surface — folded into the agent hub.
     expect(NAV.find((i) => i.key === 'skills')).toBeUndefined()
@@ -164,12 +165,12 @@ describe('NAV registry', () => {
       'tools',
       'connections',
     ])
-    // Workspace = the daily work surfaces (Files, Terminal, Workspaces). The
-    // dynamic single-workspace route (workspace-detail) is hidden, so excluded.
+    // Workspace = the daily work surfaces (Files, Terminal). Terminal is now the
+    // UNIFIED surface (Scratch + saved workspaces in one); the separate Workspaces
+    // rail entry was removed.
     expect(grouped.find((g) => g.group === 'workspace')!.items.map((i) => i.key)).toEqual([
       'files',
       'terminal',
-      'workspaces',
     ])
     // Activity = the agent's ongoing work (Tasks, Board) plus the System recovery
     // surface (after Board, just above the pinned bottom). Usage moved to the

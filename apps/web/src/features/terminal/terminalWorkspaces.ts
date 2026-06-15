@@ -4,7 +4,7 @@ import type {
   WorkspacePaneDefinition,
   WorkspaceSummary,
 } from '@agent-deck/protocol'
-import { MAX_TERMINALS, type ViewMode } from './terminalSessions'
+import { MAX_TERMINALS, type TerminalSession, type ViewMode } from './terminalSessions'
 
 /**
  * Pure, framework-agnostic state for a single terminal WORKSPACE — a named,
@@ -285,6 +285,44 @@ export function toPaneDefinitions(state: WorkspaceState): WorkspacePaneDefinitio
     ...(p.cwd !== undefined ? { cwd: p.cwd } : {}),
     ...(p.attach !== undefined ? { attach: p.attach } : {}),
   }))
+}
+
+/** The protocol pane-id charset (a tmux/process-arg-safe subset). */
+const PANE_ID_CHARS = /[^A-Za-z0-9_-]/g
+
+/**
+ * Sanitize an arbitrary id into the protocol pane-id charset (`[A-Za-z0-9_-]`,
+ * 1..64 chars), replacing anything else with `-` and falling back to a short
+ * token when the whole id sanitizes away. Scratch session ids already comply, but
+ * this keeps the Save-promote payload valid for any future id shape.
+ */
+function sanitizePaneId(id: string): string {
+  const cleaned = id.replace(PANE_ID_CHARS, '-').slice(0, 64)
+  return cleaned || `p-${randomToken()}`
+}
+
+/**
+ * Build the panes for a Save-promote: convert the Scratch session list (the live
+ * quick-terminal panes) into protocol {@link WorkspacePaneDefinition}s for a
+ * `POST /workspaces`. Each pane carries the session's cli (or its foreign
+ * `attach`) and label; Scratch sessions have no per-pane cwd, so none is sent (the
+ * saved panes fall back to the server default cwd, exactly as they did ad-hoc).
+ * Pane ids are sanitized into the protocol charset, deduped so two sessions never
+ * collide on one pane id (a reused id would reattach to the wrong shell).
+ */
+export function panesFromSessions(sessions: TerminalSession[]): WorkspacePaneDefinition[] {
+  const seen = new Set<string>()
+  return sessions.map((s) => {
+    let id = sanitizePaneId(s.id)
+    while (seen.has(id)) id = sanitizePaneId(`${s.id}-${randomToken()}`)
+    seen.add(id)
+    const pane: WorkspacePaneDefinition = { id, label: s.title }
+    // A foreign attach session promotes to an attach pane (no cli); everything
+    // else carries its launcher cli.
+    if (s.attach !== undefined) pane.attach = s.attach
+    else pane.cli = s.cli
+    return pane
+  })
 }
 
 /**

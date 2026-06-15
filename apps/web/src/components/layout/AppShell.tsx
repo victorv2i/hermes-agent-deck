@@ -72,6 +72,9 @@ const SURFACES_WITH_OWN_HEADER = [
   '/kanban',
   '/files',
   '/terminal',
+  // The unified Terminal surface also answers `/workspaces` + `/workspaces/:id`
+  // and brings its own SurfaceHeader, so suppress the chrome fallback title here.
+  '/workspaces',
   '/jobs',
   '/profiles',
   // Connections mounts the existing Voice/Messaging/MCP Routes as tabs, and each

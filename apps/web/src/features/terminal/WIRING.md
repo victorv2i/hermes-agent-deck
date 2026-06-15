@@ -12,25 +12,49 @@ build on the host.
 
 1-line description: An interactive workspace shell (xterm.js ↔ BFF node-pty).
 
-## Multi-terminal (tab + grid)
+## Unified surface: one page, two controllers, one grid
 
-After the launcher picks the FIRST preset, the body is `TerminalMultiView`: many
-live shells with a TAB view (one active at a time, "+" to open up to 12) and a
-GRID view (several at once; the focused one carries the sanctioned amber ring). A
-calm toggle switches modes; inactive tabs stay MOUNTED (hidden) so their shells
-keep running. Tabs/grid carry the CLI's local-SVG BRAND mark (`cliBrandIcons.tsx`,
-identity, never the amber accent; Hermes uses a tasteful monogram fallback).
+Terminal and Workspaces are ONE surface, `TerminalSurface.tsx` (mounted at
+`/terminal`, `/workspaces`, and `/workspaces/:id`, see Routing below). It owns the
+chrome: the single `SurfaceHeader` (whose status/Clear/Restart act on the ACTIVE
+pane, lifted up from whichever controller is mounted), the backend/cwd availability
+probe + the first-open real-shell consent gate, and a compact workspace switcher
+(`[Scratch] [<saved workspaces...>] [+ New] [Save]`; a dropdown on phones). SCRATCH
+is the ephemeral quick terminal; the `:id` selects a saved, server-persisted
+workspace (a cross-device deep link).
 
-Each session = ONE mounted `TerminalView` → its own `TerminalSocket` → its own
-socket.io connection → its own server pty. The client sends a STABLE wire id
-(`sessionKey` = `id:epoch`) on `terminal.start`; the server keys managed ptys by
-that id (live OR parked), so a refresh reattaches and the cap counts every managed
-session. Both caps are 12 (`MAX_TERMINALS` web / `DEFAULT_MAX_SESSIONS` server,
-`index.ts` also passes `maxSessions: 12`) so the client never lets you exceed what
-the server allows. A Restart bumps `epoch` → a new wire id → a fresh shell. The old
-shell: a non-tmux parked pty is reaped after its grace window; a tmux-backed
-(persistent) one is killed explicitly (`terminal.close`) before the epoch bump so
-no `adk_*` session is orphaned.
+The surface mounts ONE of two controllers by selection, and BOTH render the SAME
+grid engine `PaneGrid.tsx`, so they look and behave identically:
+
+- `ScratchPaneController.tsx` (selection = Scratch): the ephemeral quick terminal,
+  modeled over the EXISTING pure `terminalSessions.ts` reducer + localStorage, so
+  it behaves byte-for-byte like the prior quick terminal. It reconciles restored
+  sessions against the server tmux list, threads the fresh-shell `expectResume`
+  signal, and reports its session list up so the surface's Save can promote it.
+- `WorkspacePaneController.tsx` (selection = a saved workspace): a named,
+  server-persisted grid. It seeds from the server's authoritative
+  `WorkspaceDefinition` (restoring only the LOCAL view shape from cache), PATCHes
+  the durable pane set back debounced, and renders a per-pane CLI/cwd settings row
+  for the active pane (`WorkspacePanePickers.tsx`).
+
+`PaneGrid` shows many live shells with a TAB view (one active at a time, "+" to
+open up to 12) and a GRID view (several at once; the focused one carries the
+sanctioned amber ring). A calm toggle switches modes; inactive tabs stay MOUNTED
+(hidden) so their shells keep running. Tabs/grid carry the CLI's local-SVG BRAND
+mark (`cliBrandIcons.tsx`, identity, never the amber accent; Hermes uses a tasteful
+monogram fallback).
+
+Each pane = ONE mounted `TerminalView` → its own `TerminalSocket` → its own
+socket.io connection → its own server pty. The client sends a STABLE wire id on
+`terminal.start` (Scratch: `sessionKey` = `id:epoch`; a workspace: the deterministic
+`paneSessionId` = `ws_<workspaceId>_<paneId>[_<epoch>]`); the server keys managed
+ptys by that id (live OR parked), so a refresh reattaches and the cap counts every
+managed session. Both caps are 12 (`MAX_TERMINALS` web / `DEFAULT_MAX_SESSIONS`
+server, `index.ts` also passes `maxSessions: 12`) so the client never lets you
+exceed what the server allows. A Restart bumps `epoch` → a new wire id → a fresh
+shell. The old shell: a non-tmux parked pty is reaped after its grace window; a
+tmux-backed (persistent) one is killed explicitly (`terminal.close`) before the
+epoch bump so no `adk_*` session is orphaned.
 
 The open session list is persisted to `localStorage` (`TERMINAL_SESSIONS_KEY`), so a
 browser refresh remounts the SAME sessions (same ids) and each reattaches to its
@@ -76,23 +100,29 @@ Paste reads `navigator.clipboard.readText()` and writes the text to the shell
 input path verbatim (bypassing the sticky-Ctrl transform); a denied or missing
 clipboard shows a quiet inline "Clipboard unavailable" notice.
 
-Session state is the pure reducer in `terminalSessions.ts` (open/close/rename/
-restart/activate + the tab⇄grid view mode + the 12 cap). The route surfaces the
-ACTIVE session's status/clear/restart up to the single SurfaceHeader.
+Scratch session state is the pure reducer in `terminalSessions.ts` (open/close/
+rename/restart/activate + the tab⇄grid view mode + the 12 cap); workspace pane
+state is the pure reducer in `terminalWorkspaces.ts` (same actions + 1/2/3/4/6
+layout presets + per-pane cli/cwd). `TerminalSurface` lifts the ACTIVE pane's
+status/clear/restart up to the single SurfaceHeader.
 
-## NAV entry (append to `apps/web/src/app/navigation.tsx` `NAV`)
+## NAV entry (`apps/web/src/app/navigation.tsx` `NAV`)
+
+ONE Terminal entry covers the whole unified surface (there is no separate
+Workspaces rail entry; saved sets live in the in-page switcher):
 
 ```ts
 import { SquareTerminal } from 'lucide-react'
-import { TerminalRoute } from '@/features/terminal/TerminalRoute'
+import { TerminalSurface } from '@/features/terminal/TerminalSurface'
 
 {
   key: 'terminal',
-  label: 'Terminal',
+  label: navMessage('navigation.item.terminal.label'),
+  labelKey: 'navigation.item.terminal.label',
   path: '/terminal',
   icon: SquareTerminal,
   group: 'workspace',
-  element: <TerminalRoute />,
+  element: <TerminalSurface />,
 }
 ```
 
@@ -102,18 +132,27 @@ import { TerminalRoute } from '@/features/terminal/TerminalRoute'
 - lucide icon: `SquareTerminal`
 - group: `workspace`
 
-## React route element + import path
+## Routing: three paths, one surface
 
-- Element: `<TerminalRoute />`
-- Import: `import { TerminalRoute } from '@/features/terminal/TerminalRoute'`
+- Element: `<TerminalSurface />`
+- Import: `import { TerminalSurface } from '@/features/terminal/TerminalSurface'`
 
-The router (`apps/web/src/app/router.tsx`) already derives a child route from each
-`NAV` entry's `path`, so appending the NAV item above is the only web edit needed.
-`TerminalRoute` probes `GET /api/agent-deck/terminal/status` via `useTerminalStatus`
-→ `@tanstack/react-query` on the single app-wide client (`apps/web/src/main.tsx`),
-then **lazy-loads** `TerminalView` (which in turn
-dynamically imports `@xterm/xterm` + `@xterm/addon-fit` + `@xterm/addon-web-links`
-and the xterm CSS) so the heavy terminal engine stays out of the initial bundle.
+The router (`apps/web/src/app/router.tsx`) derives a child route from the NAV
+entry's `path` (`/terminal`), and additionally aliases two more paths to the SAME
+surface element so the old Workspaces links and deep links keep working:
+
+- `/terminal` → Scratch (the quick terminal),
+- `/workspaces` → the surface with Scratch active,
+- `/workspaces/:id` → the surface with that saved workspace active (the URL is the
+  source of truth for which workspace is active, so the `:id` is a cross-device deep
+  link; this is an ALIAS, not a redirect).
+
+`TerminalSurface` probes `GET /api/agent-deck/terminal/status` via
+`useTerminalStatus` → `@tanstack/react-query` on the single app-wide client
+(`apps/web/src/main.tsx`), then (once a controller mounts) **lazy-loads**
+`TerminalView` (which in turn dynamically imports `@xterm/xterm` + `@xterm/addon-fit`
++ `@xterm/addon-web-links` and the xterm CSS) so the heavy terminal engine stays out
+of the initial bundle.
 
 ## Fastify route plugin (REST status probe)
 
@@ -197,7 +236,18 @@ Web (`apps/web/src/features/terminal/`):
 - `TerminalView.tsx` (+ `.test.tsx`): the xterm component (lazy xterm import,
   fit-on-resize, status dot, unavailable/exit overlays). Engine + socket injectable.
 - `useTerminalStatus.ts`: the `/status` probe hook (plain fetch).
-- `TerminalRoute.tsx` (+ `.test.tsx`): the route: probe → lazy `TerminalView`.
+- `TerminalSurface.tsx` (+ `.test.tsx`): the UNIFIED route element (probe + consent
+  gate + workspace switcher + Save), aliased from `/terminal`, `/workspaces`, and
+  `/workspaces/:id`. Mounts ONE of the two controllers below.
+- `PaneGrid.tsx` (+ `.test.tsx`): the single grid engine both controllers feed
+  (tab/grid views, the focused-cell ring, the "+" preset menu, the 12 cap, and
+  optional 1/2/3/4/6 layout presets). Lazy `TerminalView` per pane.
+- `ScratchPaneController.tsx` (+ `.test.tsx`): the Scratch controller over the pure
+  `terminalSessions.ts` reducer + localStorage (refresh-resume, tmux reconcile).
+- `WorkspacePaneController.tsx` (+ `.test.tsx`): the saved-workspace controller over
+  the pure `terminalWorkspaces.ts` reducer (server-seeded, debounced PATCH back).
+- `WorkspacePanePickers.tsx` (+ `.test.tsx`): the per-pane CLI + cwd pickers (the
+  cwd browser walks only server-allowlisted roots/dirs).
 
 ## Tests
 
