@@ -54,58 +54,60 @@ export function StudioPage({
   onRetry,
 }: StudioPageProps) {
   return (
-    // Fill the available viewport height and CENTER the composition vertically so
-    // a short landing (the launchpad + roster + workbench) reads as a balanced
-    // panel with deliberate breathing room above and below, not content stranded
-    // at the top over a dead void. `min-h-full` claims the scroll container's
-    // height; `justify-center` centers when the content is short, while a long
-    // roster simply overflows and scrolls from the top (justify-center never
-    // clips because the column can grow past the viewport). Capped at a
-    // comfortable measure so the whitespace flanks the work as margin, not gulf.
-    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-center gap-6 px-4 py-8 sm:px-6 lg:py-12">
-      <StudioLaunchpad status={launchpadStatus} onStartChat={onStartChat} />
+    // Fill the available viewport height; the inner wrapper centers the
+    // composition (launchpad + roster + workbench) when it fits, so a short
+    // landing reads as a balanced panel rather than content stranded at the top
+    // over a dead void. When a tall section overflows (Model's provider list, a
+    // long Soul), `my-auto` collapses to 0 and the wrapper top-aligns + scrolls,
+    // so the tab bar is never pushed above the fold (unlike `justify-center`,
+    // which clips the top of a scroll container). Capped at a comfortable measure.
+    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-8 sm:px-6 lg:py-12">
+      <div className="my-auto flex w-full flex-col gap-6">
+        <StudioLaunchpad status={launchpadStatus} onStartChat={onStartChat} />
 
-      {loading ? (
-        <StudioSkeleton />
-      ) : error ? (
-        <ErrorState
-          icon={Server}
-          title="Couldn't load your agents"
-          description={error}
-          onRetry={onRetry}
-        />
-      ) : (
-        // Master-detail: a clean secondary roster column beside the workbench
-        // (the focus). On mobile (<lg) the grid collapses to one column, so the
-        // roster stacks above the workbench (master → detail). The workbench is
-        // the wider, raised panel so the eye lands on it.
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
-          <div className="lg:sticky lg:top-4 lg:self-start">
-            <StudioRoster
-              profiles={profiles}
-              selected={selectedAgent}
-              onSelect={onSelectAgent}
-              onNewAgent={onNewAgent}
-              onCloneSelected={onCloneSelected}
-            />
-          </div>
-
-          {selectedAgent && selectedProfile ? (
-            // A comfortable minimum height gives the detail panel real vertical
-            // presence, so the centered landing reads as an intentional workbench
-            // rather than a thin strip. It still grows past this for tall sections.
-            <Card className="ad-raised min-h-[26rem] min-w-0 p-5 sm:p-6">
-              <StudioWorkbench
-                key={selectedAgent}
-                agent={selectedAgent}
-                profile={selectedProfile}
-                section={section}
-                onSectionChange={onSectionChange}
+        {loading ? (
+          <StudioSkeleton />
+        ) : error ? (
+          <ErrorState
+            icon={Server}
+            title="Couldn't load your agents"
+            description={error}
+            onRetry={onRetry}
+          />
+        ) : (
+          // Master-detail: a clean secondary roster column beside the workbench
+          // (the focus). On mobile (<lg) the grid collapses to one column, so the
+          // roster stacks above the workbench (master → detail). The workbench is
+          // the wider, raised panel so the eye lands on it.
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+            <div className="lg:sticky lg:top-4 lg:self-start">
+              <StudioRoster
+                profiles={profiles}
+                selected={selectedAgent}
+                onSelect={onSelectAgent}
+                onNewAgent={onNewAgent}
+                onCloneSelected={onCloneSelected}
               />
-            </Card>
-          ) : null}
-        </div>
-      )}
+            </div>
+
+            {selectedAgent && selectedProfile ? (
+              // A comfortable minimum height gives the detail panel real vertical
+              // presence, so the centered landing reads as an intentional
+              // workbench rather than a thin strip. It grows past this for tall
+              // sections (then the wrapper top-aligns and the page scrolls).
+              <Card className="ad-raised min-h-[26rem] min-w-0 p-5 sm:p-6">
+                <StudioWorkbench
+                  key={selectedAgent}
+                  agent={selectedAgent}
+                  profile={selectedProfile}
+                  section={section}
+                  onSectionChange={onSectionChange}
+                />
+              </Card>
+            ) : null}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
