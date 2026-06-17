@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from 'framer-motion'
  * no-motion behavior matches the prior inline code.
  */
 
-const RAIL_WIDTH = 260
+const RAIL_WIDTH = 212
 
 type Spring = { duration: number } | { type: 'spring'; stiffness: number; damping: number }
 

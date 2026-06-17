@@ -18,8 +18,8 @@ import type { SessionDetail, SessionMessage } from './types'
  * already-loaded `GET /sessions/:id/messages` payload client-side and downloads
  * a Blob — a LOCAL file, no upload, no share-link; copy reads the id that's
  * already in hand. Each confirms via a calm toast (the app's bottom feedback
- * channel). Amber is governed, so the trigger is a muted ghost control, never an
- * amber fill.
+ * channel). The action accent is governed, so the trigger is a muted ghost control, never a
+ * sky-blue fill.
  *
  * The menu stays reachable whenever a session is open: copying the id works on
  * an empty transcript, so the export items are gated individually rather than

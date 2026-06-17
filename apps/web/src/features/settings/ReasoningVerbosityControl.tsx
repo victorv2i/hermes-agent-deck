@@ -12,7 +12,7 @@ import { useReasoningVerbosity, type VerbosityMode } from '@/features/reasoning/
  * @/features/reasoning/reasoningPrefs).
  *
  * Rendered as an accessible two-option radiogroup (roving selection, governed
- * amber for the active option per the accent rules), it sits below Density.
+ * sky-blue for the active option per the accent rules), it sits below Density.
  */
 
 const OPTIONS = [

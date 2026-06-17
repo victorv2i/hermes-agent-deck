@@ -119,7 +119,7 @@ export function ProfileSwitcher({
                       </span>
                     </span>
                     {isActive ? (
-                      // The single amber active marker (a Check, never on the avatar).
+                      // The single sky-blue active marker (a Check, never on the avatar).
                       <Check className="size-4 shrink-0 text-primary" aria-label="Active" />
                     ) : (
                       <ArrowRight

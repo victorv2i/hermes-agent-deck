@@ -225,28 +225,28 @@ describe('session persistence (refresh resumes the SAME shells)', () => {
 
 describe('foreign attach sessions', () => {
   it('opens an attach tab titled with the tmux session name', () => {
-    const s = openAttachSession(emptySessions(), 'victors_own')
+    const s = openAttachSession(emptySessions(), 'my_session')
     expect(s.sessions).toHaveLength(1)
     const tab = s.sessions[0]!
-    expect(tab.attach).toBe('victors_own')
-    expect(tab.title).toBe('victors_own')
+    expect(tab.attach).toBe('my_session')
+    expect(tab.title).toBe('my_session')
     expect(s.activeId).toBe(tab.id)
   })
 
   it('attaching the same session twice only refocuses the existing tab', () => {
-    let s = openAttachSession(emptySessions(), 'victors_own')
+    let s = openAttachSession(emptySessions(), 'my_session')
     s = openSession(s, 'shell')
     const before = s.sessions.length
-    s = openAttachSession(s, 'victors_own')
+    s = openAttachSession(s, 'my_session')
     expect(s.sessions).toHaveLength(before)
-    expect(s.activeId).toBe(s.sessions.find((x) => x.attach === 'victors_own')!.id)
+    expect(s.activeId).toBe(s.sessions.find((x) => x.attach === 'my_session')!.id)
   })
 
   it('attach tabs round-trip through persistence', () => {
-    const s = openAttachSession(emptySessions(), 'victors_own')
+    const s = openAttachSession(emptySessions(), 'my_session')
     writeSessions(s)
     const restored = readPersistedSessions()
-    expect(restored!.sessions[0]!.attach).toBe('victors_own')
+    expect(restored!.sessions[0]!.attach).toBe('my_session')
   })
 })
 
@@ -273,7 +273,7 @@ describe('recovered deck sessions + wire keys', () => {
 
   it('refuses to recover a non-deck name', () => {
     const empty = emptySessions()
-    expect(openRecoveredSession(empty, 'victors_own')).toBe(empty)
+    expect(openRecoveredSession(empty, 'my_session')).toBe(empty)
     expect(openRecoveredSession(empty, 'adk_')).toBe(empty)
   })
 
@@ -282,8 +282,8 @@ describe('recovered deck sessions + wire keys', () => {
     expect(expectedTmuxName(deck)).toBe(deckTmuxName(sessionKey(deck)))
     const rec = openRecoveredSession(emptySessions(), 'adk_w1').sessions[0]!
     expect(expectedTmuxName(rec)).toBe('adk_w1')
-    const att = openAttachSession(emptySessions(), 'victors_own').sessions[0]!
-    expect(expectedTmuxName(att)).toBe('victors_own')
+    const att = openAttachSession(emptySessions(), 'my_session').sessions[0]!
+    expect(expectedTmuxName(att)).toBe('my_session')
   })
 })
 
@@ -313,7 +313,7 @@ describe('reconcileSessions (server list is the source of truth)', () => {
   })
 
   it('cleans an attach entry whose foreign session is gone', () => {
-    const s = openAttachSession(emptySessions(), 'victors_own')
+    const s = openAttachSession(emptySessions(), 'my_session')
     const next = reconcileSessions(s, srv([]))
     expect(next.sessions).toHaveLength(0)
     expect(next.activeId).toBeNull()
@@ -322,11 +322,11 @@ describe('reconcileSessions (server list is the source of truth)', () => {
   it('recovers deck-owned server sessions this browser forgot', () => {
     const s = openSession(emptySessions(), 'shell')
     const mine = expectedTmuxName(s.sessions[0]!)
-    const next = reconcileSessions(s, srv([mine, 'adk_forgotten-1', 'victors_own']))
+    const next = reconcileSessions(s, srv([mine, 'adk_forgotten-1', 'my_session']))
     // The forgotten deck session appears; the foreign one is NOT auto-opened.
     expect(next.sessions).toHaveLength(2)
     const recovered = next.sessions.find((x) => x.wire === 'forgotten-1')!
-    expect(recovered.title).toBe('forgotten-1')
+    expect(recovered.title).toBe('Recovered shell')
     // The surviving active session keeps focus (recovery never steals it).
     expect(next.activeId).toBe(s.activeId)
   })

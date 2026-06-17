@@ -23,6 +23,7 @@ import {
 import { IdentitySection } from './workbench/IdentitySection'
 import { SoulSection } from './workbench/SoulSection'
 import { ModelSection } from './workbench/ModelSection'
+import { AdvancedModelSection } from './workbench/AdvancedModelSection'
 import { ToolsSection } from './workbench/ToolsSection'
 import { MemorySection } from './workbench/MemorySection'
 import { SkillsSection } from './workbench/SkillsSection'
@@ -91,7 +92,13 @@ export function StudioWorkbench({ agent, profile, section, onSectionChange }: St
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="overflow-x-auto pb-2">
+      {/* The section switcher pins to the top of the page scroll container (the
+          AppShell <main> overflow-y-auto), so the tabs stay reachable on a long
+          section instead of scrolling away. The wrapper carries the panel's own
+          bg-card and cancels the Card's padding with negative margins so the
+          masking band spans gutter-to-gutter (content never bleeds under the
+          strip); the Studio Card opts into overflow-visible so this can escape it. */}
+      <div className="sticky top-0 z-10 -mx-5 -mt-5 overflow-x-auto bg-card px-5 pt-5 pb-2 sm:-mx-6 sm:-mt-6 sm:px-6 sm:pt-6">
         <div
           role="tablist"
           aria-label="Workbench sections"
@@ -112,9 +119,11 @@ export function StudioWorkbench({ agent, profile, section, onSectionChange }: St
                 tabIndex={selected ? 0 : -1}
                 onClick={() => onSectionChange(s)}
                 className={cn(
-                  'inline-flex min-h-9 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-13 font-medium transition-colors',
+                  'inline-flex min-h-11 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-13 font-medium transition-colors sm:min-h-9',
                   'focus-visible:ad-focus',
-                  selected ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
+                  selected
+                    ? 'bg-primary/12 text-primary-hover'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {SECTION_LABELS[s]}
@@ -195,23 +204,47 @@ function SoulPanel({ agent }: { agent: string }) {
 function ModelPanel({ agent }: { agent: string }) {
   const options = useModelOptions(agent)
   const setModel = useSetProfileModel(agent)
+  // The advanced block (context length + auxiliary/delegation routing) reads +
+  // writes the per-agent config subset, the same scoped hooks Tools/Memory use.
+  const config = useStudioConfig(agent)
+  const writeConfig = useWriteStudioConfig(agent)
   return (
-    <ModelSection
-      options={options.data}
-      isLoading={options.isLoading}
-      error={errMsg(options.isError, options.error, "Couldn't load models.")}
-      isSetting={setModel.isPending}
-      onSet={async ({ provider, model }) => {
-        try {
-          await setModel.mutateAsync({ provider, model })
-          toast.success(`Model set to ${model}`)
-        } catch (err) {
-          toast.error("Couldn't set the model", {
-            description: err instanceof Error ? err.message : 'Please try again.',
-          })
-        }
-      }}
-    />
+    <div className="flex flex-col gap-6">
+      <ModelSection
+        options={options.data}
+        isLoading={options.isLoading}
+        error={errMsg(options.isError, options.error, "Couldn't load models.")}
+        isSetting={setModel.isPending}
+        onSet={async ({ provider, model }) => {
+          try {
+            await setModel.mutateAsync({ provider, model })
+            toast.success(`Model set to ${model}`)
+          } catch (err) {
+            toast.error("Couldn't set the model", {
+              description: err instanceof Error ? err.message : 'Please try again.',
+            })
+          }
+        }}
+      />
+      <div className="border-t border-border pt-5">
+        <AdvancedModelSection
+          config={config.data}
+          isLoading={config.isLoading}
+          error={errMsg(config.isError, config.error, "Couldn't load advanced options.")}
+          isSaving={writeConfig.isPending}
+          onSave={async (patch) => {
+            try {
+              await writeConfig.mutateAsync(patch)
+              toast.success('Saved', { description: 'Restart your agent to apply.' })
+            } catch (err) {
+              toast.error("Couldn't save advanced options", {
+                description: err instanceof Error ? err.message : 'Please try again.',
+              })
+            }
+          }}
+        />
+      </div>
+    </div>
   )
 }
 

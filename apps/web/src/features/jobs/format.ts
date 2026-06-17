@@ -5,7 +5,7 @@
  */
 import type { CronJob, CronJobStatus, CronSchedule } from './types'
 
-/** Map a job's last-run status to a governed semantic Badge variant (NOT amber). */
+/** Map a job's last-run status to a governed semantic Badge variant (NOT the action accent). */
 export function statusTone(
   status: CronJobStatus | null,
 ): 'success' | 'destructive' | 'warning' | 'muted' {

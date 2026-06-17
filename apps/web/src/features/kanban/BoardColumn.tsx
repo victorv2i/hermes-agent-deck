@@ -81,8 +81,9 @@ export function BoardColumn({
       aria-labelledby={headingId}
       data-testid={testId}
       data-column={column.name}
-      // self-stretch lets an empty lane fill the board height so its crafted
-      // empty state can sit vertically centered, not pinned under the header.
+      // self-stretch keeps lanes equal-height in the board row; the empty-state
+      // placeholder stays compact (min-h-32) near the top rather than stretching
+      // to fill the column, so an empty board reads as bounded cards, not a void.
       className={cn('flex w-[272px] shrink-0 flex-col gap-2.5 self-stretch', className)}
     >
       <header className="flex items-center gap-2 px-1">
@@ -119,7 +120,7 @@ export function BoardColumn({
         // a considered, waiting place rather than a header over a black void. The
         // hairline+highlight surface (ad-surface) and lifted-but-dashed frame keep
         // it inviting; neutral tones only, never the action accent.
-        <div className="ad-surface flex min-h-32 flex-1 flex-col items-center justify-center gap-2 rounded-lg border-dashed bg-surface-1/40 px-3 py-6 text-center">
+        <div className="ad-surface flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-dashed bg-surface-1/40 px-3 py-6 text-center">
           <span
             aria-hidden
             className="grid size-8 place-items-center rounded-lg bg-muted/50 text-foreground-tertiary"

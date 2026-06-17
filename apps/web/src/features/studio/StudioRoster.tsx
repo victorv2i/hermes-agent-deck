@@ -1,4 +1,4 @@
-import { Copy, CircleDot, IdCard, Plus, Star } from 'lucide-react'
+import { Copy, CircleDot, IdCard, Plus, Star, Upload } from 'lucide-react'
 import { Avatar } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,7 @@ import type { ProfileSummary } from '@/features/profiles/types'
  *
  * Presentational: the roster + selection + the action callbacks arrive as props,
  * so the route owns the data + the dialogs. The active card's identity uses the
- * governed identity pattern (strong border + surface tint), never the amber
+ * governed identity pattern (strong border + surface tint), never the sky-blue
  * action accent (identity is never the accent).
  */
 export interface StudioRosterProps {
@@ -27,6 +27,8 @@ export interface StudioRosterProps {
   onNewAgent: () => void
   /** Clone the given agent (the route runs create+clone, then opens the new one). */
   onCloneSelected: (sourceName: string) => void
+  /** Open the Import dialog (bring an exported `.tar.gz` agent back as a new one). */
+  onImport: () => void
 }
 
 export function StudioRoster({
@@ -35,6 +37,7 @@ export function StudioRoster({
   onSelect,
   onNewAgent,
   onCloneSelected,
+  onImport,
 }: StudioRosterProps) {
   if (profiles.length === 0) {
     return (
@@ -43,10 +46,16 @@ export function StudioRoster({
         title="No agents yet"
         description="Hatch your first agent: give it a name and a face, and it gets its own model, skills, and memory."
         action={
-          <Button type="button" onClick={onNewAgent}>
-            <Plus aria-hidden />
-            New agent
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button type="button" onClick={onNewAgent}>
+              <Plus aria-hidden />
+              New agent
+            </Button>
+            <Button type="button" variant="outline" onClick={onImport}>
+              <Upload aria-hidden />
+              Import
+            </Button>
+          </div>
         }
       />
     )
@@ -54,7 +63,7 @@ export function StudioRoster({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <h2 className="ad-section-label">Agents</h2>
         <div className="flex items-center gap-1.5">
           {selected && (
@@ -69,6 +78,16 @@ export function StudioRoster({
               Clone
             </Button>
           )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onImport}
+            className="text-foreground-tertiary"
+          >
+            <Upload aria-hidden />
+            Import
+          </Button>
           <Button type="button" size="sm" variant="outline" onClick={onNewAgent}>
             <Plus aria-hidden />
             New agent

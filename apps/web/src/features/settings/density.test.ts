@@ -42,13 +42,17 @@ describe('density storage', () => {
     expect(readStoredDensity()).toBeNull()
   })
 
-  it('defaults to comfortable when nothing is stored', () => {
-    expect(getDensity()).toBe('comfortable')
+  it('defaults to compact when nothing is stored', () => {
+    // Compact is the default read, so an unset store resolves to compact.
+    setDensity('compact')
+    localStorage.clear()
+    expect(readStoredDensity()).toBeNull()
+    expect(getDensity()).toBe('compact')
   })
 
-  it('reflects a set compact value in getDensity()', () => {
-    setDensity('compact')
-    expect(getDensity()).toBe('compact')
+  it('reflects a set comfortable value in getDensity()', () => {
+    setDensity('comfortable')
+    expect(getDensity()).toBe('comfortable')
   })
 })
 

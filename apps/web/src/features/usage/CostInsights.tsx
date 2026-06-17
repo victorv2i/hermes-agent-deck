@@ -1,18 +1,18 @@
 /**
- * CostInsights — the cost-first half of the Usage surface (the cockpit's
+ * CostInsights – the cost-first half of the Usage surface (the cockpit's
  * deep-dive). Three calm, newcomer-legible blocks, NOT a wall of charts:
  *
- *   1. SPEND TREND — a per-day spend line with a dashed rolling daily-average
+ *   1. SPEND TREND – a per-day spend line with a dashed rolling daily-average
  *      reference, so "is today unusually expensive?" is answerable at a glance.
- *   2. COST SHARE BY MODEL — models ordered by spend, each with its share of the
+ *   2. COST SHARE BY MODEL – models ordered by spend, each with its share of the
  *      bill, so the expensive model is obvious.
- *   3. EFFICIENCY NUDGE — a gentle, optional info note, shown ONLY when spend is
+ *   3. EFFICIENCY NUDGE – a gentle, optional info note, shown ONLY when spend is
  *      non-trivial AND one model dominates the bill ("Most spend is Opus on
- *      routine tasks — try Sonnet"). Calm, dismissible-by-ignoring, never nagging.
+ *      routine tasks – try Sonnet"). Calm, dismissible-by-ignoring, never nagging.
  *
  * Accent governance: spend magnitude bars/line use the semantic teal chart token
  * (decorative magnitude, not an action), the average reference is a quiet dashed
- * line, and the nudge is an INFO note — amber stays reserved for live action /
+ * line, and the nudge is an INFO note – the action accent stays reserved for live action /
  * the budget-crossed state, never spent here.
  */
 import { useMemo } from 'react'
@@ -44,7 +44,7 @@ export interface CostInsightsProps {
   billingMode?: UsageBillingMode
 }
 
-/** Below this total spend we stay quiet — no efficiency nudge on pocket change. */
+/** Below this total spend we stay quiet – no efficiency nudge on pocket change. */
 const NUDGE_MIN_SPEND = 1
 /** A cheaper alternative to suggest when the named model dominates the bill. */
 const CHEAPER_HINT: Record<string, string> = {
@@ -105,11 +105,11 @@ export function CostInsights({
 
 /**
  * The subscription stand-in for the spend trend: work happened (tokens flowed)
- * but a flat subscription — not a per-call meter — covers it, so there's no
+ * but a flat subscription – not a per-call meter – covers it, so there's no
  * dollar line to draw. We make the honest TOKEN total the headline and say
  * plainly that it's included in the subscription, rather than the misleading
  * "No spend recorded" / "$0 billed". Tokens are decorative magnitude, not an
- * action, so this stays on neutral foreground type — no --primary, no amber.
+ * action, so this stays on neutral foreground type – no --primary, no accent.
  */
 function PlanUsageCard({
   tokens,
@@ -164,7 +164,7 @@ function SpendTrend({ daily, average }: { daily: UsageDailyPoint[]; average: num
   const HEIGHT = 120
   const avgY = HEIGHT - (average / max) * HEIGHT
   const avgLabel = formatCost(average)
-  // Indexes that get an x-axis label — first, last, and a midpoint — so a 30-day
+  // Indexes that get an x-axis label – first, last, and a midpoint – so a 30-day
   // window stays uncrowded.
   const lastIdx = points.length - 1
   const midIdx = Math.floor(lastIdx / 2)
@@ -226,7 +226,7 @@ function SpendTrend({ daily, average }: { daily: UsageDailyPoint[]; average: num
   )
 }
 
-/** Cost share by model — ordered by spend, each row showing its % of the bill. */
+/** Cost share by model – ordered by spend, each row showing its % of the bill. */
 function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
   return (
     <Card className="ad-raised">
@@ -245,7 +245,7 @@ function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
                     {m.model}
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    <span className="text-foreground">{cost ?? '—'}</span>
+                    <span className="text-foreground">{cost ?? '–'}</span>
                     <span className="mx-1.5 text-border-strong">·</span>
                     {pct}% of spend
                   </span>
@@ -265,7 +265,7 @@ function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
   )
 }
 
-/** The gentle efficiency note. Calm INFO styling — informative, not alarming. */
+/** The gentle efficiency note. Calm INFO styling – informative, not alarming. */
 function EfficiencyNudge({ model, share }: { model: string; share: number }) {
   const pct = Math.round(share * 100)
   const alt = cheaperAlternative(model)

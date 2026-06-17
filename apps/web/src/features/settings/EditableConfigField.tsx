@@ -23,7 +23,7 @@ import type { SettingsField } from './types'
  * succeed. A failed write keeps the editor open with a specific message rather
  * than silently swallowing the error.
  *
- * Design: the Save action is the one place amber (the action accent) is allowed
+ * Design: the Save action is the one place the sky-blue action accent is allowed
  * on this surface; Edit/Cancel are quiet. ≤300ms, no glassmorphism, AA.
  */
 export function EditableConfigField({ field }: { field: SettingsField }) {

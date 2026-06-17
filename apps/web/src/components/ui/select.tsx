@@ -10,7 +10,7 @@ export type SelectProps = React.ComponentProps<'select'>
  * surface, the canonical `.ad-focus` ring) with a neutral chevron. Extracted
  * from the hand-rolled `SELECT_CLASS` copies in the Voice / Models surfaces so
  * every dropdown looks and focuses identically. Pass `<option>`s as children.
- * The amber `--primary` is never used here — choosing a value is not an action.
+ * The sky-blue `--primary` is never used here — choosing a value is not an action.
  */
 export function Select({ className, children, ...props }: SelectProps) {
   return (

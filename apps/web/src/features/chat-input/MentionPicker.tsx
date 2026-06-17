@@ -12,7 +12,7 @@
  * readable reference (e.g. `@src/index.ts`) that the agent resolves with its own
  * file tools.
  *
- * Token-driven, all themes; amber is reserved for the active row only. a11y: a
+ * Token-driven, all themes; the sky-blue accent is reserved for the active row only. a11y: a
  * labelled listbox with roving `aria-selected`. LOCAL-ONLY.
  */
 import { useEffect, useRef, useState } from 'react'

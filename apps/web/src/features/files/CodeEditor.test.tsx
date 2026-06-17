@@ -11,6 +11,7 @@ interface KeyBinding {
 const cm = vi.hoisted(() => ({
   keymapOf: vi.fn((bindings: KeyBinding[]) => ({ kind: 'keymap', bindings })),
   precHigh: vi.fn((extension: unknown) => ({ kind: 'high', extension })),
+  precHighest: vi.fn((extension: unknown) => ({ kind: 'highest', extension })),
   props: [] as Array<{ extensions: unknown[]; readOnly?: boolean }>,
 }))
 
@@ -24,7 +25,7 @@ vi.mock('@uiw/react-codemirror', () => ({
     lineWrapping: { kind: 'lineWrapping' },
   },
   keymap: { of: cm.keymapOf },
-  Prec: { high: cm.precHigh },
+  Prec: { high: cm.precHigh, highest: cm.precHighest },
 }))
 
 vi.mock('@/components/theme/theme-context', () => ({

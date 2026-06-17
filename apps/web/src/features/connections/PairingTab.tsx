@@ -193,8 +193,12 @@ export function PairingTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Initial load: a calm skeleton (matching the other surfaces) instead of
+          a blank body until the first read settles. */}
+      {!unsupported && isLoading && <PairingSkeleton />}
+
       {/* Pending requests */}
-      {!unsupported && (
+      {!unsupported && !isLoading && (
         <section className="mb-8" aria-labelledby="pending-heading">
           <h2
             id="pending-heading"
@@ -204,7 +208,7 @@ export function PairingTab() {
             Pending requests ({pending.length})
           </h2>
 
-          {pending.length === 0 && !isLoading ? (
+          {pending.length === 0 ? (
             <EmptyState
               icon={Users}
               title="No pending requests"
@@ -257,7 +261,7 @@ export function PairingTab() {
       )}
 
       {/* Approved users */}
-      {!unsupported && (
+      {!unsupported && !isLoading && (
         <section aria-labelledby="approved-heading">
           <h2
             id="approved-heading"
@@ -267,7 +271,7 @@ export function PairingTab() {
             Approved users ({approved.length})
           </h2>
 
-          {approved.length === 0 && !isLoading ? (
+          {approved.length === 0 ? (
             <EmptyState
               icon={ShieldCheck}
               title="No approved users"
@@ -304,6 +308,25 @@ export function PairingTab() {
           </ul>
         </section>
       )}
+    </div>
+  )
+}
+
+/** Initial-load placeholder using the same calm shimmer-card vocabulary the
+ *  other surfaces use (Jobs/Files), so a first load reads as "loading" not a
+ *  blank body. Decorative (aria-hidden rows) under a polite status label. */
+function PairingSkeleton() {
+  return (
+    <div role="status" aria-live="polite" data-testid="pairing-skeleton">
+      <span className="sr-only">Loading pairing</span>
+      <div className="flex flex-col gap-2" aria-hidden>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="ad-surface ad-raised h-[68px] animate-pulse rounded-xl bg-surface-2/60 motion-reduce:animate-none"
+          />
+        ))}
+      </div>
     </div>
   )
 }

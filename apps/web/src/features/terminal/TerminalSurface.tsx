@@ -408,7 +408,7 @@ function SwitcherBar({
       : (workspaces.find((w) => w.id === selectedId)?.name ?? 'Workspace')
 
   return (
-    <div className="flex items-center gap-2 border-b border-border bg-surface-1 px-2.5 py-1.5">
+    <div className="flex items-center gap-2 border-b border-border px-4 py-1.5 sm:px-6">
       {phone ? (
         <WorkspaceDropdown
           selectedId={selectedId}

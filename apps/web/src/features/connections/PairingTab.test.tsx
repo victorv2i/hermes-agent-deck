@@ -20,6 +20,23 @@ function renderTab() {
   )
 }
 
+describe('PairingTab loading', () => {
+  it('shows a calm skeleton (not a blank body) while the first read is in flight', () => {
+    // A fetch that never resolves keeps the query in its loading state.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {})),
+    )
+    renderTab()
+
+    expect(screen.getByTestId('pairing-skeleton')).toBeInTheDocument()
+    // No empty state leaks while still loading (that would falsely read as
+    // "nothing here" before the request settles).
+    expect(screen.queryByText(/No pending requests/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/No approved users/i)).not.toBeInTheDocument()
+  })
+})
+
 describe('PairingTab — version-skew handling', () => {
   it('renders an honest "not available on this Hermes version" state on a 404, not a generic error', async () => {
     // The BFF preserves an upstream 404 as { error: 'unsupported' } so an ABSENT

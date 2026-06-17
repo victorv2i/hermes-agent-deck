@@ -12,7 +12,7 @@ const model = (over: Partial<UsageModelBreakdown> = {}): UsageModelBreakdown => 
   ...over,
 })
 
-describe('ProviderBreakdown — per-provider rollup view', () => {
+describe('ProviderBreakdown – per-provider rollup view', () => {
   it('shows one row per provider with a brand mark and share %', () => {
     render(
       <ProviderBreakdown

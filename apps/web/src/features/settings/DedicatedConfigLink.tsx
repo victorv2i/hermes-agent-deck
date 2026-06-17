@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card'
  *
  * No editor here (read-only marker, no fake control); the only affordance is the
  * link out. Neutral glyph tile (identity/decoration is never the accent); the
- * governed amber is reserved for focus rings.
+ * governed sky-blue accent is reserved for focus rings.
  */
 export function DedicatedConfigLink({
   icon: Icon,

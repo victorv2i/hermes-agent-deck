@@ -252,11 +252,11 @@ describe('TerminalSocket', () => {
   it('forwards a foreign attach target in terminal.start (never with a sessionId)', () => {
     const fake = new FakeSocket()
     const t = new TerminalSocket({ onData: vi.fn() }, { socket: fake })
-    t.start({ cols: 80, rows: 24, attach: 'victors_own' })
+    t.start({ cols: 80, rows: 24, attach: 'my_session' })
     t.connect()
     const starts = fake.emitsFor('terminal.start')
     expect(starts).toHaveLength(1)
-    expect(starts[0]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'victors_own' })
+    expect(starts[0]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'my_session' })
   })
 
   it('RE-STARTS to reattach on reconnect for a foreign attach session', () => {
@@ -265,13 +265,13 @@ describe('TerminalSocket', () => {
     const onReconnectDropped = vi.fn()
     const fake = new FakeSocket()
     const t = new TerminalSocket({ onData: vi.fn(), onReconnectDropped }, { socket: fake })
-    t.start({ cols: 80, rows: 24, attach: 'victors_own' })
+    t.start({ cols: 80, rows: 24, attach: 'my_session' })
     t.connect()
     fake.disconnect()
     fake.connect()
     const starts = fake.emitsFor('terminal.start')
     expect(starts).toHaveLength(2)
-    expect(starts[1]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'victors_own' })
+    expect(starts[1]!.args[0]).toEqual({ cols: 80, rows: 24, attach: 'my_session' })
     expect(onReconnectDropped).not.toHaveBeenCalled()
   })
 

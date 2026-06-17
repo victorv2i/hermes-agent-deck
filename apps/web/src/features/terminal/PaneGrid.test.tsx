@@ -285,10 +285,10 @@ describe('PaneGrid per-pane cwd', () => {
     let s = emptyWorkspace('w1', 'Alpha')
     s = addPane(s, 'shell')
     const paneId = s.panes[0]!.id
-    s = setPaneCwd(s, paneId, '/home/wonny/Projects')
+    s = setPaneCwd(s, paneId, '/home/operator/Projects')
     render(<Harness initial={s} viewComponent={RecordingStub} />)
     expect(mounts).toHaveLength(1)
-    expect(mounts[0]!.cwd).toBe('/home/wonny/Projects')
+    expect(mounts[0]!.cwd).toBe('/home/operator/Projects')
     // The deterministic sessionId is also forwarded alongside the cwd.
     expect(mounts[0]!.sessionId).toBe(`ws_w1_${paneId}`)
   })
@@ -401,15 +401,15 @@ describe('PaneGrid persistence + honest close/restart', () => {
   it('a FOREIGN attach tab detaches (never a kill confirm), labeled honestly', () => {
     const s: WorkspaceState = {
       ...emptyWorkspace('w1', 'Scratch', 'tab'),
-      panes: [{ id: 'p1', label: 'victors_own', attach: 'victors_own', epoch: 0 }],
+      panes: [{ id: 'p1', label: 'my_session', attach: 'my_session', epoch: 0 }],
       activePane: 'p1',
     }
     render(<Harness initial={s} viewComponent={persistenceStub(true)} />)
-    const tab = screen.getByRole('tab', { name: /victors_own/i })
-    const detach = within(tab).getByRole('button', { name: /detach victors_own/i })
+    const tab = screen.getByRole('tab', { name: /my_session/i })
+    const detach = within(tab).getByRole('button', { name: /detach my_session/i })
     fireEvent.click(detach)
     expect(screen.queryByText(/ends the persistent shell/i)).toBeNull()
-    expect(closeCalls).toEqual(['victors_own'])
+    expect(closeCalls).toEqual(['my_session'])
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
   })
 
@@ -447,7 +447,7 @@ describe('PaneGrid persistence + honest close/restart', () => {
   it("restarting a FOREIGN attach tab never kills the user's own session", () => {
     const s: WorkspaceState = {
       ...emptyWorkspace('w1', 'Scratch', 'grid'),
-      panes: [{ id: 'p1', label: 'victors_own', attach: 'victors_own', epoch: 0 }],
+      panes: [{ id: 'p1', label: 'my_session', attach: 'my_session', epoch: 0 }],
       activePane: 'p1',
     }
     render(<Harness initial={s} viewComponent={persistenceStub(true)} />)

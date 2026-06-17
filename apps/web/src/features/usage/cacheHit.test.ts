@@ -8,12 +8,12 @@ describe('cacheHitRatio', () => {
   })
 
   it('returns null (honest empty) when there is no prompt-side usage at all', () => {
-    // No input and no cache → divide-by-zero → null, the "—" empty state.
+    // No input and no cache → divide-by-zero → null, the "–" empty state.
     expect(cacheHitRatio({ cacheReadTokens: 0, inputTokens: 0 })).toBeNull()
   })
 
   it('returns a real 0 when input exists but nothing was a cache hit', () => {
-    // 0% is a genuine, measurable answer — NOT the empty state.
+    // 0% is a genuine, measurable answer – NOT the empty state.
     expect(cacheHitRatio({ cacheReadTokens: 0, inputTokens: 5000 })).toBe(0)
   })
 
@@ -34,8 +34,8 @@ describe('formatCacheHitPct', () => {
     expect(formatCacheHitPct(1)).toBe('100%')
   })
 
-  it('renders "—" for the null empty state', () => {
-    expect(formatCacheHitPct(null)).toBe('—')
+  it('renders "–" for the null empty state', () => {
+    expect(formatCacheHitPct(null)).toBe('–')
   })
 
   it('clamps out-of-range ratios into 0..100%', () => {

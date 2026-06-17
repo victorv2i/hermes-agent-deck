@@ -85,7 +85,7 @@ describe('NewAgentDialog ceremony', () => {
     // A radiogroup of faces is present; the preview Avatar img reflects a built-in.
     expect(screen.getByRole('radiogroup', { name: /choose a face/i })).toBeInTheDocument()
     await user.type(screen.getByLabelText('Profile ID'), 'atlas')
-    // The preview face is one of the served built-in webps (an <img>, not amber svg).
+    // The preview face is one of the served built-in webps (an <img>, not sky-blue svg).
     const imgs = screen.getAllByRole('img', { hidden: true })
     expect(imgs.some((i) => (i as HTMLImageElement).src.includes('/avatars/'))).toBe(true)
   })

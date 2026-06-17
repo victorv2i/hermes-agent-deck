@@ -7,7 +7,7 @@
  * (running / completed / a normal `handoff_state: 'none'`) gets NO indicator —
  * we never clutter normal rows. Only an errored/failed session or a handed-off
  * session earns a subtle, accessible marker, and state is conveyed by
- * SHAPE/ICON + an aria-label/title (governed semantic color, never amber, and
+ * SHAPE/ICON + an aria-label/title (governed semantic color, never the action accent, and
  * never color alone — colorblind-safe).
  */
 

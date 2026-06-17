@@ -1,16 +1,16 @@
 /**
- * CacheHitTile — a single headline tile showing the prompt-cache hit rate, the
+ * CacheHitTile – a single headline tile showing the prompt-cache hit rate, the
  * fraction of prompt-side (input) tokens served from the provider cache rather
  * than freshly processed. Sits alongside the other Usage stat tiles and reuses
  * the shared {@link StatCard} primitive, so it inherits the neutral, AA-safe,
- * amber-free card vocabulary (the spine reserves amber for actions / live state,
- * never decoration — a ratio is not an active accent).
+ * accent-free card vocabulary (the spine reserves the sky-blue accent for actions / live state,
+ * never decoration – a ratio is not an active accent).
  *
  * Purely presentational: the ratio is computed from fields already present in
- * the usage response (`cacheReadTokens`, `inputTokens`) — no new fetch.
+ * the usage response (`cacheReadTokens`, `inputTokens`) – no new fetch.
  *
  * Honest empty state: when there is no prompt-side usage at all, the value reads
- * "—" (via the compute returning `null`), distinct from a genuine 0% (input
+ * "–" (via the compute returning `null`), distinct from a genuine 0% (input
  * existed but none was a cache hit).
  */
 import { DatabaseZap } from 'lucide-react'

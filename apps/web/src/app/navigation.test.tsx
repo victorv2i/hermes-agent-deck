@@ -14,6 +14,7 @@ import {
   NAV_GROUPS,
   NAV_GROUP_LABELS,
   CHAT_PATH,
+  flatNavItems,
   navByGroup,
   pinnedNavItems,
   pinnedTopNavItems,
@@ -26,7 +27,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 describe('NAV registry', () => {
   it('mounts the Agent Studio (Home) at the index path as a STANDALONE top item', () => {
     const studio = NAV.find((i) => i.key === 'studio')!
-    expect(studio.label).toBe('Agent Studio')
+    expect(studio.label).toBe('Home')
     expect(studio.path).toBe('/')
     expect(studio.hidden).toBeUndefined()
     // The Studio floats ABOVE the grouped nav as a pinned-top standalone item.
@@ -48,6 +49,17 @@ describe('NAV registry', () => {
     expect(chat.hidden).toBeUndefined()
   })
 
+  it('promotes Terminal to a pinned-top item immediately UNDER Chat', () => {
+    const terminal = NAV.find((i) => i.key === 'terminal')!
+    expect(terminal.label).toBe('Terminal')
+    expect(terminal.path).toBe('/terminal')
+    expect(terminal.pinnedTop).toBe(true)
+    expect(terminal.hidden).toBeUndefined()
+    // Registry order (which pinnedTop preserves) places it right after Chat, so the
+    // three leading destinations read Agent Studio · Chat · Terminal.
+    expect(pinnedTopNavItems().map((i) => i.key)).toEqual(['studio', 'chat', 'terminal'])
+  })
+
   it('keeps the History surface ROUTED but HIDDEN from the rail (folded into Chat)', () => {
     const history = NAV.find((i) => i.key === 'chats')!
     // The data term stays "session" + the stable key stays `chats`; the label +
@@ -60,16 +72,18 @@ describe('NAV registry', () => {
   })
 
   it('registers every integrated surface', () => {
+    // Terminal is PROMOTED to a pinned-top item right after Chat (registry order),
+    // and Connections is REMOVED from the registry entirely (it folded into the
+    // Studio as a global view; the `/connections` path redirects there).
     expect(NAV.map((i) => i.key)).toEqual([
       'studio',
       'chat',
+      'terminal',
       'chats',
       'sessions',
       'files',
       'jobs',
       'kanban',
-      'terminal',
-      'connections',
       'usage',
       'logs',
       'system',
@@ -95,12 +109,11 @@ describe('NAV registry', () => {
     expect(NAV.find((i) => i.key === 'voice')).toBeUndefined()
     expect(NAV.find((i) => i.key === 'messaging')).toBeUndefined()
     expect(NAV.find((i) => i.key === 'mcp')).toBeUndefined()
-    // Connections is a real routed rail surface, PROMOTED to the top-level "Your
-    // agent" group (its outward reach), out of Advanced.
-    const connections = NAV.find((i) => i.key === 'connections')!
-    expect(connections.path).toBe('/connections')
-    expect(connections.group).toBe('agent')
-    expect(connections.hidden).toBeUndefined()
+    // Connections is no longer a rail surface AT ALL — it folded into the Agent
+    // Studio (Home) as a GLOBAL view (`/?view=connections`), since those settings
+    // apply to every agent. The `/connections` path redirects there (router.tsx),
+    // so it's no longer a NAV entry.
+    expect(NAV.find((i) => i.key === 'connections')).toBeUndefined()
     // System is a VISIBLE Activity rail row again — it holds the recovery actions
     // (restart, updates, health), which must be findable from the rail exactly
     // when the agent is down. Being non-hidden also puts it back in the palette's
@@ -122,14 +135,34 @@ describe('NAV registry', () => {
     expect(grouped).not.toContain('usage')
   })
 
-  it('pins Agent Studio (Home) + Chat to the TOP of the rail as standalone items', () => {
+  it('pins Agent Studio (Home) + Chat + Terminal to the TOP as the leading items', () => {
     expect(NAV.find((i) => i.key === 'studio')?.pinnedTop).toBe(true)
     expect(NAV.find((i) => i.key === 'chat')?.pinnedTop).toBe(true)
-    expect(pinnedTopNavItems().map((i) => i.key)).toEqual(['studio', 'chat'])
-    // The grouped rail nav never re-lists the pinned-top Studio/Chat.
+    expect(NAV.find((i) => i.key === 'terminal')?.pinnedTop).toBe(true)
+    expect(pinnedTopNavItems().map((i) => i.key)).toEqual(['studio', 'chat', 'terminal'])
+    // The palette grouping never re-lists the pinned-top Studio/Chat/Terminal.
     const grouped = navByGroup().flatMap((g) => g.items.map((i) => i.key))
     expect(grouped).not.toContain('studio')
     expect(grouped).not.toContain('chat')
+    expect(grouped).not.toContain('terminal')
+  })
+
+  it('flatNavItems is one ordered list: pinned-top leads, then the rest, no pinned-bottom', () => {
+    // The rail's single ordering: Studio · Chat · Terminal (pinned-top), then the
+    // remaining grouped surfaces in registry order (Files · Tasks · Board ·
+    // System). Usage + Settings are pinned-bottom (excluded here); hidden surfaces
+    // (Sessions, Logs) never appear.
+    expect(flatNavItems().map((i) => i.key)).toEqual([
+      'studio',
+      'chat',
+      'terminal',
+      'files',
+      'jobs',
+      'kanban',
+      'system',
+    ])
+    // Connections is gone (folded into the Studio), so it's not in the rail list.
+    expect(flatNavItems().map((i) => i.key)).not.toContain('connections')
   })
 
   it('gives each group a friendly (non-jargon) header label', () => {
@@ -152,30 +185,21 @@ describe('NAV registry', () => {
     }
   })
 
-  it('navByGroup orders by NAV_GROUPS, drops empty + hidden + pinned + pinnedTop, preserves order', () => {
+  it('navByGroup (palette grouping) orders by NAV_GROUPS, drops empty + hidden + pinned + pinnedTop', () => {
     const grouped = navByGroup()
-    // Agent Studio (Home) + Chat are pinned-top; the Agents + Tools surfaces folded
-    // INTO the Studio, so the "Your agent" group is now just Connections (the
-    // outward reach). Files + Terminal in "Workspace"; History/Sessions/Logs
-    // hidden; Usage + Settings pinned-bottom.
-    // "Your agent" leads (the personalization core), then Workspace, then Activity.
-    expect(grouped.map((g) => g.group)).toEqual(['agent', 'workspace', 'activity'])
-    expect(grouped.map((g) => g.label)).toEqual(['Your agent', 'Workspace', 'Activity'])
-    // "Your agent" = the agent's outward reach (Connections); identity + tools live
-    // in the Studio (Home) now, not as separate rail rows.
-    expect(grouped.find((g) => g.group === 'agent')!.items.map((i) => i.key)).toEqual([
-      'connections',
-    ])
-    // Workspace = the daily work surfaces (Files, Terminal). Terminal is now the
-    // UNIFIED surface (Scratch + saved workspaces in one); the separate Workspaces
-    // rail entry was removed.
-    expect(grouped.find((g) => g.group === 'workspace')!.items.map((i) => i.key)).toEqual([
-      'files',
-      'terminal',
-    ])
+    // navByGroup now feeds ONLY the ⌘K palette's "Go to" sections (the rail is
+    // flat). The "Your agent" group is EMPTY now — Connections folded into the
+    // Studio as a global view, and identity/tools live in the Studio — so that
+    // group is dropped. Terminal is pinned-top (excluded). What remains: Workspace
+    // (Files) and Activity (Tasks · Board · System).
+    expect(grouped.map((g) => g.group)).toEqual(['workspace', 'activity'])
+    expect(grouped.map((g) => g.label)).toEqual(['Workspace', 'Activity'])
+    expect(grouped.find((g) => g.group === 'agent')).toBeUndefined()
+    // Workspace = the daily work surfaces; Terminal is pinned-top now, so only
+    // Files remains in the group.
+    expect(grouped.find((g) => g.group === 'workspace')!.items.map((i) => i.key)).toEqual(['files'])
     // Activity = the agent's ongoing work (Tasks, Board) plus the System recovery
-    // surface (after Board, just above the pinned bottom). Usage moved to the
-    // pinned-bottom cluster; hidden Logs excluded.
+    // surface. Usage moved to the pinned-bottom cluster; hidden Logs excluded.
     expect(grouped.find((g) => g.group === 'activity')!.items.map((i) => i.key)).toEqual([
       'jobs',
       'kanban',
@@ -187,7 +211,7 @@ describe('NAV registry', () => {
   })
 
   it('surfaceTitle resolves the friendly active-surface name from a pathname', () => {
-    expect(surfaceTitle('/')).toBe('Agent Studio')
+    expect(surfaceTitle('/')).toBe('Home')
     expect(surfaceTitle('/chat')).toBe('Chat')
     expect(surfaceTitle('/history')).toBe('History')
     expect(surfaceTitle('/files')).toBe('Files')
@@ -195,9 +219,11 @@ describe('NAV registry', () => {
     // System (a rail row) and the demoted Logs both resolve their friendly titles.
     expect(surfaceTitle('/system')).toBe('System')
     expect(surfaceTitle('/logs')).toBe('Logs')
-    // The folded Connections surface resolves its title; Voice/Messaging/MCP now
-    // redirect here, so the live path the header reads is always /connections.
-    expect(surfaceTitle('/connections')).toBe('Connections')
+    // Connections folded into the Studio as a global view (`/connections`
+    // redirects to `/?view=connections`), so `/connections` is no longer a
+    // resolvable surface title — a visit redirects to '/' before the header reads
+    // it (the index resolves to "Agent Studio").
+    expect(surfaceTitle('/connections')).toBeNull()
     // Tools + the Agents roster/hub folded into the Studio (their paths redirect
     // to '/' via router.tsx), so they are no longer resolvable surface titles —
     // a visit redirects before the header ever reads the old path.

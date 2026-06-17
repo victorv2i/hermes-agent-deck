@@ -3,6 +3,7 @@ import App from '@/App'
 import { NotFound } from '@/components/system/NotFound'
 import { CHAT_PATH, NAV } from './navigation'
 import { ProfileNameRedirect } from './ProfileNameRedirect'
+import { ConnectionsRedirect } from './ConnectionsRedirect'
 
 // The unified Terminal surface element (from its NAV entry), reused for the
 // `/workspaces` + `/workspaces/:id` aliases below so all three paths render ONE
@@ -26,10 +27,14 @@ const terminalElement = NAV.find((item) => item.key === 'terminal')?.element
  *  - `/tools` → `/` REDIRECT: the Tools surface became a Studio section.
  *  - `/memory` → `/` + `/skills` → `/` REDIRECTS: the standalone Memory/Soul +
  *    Skills surfaces folded into the agent's authoring surface (now the Studio).
- *  - `/voice` · `/messaging` · `/mcp` → `/connections?tab=…` REDIRECTS: those three
- *    surfaces folded into the ONE tabbed Connections surface, so the old paths
- *    redirect to the matching tab — deep-links + Settings' "Configured on the X
- *    page →" links still land on the right place.
+ *  - `/connections` → `/?view=connections` REDIRECT: Connections folded INTO the
+ *    Agent Studio (Home) as a GLOBAL view (those settings apply to ALL agents, so
+ *    it's a Studio-level view switch, not a per-agent tab). The old rail path
+ *    forwards to the Studio with its Connections view active.
+ *  - `/voice` · `/messaging` · `/mcp` → `/?view=connections&tab=…` REDIRECTS: those
+ *    three surfaces folded into the embedded Connections view, so the old paths
+ *    redirect to the Studio's Connections view on the matching sub-tab — deep-links
+ *    + Settings' "Configured on the X page →" links still land on the right place.
  *  - `/models` → `/settings` REDIRECT: the standalone Models page was demoted to a
  *    Settings section (model picker lives there now), so old links still land.
  *  - the catch-all `*` renders {@link NotFound} inside the shell, so an unknown
@@ -70,10 +75,17 @@ export const routes: RouteObject[] = [
       // folded into the agent's authoring surface, which is now the Studio (Home).
       { path: 'memory', element: <Navigate to="/" replace /> },
       { path: 'skills', element: <Navigate to="/" replace /> },
-      // Folded into the tabbed Connections surface — redirect to the right tab.
-      { path: 'voice', element: <Navigate to="/connections?tab=voice" replace /> },
-      { path: 'messaging', element: <Navigate to="/connections?tab=messaging" replace /> },
-      { path: 'mcp', element: <Navigate to="/connections?tab=mcp" replace /> },
+      // Connections folded INTO the Agent Studio (Home) as a GLOBAL view — redirect
+      // the old rail path to the Studio with its Connections view active, FORWARDING
+      // any `?tab=` deep link (pairing/webhooks/credentials have no other path alias)
+      // instead of dropping it and always landing on the default Voice tab.
+      { path: 'connections', element: <ConnectionsRedirect /> },
+      // Voice/Messaging/MCP fold into the embedded Connections view — redirect to
+      // the Studio's Connections view on the matching sub-tab (the embedded
+      // ConnectionsRoute reads `?tab=`).
+      { path: 'voice', element: <Navigate to="/?view=connections&tab=voice" replace /> },
+      { path: 'messaging', element: <Navigate to="/?view=connections&tab=messaging" replace /> },
+      { path: 'mcp', element: <Navigate to="/?view=connections&tab=mcp" replace /> },
       // Demoted from a rail surface to a Settings section — keep the deep-link alive.
       { path: 'models', element: <Navigate to="/settings" replace /> },
       { path: '*', element: <NotFound /> },

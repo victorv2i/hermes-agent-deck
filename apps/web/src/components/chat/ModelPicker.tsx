@@ -50,7 +50,13 @@ export function ModelPicker({
   if (models.length === 0) return null
 
   const selected = models.find((m) => m.qualifiedId === value) ?? null
-  const triggerLabel = labelFor(selected) ?? (value ? shortId(value) : 'Model')
+  // Strip the redundant `provider/` prefix (the brand mark already carries the
+  // vendor) so the chip + rows show the model NAME, not a clipped qualified id.
+  const triggerLabel = selected
+    ? shortId(labelFor(selected) ?? selected.id)
+    : value
+      ? shortId(value)
+      : 'Model'
   // The trigger chip's brand mark: infer vendor from the selected model id
   const triggerVendor = selected ? vendorFromModel(selected.id) : ''
 
@@ -62,7 +68,7 @@ export function ModelPicker({
           data-testid="model-picker-trigger"
           aria-label={`Model: ${triggerLabel}. Change model`}
           className={cn(
-            'inline-flex h-11 max-w-[200px] items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground focus-visible:ad-focus aria-expanded:text-foreground sm:h-10',
+            'inline-flex h-11 max-w-[200px] items-center gap-1.5 rounded-md border border-border bg-surface-2 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground focus-visible:ad-focus aria-expanded:text-foreground sm:h-10',
             className,
           )}
         >
@@ -72,7 +78,7 @@ export function ModelPicker({
               <ProviderBrandIcon provider={triggerVendor} size={13} />
             </span>
           )}
-          <span className="truncate">{triggerLabel}</span>
+          <span className="min-w-0 truncate">{triggerLabel}</span>
           <ChevronDown className="size-3 shrink-0 opacity-70" aria-hidden />
         </button>
       </Popover.Trigger>
@@ -81,7 +87,7 @@ export function ModelPicker({
           align="end"
           side="top"
           sideOffset={8}
-          className="ad-surface z-50 max-h-[min(60vh,320px)] w-[var(--radix-popover-trigger-width)] min-w-[200px] overflow-y-auto rounded-xl bg-popover p-1 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="ad-surface z-50 max-h-[min(60vh,320px)] w-max min-w-[220px] max-w-[min(92vw,440px)] overflow-y-auto rounded-xl bg-popover p-1 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           <div role="listbox" aria-label="Select a model" className="flex flex-col gap-0.5">
             {models.map((m) => {
@@ -106,7 +112,7 @@ export function ModelPicker({
                     setOpen(false)
                   }}
                   className={cn(
-                    'flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 transition-colors focus-visible:ad-focus sm:min-h-10',
+                    'flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors focus-visible:ad-focus sm:min-h-10',
                     locked
                       ? 'cursor-not-allowed text-foreground-tertiary'
                       : isSelected
@@ -125,7 +131,7 @@ export function ModelPicker({
                   >
                     <ProviderBrandIcon provider={vendor} size={13} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{labelFor(m) ?? shortId(m.id)}</span>
+                  <span className="min-w-0 flex-1 truncate">{shortId(labelFor(m) ?? m.id)}</span>
                   {hint ? (
                     <span className="shrink-0 text-[11px] text-foreground-tertiary">{hint}</span>
                   ) : (

@@ -7,7 +7,7 @@ import { PROJECT_COLORS, DEFAULT_PROJECT_COLOR, projectColorVar } from './projec
 /**
  * The "+ New project" form: a name input + a color picker drawn from the curated
  * categorical palette. Submits `{ name, color }` to the caller (which fires the
- * create mutation). Deliberately quiet — no amber chrome until the primary
+ * create mutation). Deliberately quiet — no sky-blue chrome until the primary
  * "Create" action. The color swatches are a labelled radiogroup so the picker is
  * fully keyboard + screen-reader navigable.
  */

@@ -34,7 +34,7 @@ export function DmAuthPanel() {
             approve a request. There&apos;s no auto-approve on purpose.
           </p>
           <Button asChild variant="outline" size="sm" className="self-start">
-            <Link to="/connections?tab=pairing">
+            <Link to="/?view=connections&tab=pairing">
               <Shield aria-hidden />
               Open the Pairing tab
             </Link>

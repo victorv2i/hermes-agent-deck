@@ -487,6 +487,111 @@ describe('POST /api/agent-deck/profiles/:name/rename', () => {
 })
 
 /**
+ * Delete — DELETE /api/agent-deck/profiles/:name. The :name is canonicalized +
+ * PROFILE_ID_RE-validated BEFORE any exec; `default` and the ACTIVE agent are
+ * refused before exec; the guarded `hermes profile delete <name> --yes` runs as
+ * argv (never a shell). An honest CLI failure → 502 with a generic message.
+ */
+describe('DELETE /api/agent-deck/profiles/:name', () => {
+  async function mountWithExec(exec: ExecFileLike): Promise<FastifyInstance> {
+    const a = Fastify({ logger: false })
+    await a.register(profilesRoutes, { hermesHome: home, hermesBin: 'hermes', execFile: exec })
+    await a.ready()
+    return a
+  }
+
+  it('execs `hermes profile delete <name> --yes` with argv (no shell) and returns ok', async () => {
+    mkdirSync(join(home, 'profiles', 'atlas'), { recursive: true })
+    const calls: Array<{ args: string[]; opts: Record<string, unknown> }> = []
+    const exec: ExecFileLike = (_file, args, opts, cb) => {
+      calls.push({ args, opts: opts as Record<string, unknown> })
+      rmSync(join(home, 'profiles', args[2]!), { recursive: true, force: true })
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/atlas' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toMatchObject({ ok: true })
+    expect(calls[0]!.args).toEqual(['profile', 'delete', 'atlas', '--yes'])
+    expect(calls[0]!.opts.shell ?? false).toBeFalsy()
+    await a.close()
+  })
+
+  it('canonicalizes a mixed-case name before exec', async () => {
+    mkdirSync(join(home, 'profiles', 'atlas'), { recursive: true })
+    const calls: string[][] = []
+    const exec: ExecFileLike = (_file, args, _opts, cb) => {
+      calls.push(args)
+      cb(null, 'ok', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/Atlas' })
+    expect(res.statusCode).toBe(200)
+    expect(calls[0]).toEqual(['profile', 'delete', 'atlas', '--yes'])
+    await a.close()
+  })
+
+  it('rejects deleting default with 400 BEFORE any exec', async () => {
+    let execCalls = 0
+    const exec: ExecFileLike = (_file, _args, _opts, cb) => {
+      execCalls += 1
+      cb(null, '', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/default' })
+    expect(res.statusCode).toBe(400)
+    expect(execCalls).toBe(0)
+    await a.close()
+  })
+
+  it('refuses to delete the ACTIVE agent with 409 BEFORE any exec', async () => {
+    mkdirSync(join(home, 'profiles', 'atlas'), { recursive: true })
+    writeFileSync(join(home, 'active_profile'), 'atlas\n')
+    let execCalls = 0
+    const exec: ExecFileLike = (_file, _args, _opts, cb) => {
+      execCalls += 1
+      cb(null, '', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/atlas' })
+    expect(res.statusCode).toBe(409)
+    expect(execCalls).toBe(0)
+    await a.close()
+  })
+
+  it('rejects an invalid name with 403 BEFORE any exec (path guard)', async () => {
+    let execCalls = 0
+    const exec: ExecFileLike = (_file, _args, _opts, cb) => {
+      execCalls += 1
+      cb(null, '', '')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/..%2f..%2fetc' })
+    expect([403, 404]).toContain(res.statusCode)
+    expect(execCalls).toBe(0)
+    await a.close()
+  })
+
+  it('returns 502 and does not leak raw stderr when the CLI delete fails', async () => {
+    mkdirSync(join(home, 'profiles', 'atlas'), { recursive: true })
+    const exec: ExecFileLike = (_file, _args, _opts, cb) => {
+      cb(Object.assign(new Error('nope'), { code: 1 }), '', '/home/secret/path leaked')
+      return undefined as never
+    }
+    const a = await mountWithExec(exec)
+    const res = await a.inject({ method: 'DELETE', url: '/api/agent-deck/profiles/atlas' })
+    expect(res.statusCode).toBe(502)
+    expect(res.payload).not.toContain('/home/secret/path')
+    await a.close()
+  })
+})
+
+/**
  * Avatar write — PUT /api/agent-deck/profiles/:name/avatar. Validates the avatar
  * id, path-guards the name, atomically writes .agent-deck/identity.json.
  */

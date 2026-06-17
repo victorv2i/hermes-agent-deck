@@ -71,7 +71,7 @@ describe('ProjectsSection', () => {
   })
 
   it('uses the CANONICAL amber active-row treatment for the selected row (matches the rail)', () => {
-    // The corrected docstring: selection reuses the amber tint + amber leading
+    // The corrected docstring: selection reuses the sky-blue tint + sky-blue leading
     // accent bar (the same pattern as the Sidebar nav + session rows), NOT a
     // "neutral-tint" treatment. Guards against the docstring drifting back.
     setup({ selectedProjectId: 'p1' })

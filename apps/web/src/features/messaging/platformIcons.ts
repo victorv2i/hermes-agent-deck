@@ -15,7 +15,7 @@ import {
  * the gateway's stable platform id (`telegram`, `discord`, …) to its mark and
  * answers "does this id have a real brand mark, or a neutral fallback?".
  *
- * Spine: brand logos are IDENTITY (their own brand colors), never the amber
+ * Spine: brand logos are IDENTITY (their own brand colors), never the sky-blue
  * `--primary` accent. Email/SMTP + unknown ids fall back to a neutral glyph rather
  * than a guessed/garbled mark.
  */

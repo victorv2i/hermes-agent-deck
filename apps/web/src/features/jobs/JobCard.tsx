@@ -84,7 +84,10 @@ export function JobCard({
             {job.paused ? (
               <Badge variant="muted">Paused</Badge>
             ) : (
-              <Badge variant="active">Active</Badge>
+              // A running job reads as a quiet semantic status (success tint), not
+              // a solid accent fill — the sky-blue accent stays reserved for the
+              // one real action per surface (the "New task" button).
+              <Badge variant="success">Active</Badge>
             )}
             {job.noAgent ? <Badge variant="secondary">Script</Badge> : null}
           </div>
@@ -255,7 +258,7 @@ export function JobCard({
             <dt>Total</dt>
             <dd className="text-foreground">{runsLabel(job)}</dd>
             <dt>Created</dt>
-            <dd className="text-foreground">{relativeTime(job.createdAt) ?? '—'}</dd>
+            <dd className="text-foreground">{relativeTime(job.createdAt) ?? '–'}</dd>
           </dl>
           <p className="mt-1.5 text-[11px] text-foreground-tertiary">
             Only the most recent run is available here.

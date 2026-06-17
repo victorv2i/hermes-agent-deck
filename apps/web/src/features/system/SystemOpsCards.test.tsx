@@ -31,7 +31,7 @@ describe('SystemStatsCard', () => {
     // The card renders the heading
     expect(screen.getByText(/system resources/i)).toBeInTheDocument()
     expect(screen.getByText('Linux')).toBeInTheDocument()
-    expect(screen.getByText('0.15.2')).toBeInTheDocument()
+    expect(screen.getByText('v0.15.2')).toBeInTheDocument()
     // Memory usage shows percentage
     expect(screen.getByText('50%')).toBeInTheDocument()
     // Uptime 2 days

@@ -1,6 +1,6 @@
 /**
  * A single log row. Monospace, dense, with level-colored emphasis (semantic
- * tokens only — never the amber action accent). The timestamp + logger stay
+ * tokens only — never the sky-blue action accent). The timestamp + logger stay
  * quiet; the level token and an error/warn message body carry the color so the
  * eye lands on problems first. Continuation/`unknown` lines render as a quiet
  * full-width line (no level chip) so multi-line tracebacks read as one block.

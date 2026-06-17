@@ -1,12 +1,12 @@
 /**
- * Subscription-vs-metered provider classifier — the authoritative billing signal
+ * Subscription-vs-metered provider classifier – the authoritative billing signal
  * the cost pair alone cannot give us.
  *
  * The /api/analytics/usage rollup only carries an estimated/actual cost pair; a
  * FLAT SUBSCRIPTION (e.g. a ChatGPT/Codex plan logged in via OAuth) has NO
  * per-call dollar amount, so under a subscription BOTH est and actual are $0.
  * Inferring billing mode from cost alone therefore mislabels a busy subscription
- * window as "local / no billed cost" — the exact bug this fixes.
+ * window as "local / no billed cost" – the exact bug this fixes.
  *
  * The active PROVIDER is the honest signal: a subscription/OAuth provider bills
  * by a flat plan (no metered key), so its usage is "included in your
@@ -15,7 +15,7 @@
  *
  * This is a curated allow-list, not a guess: only providers we KNOW are flat
  * subscription / OAuth seats are tagged `subscription`. Anything unknown returns
- * `false`, falling back to the cost-based inference — so we never invent a label.
+ * `false`, falling back to the cost-based inference – so we never invent a label.
  */
 
 /**
@@ -36,7 +36,7 @@ const SUBSCRIPTION_PROVIDER_SLUGS = [
 ] as const
 
 /**
- * True when the active provider is a known flat-subscription / OAuth provider —
+ * True when the active provider is a known flat-subscription / OAuth provider –
  * its tokens are "included in your subscription", not billed per call. Unknown
  * providers return `false` so the caller falls back to cost-based inference.
  */

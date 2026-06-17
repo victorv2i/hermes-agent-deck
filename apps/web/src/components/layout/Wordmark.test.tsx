@@ -28,7 +28,7 @@ describe('Wordmark', () => {
     const { container } = render(<BrandMark />)
     const img = container.querySelector('img')!
     // Unlike the former inline-SVG mark, the raster identity image does not follow
-    // the theme and never carries the amber accent (no text-primary / currentColor).
+    // the theme and never carries the sky-blue accent (no text-primary / currentColor).
     expect(img.className).not.toContain('text-primary')
   })
 

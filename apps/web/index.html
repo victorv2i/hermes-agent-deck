@@ -12,7 +12,7 @@
          bottom-anchored UI (composer, terminal) stays visible above it. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=yes, interactive-widget=resizes-content"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, interactive-widget=resizes-content"
     />
     <meta name="theme-color" content="#16181c" />
     <title>Agent Deck</title>
@@ -61,13 +61,17 @@
           document.documentElement.classList.add('dark')
           document.documentElement.setAttribute('data-theme', 'dark')
         }
-        // Apply the saved density before paint (compact only; comfortable is the
-        // attribute-less default) so there's no comfortable→compact flash.
+        // Apply the density before paint. Compact is the DEFAULT (dense pro-
+        // desktop read), so stamp data-density='compact' UNLESS the user has
+        // explicitly stored 'comfortable' (the airier opt-in, attribute-less).
+        // This mirrors density.ts so there's no flash on load.
         try {
-          if (localStorage.getItem('agent-deck-density') === 'compact') {
+          if (localStorage.getItem('agent-deck-density') !== 'comfortable') {
             document.documentElement.setAttribute('data-density', 'compact')
           }
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.setAttribute('data-density', 'compact')
+        }
         // Apply the saved palette before paint. 'clay-sky' is the default and
         // lives at the bare :root, so it carries NO attribute (clean DOM, no
         // default→saved flash). Only a valid NON-default palette stamps

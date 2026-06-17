@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ProfileSummary } from '@/features/profiles/types'
@@ -31,6 +32,9 @@ const ROSTER: ProfileSummary[] = [
 
 function base(): StudioPageProps {
   return {
+    view: 'agents',
+    onViewChange: vi.fn(),
+    connections: <div data-testid="stub-connections">connections surface</div>,
     profiles: ROSTER,
     loading: false,
     error: null,
@@ -43,6 +47,7 @@ function base(): StudioPageProps {
     onStartChat: vi.fn(),
     onNewAgent: vi.fn(),
     onCloneSelected: vi.fn(),
+    onImport: vi.fn(),
     onRetry: vi.fn(),
   }
 }
@@ -86,5 +91,44 @@ describe('StudioPage', () => {
     expect(screen.queryByTestId('stub-workbench')).not.toBeInTheDocument()
     // The roster's own empty state covers the "no agents" guidance.
     expect(screen.getByText(/no agents yet/i)).toBeInTheDocument()
+  })
+
+  it('reaches Connections from the launchpad action, NOT a top-level view switch', () => {
+    renderPage()
+    // The old [ Agents | Connections ] segmented control is gone.
+    expect(screen.queryByRole('tablist', { name: /studio view/i })).not.toBeInTheDocument()
+    // Connections is a quiet global action in the launchpad strip instead.
+    expect(screen.getByRole('button', { name: /connections/i })).toBeInTheDocument()
+  })
+
+  it('shows the hero + roster on the Agents view, NOT the embedded connections surface', () => {
+    renderPage()
+    // The roster/workbench are present, and the global connections surface is not.
+    expect(screen.getByTestId('studio-roster-card-mercury')).toBeInTheDocument()
+    expect(screen.queryByTestId('stub-connections')).not.toBeInTheDocument()
+  })
+
+  it('embeds the GLOBAL connections surface on the Connections view (roster hidden)', () => {
+    renderPage({ ...base(), view: 'connections' })
+    expect(screen.getByTestId('stub-connections')).toBeInTheDocument()
+    // The roster/workbench + launchpad are not rendered in the Connections view.
+    expect(screen.queryByTestId('studio-roster-card-mercury')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /start a chat/i })).not.toBeInTheDocument()
+    // An honest caption notes the global scope.
+    expect(screen.getByText(/apply to all your agents/i)).toBeInTheDocument()
+  })
+
+  it('opens the Connections view from the launchpad Connections button', async () => {
+    const onViewChange = vi.fn()
+    renderPage({ ...base(), onViewChange })
+    await userEvent.click(screen.getByRole('button', { name: /connections/i }))
+    expect(onViewChange).toHaveBeenCalledWith('connections')
+  })
+
+  it('returns to the Agents view from the Connections back link', async () => {
+    const onViewChange = vi.fn()
+    renderPage({ ...base(), view: 'connections', onViewChange })
+    await userEvent.click(screen.getByRole('button', { name: /^agent studio$/i }))
+    expect(onViewChange).toHaveBeenCalledWith('agents')
   })
 })

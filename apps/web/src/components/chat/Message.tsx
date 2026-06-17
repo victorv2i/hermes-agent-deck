@@ -22,7 +22,7 @@ import { ToolStatusChip } from './ToolStatusChip'
  *  - user: a soft surface card, right-aligned, max-width-constrained. Hovering
  *    reveals Copy + Edit (edit-and-resend trims later turns and re-runs, T1.4).
  *  - assistant: full-width prose via <Markdown>, with tool chips + a thinking
- *    disclosure. A pulsing amber caret trails the text while streaming. Hovering
+ *    disclosure. A pulsing sky-blue caret trails the text while streaming. Hovering
  *    a finished turn reveals Copy + Retry (re-run the prompting user turn, T1.4).
  * The hover meta row also shows a relative timestamp when known (T3.5).
  */
@@ -313,13 +313,13 @@ function UserMessage({
   const attachments = userAttachments(turn)
 
   return (
-    <div className="group/turn flex flex-col items-end gap-1 py-2.5">
+    <div className="group/turn flex flex-col items-end gap-1 py-1.5">
       {attachments.length > 0 && <UserAttachments attachments={attachments} />}
       {/* An image-only turn (text empty + an image attached) shows just the
           image — no empty text bubble. Any other turn (prose, or a degenerate
           empty turn with no image) keeps its bubble exactly as before. */}
       {(turn.content.length > 0 || attachments.length === 0) && (
-        <div className="ad-surface max-w-[85%] rounded-xl rounded-tr-md bg-surface-2 px-3.5 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap text-foreground">
+        <div className="ad-surface max-w-[85%] rounded-xl rounded-tr-md bg-surface-2 px-3.5 py-2 text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
           <HighlightText text={turn.content} query={highlightQuery} active={highlightActive} />
         </div>
       )}
@@ -428,7 +428,7 @@ function UserEditor({
   }
 
   return (
-    <div className="group/turn flex flex-col items-end gap-1.5 py-2.5">
+    <div className="group/turn flex flex-col items-end gap-1.5 py-1.5">
       <div className="ad-surface flex w-full max-w-[85%] flex-col gap-2 rounded-xl rounded-tr-md bg-surface-2 p-2.5">
         <textarea
           ref={ref}
@@ -444,7 +444,7 @@ function UserEditor({
               submit()
             }
           }}
-          className="max-h-[240px] w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none"
+          className="max-h-[240px] w-full resize-none bg-transparent text-[13px] leading-relaxed text-foreground outline-none"
         />
         <div className="flex items-center justify-end gap-1.5">
           <ActionButton onClick={onCancel} label="Cancel edit">
@@ -524,9 +524,9 @@ function AssistantMessage({
     showRefinement && !turn.streaming && hasText && Boolean(onSend) && Boolean(onRetry)
 
   return (
-    <div className="group/turn flex gap-2.5 py-2.5">
+    <div className="group/turn flex gap-2.5 py-1.5">
       {/* Identity gutter (A1): the agent's face, once per consecutive group. The
-          face is IDENTITY — never the amber accent (the Avatar primitive enforces
+          face is IDENTITY — never the sky-blue accent (the Avatar primitive enforces
           the `--border-strong` ring + neutral fallback). aria-hidden via the
           decorative Avatar; the live region still narrates "Assistant replied". */}
       {gutterAgent ? (

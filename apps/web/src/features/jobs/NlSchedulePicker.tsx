@@ -11,7 +11,7 @@
  * If the phrase isn't recognized it says so and the Apply button stays disabled —
  * the user falls back to the raw cron field below rather than getting a wrong guess.
  *
- * Design spine: amber lives ONLY on the primary "Use this schedule" action; the
+ * Design spine: the sky-blue accent lives ONLY on the primary "Use this schedule" action; the
  * parsed-cron chip + preview are neutral; the input is a ≥40px touch target with a
  * labelled, keyboard-reachable control and an aria-live region for the result.
  */

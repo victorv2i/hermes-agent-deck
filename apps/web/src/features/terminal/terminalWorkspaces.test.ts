@@ -183,8 +183,8 @@ describe('terminalWorkspaces reducers', () => {
   it('setPaneCwd sets and clears (blank/whitespace clears to undefined)', () => {
     let s = addPane(emptyWorkspace('w1', 'Build'), 'shell')
     const id = s.panes[0]!.id
-    s = setPaneCwd(s, id, '/home/wonny/Projects')
-    expect(s.panes[0]!.cwd).toBe('/home/wonny/Projects')
+    s = setPaneCwd(s, id, '/home/operator/Projects')
+    expect(s.panes[0]!.cwd).toBe('/home/operator/Projects')
     s = setPaneCwd(s, id, '   ')
     expect(s.panes[0]!.cwd).toBeUndefined()
   })
@@ -297,7 +297,7 @@ describe('fromDefinition / toPaneDefinitions (server is authoritative)', () => {
       name: 'Build',
       description: 'the build box',
       panes: [
-        { id: 'p1', label: 'editor', cli: 'shell', cwd: '/home/wonny' },
+        { id: 'p1', label: 'editor', cli: 'shell', cwd: '/home/operator' },
         { id: 'p2', label: 'agent', cli: 'hermes' },
       ],
       createdAt: '2026-06-14T00:00:00.000Z',
@@ -308,7 +308,7 @@ describe('fromDefinition / toPaneDefinitions (server is authoritative)', () => {
     expect(s.description).toBe('the build box')
     expect(s.panes.map((p) => p.id)).toEqual(['p1', 'p2'])
     expect(s.panes.every((p) => p.epoch === 0)).toBe(true)
-    expect(s.panes[0]!.cwd).toBe('/home/wonny')
+    expect(s.panes[0]!.cwd).toBe('/home/operator')
     expect(s.activePane).toBe('p1')
     expect(s.viewMode).toBe('tab')
   })
@@ -317,11 +317,11 @@ describe('fromDefinition / toPaneDefinitions (server is authoritative)', () => {
     const s = fromDefinition({
       id: 'w1',
       name: 'Build',
-      panes: [{ id: 'p1', label: 'foreign', attach: 'victors_own' }],
+      panes: [{ id: 'p1', label: 'foreign', attach: 'my_session' }],
       createdAt: '2026-06-14T00:00:00.000Z',
       lastModifiedAt: '2026-06-14T00:00:00.000Z',
     })
-    expect(s.panes[0]!.attach).toBe('victors_own')
+    expect(s.panes[0]!.attach).toBe('my_session')
     expect(s.panes[0]!.cli).toBeUndefined()
   })
 
@@ -339,11 +339,11 @@ describe('fromDefinition / toPaneDefinitions (server is authoritative)', () => {
 
   it('toPaneDefinitions serializes panes back for a PATCH (drops view-only fields)', () => {
     let s = addPane(emptyWorkspace('w1', 'Build'), 'hermes')
-    s = setPaneCwd(s, s.panes[0]!.id, '/home/wonny')
+    s = setPaneCwd(s, s.panes[0]!.id, '/home/operator')
     s = restartPane(s, s.panes[0]!.id)
     const defs = toPaneDefinitions(s)
     expect(defs).toEqual([
-      { id: s.panes[0]!.id, label: s.panes[0]!.label, cli: 'hermes', cwd: '/home/wonny' },
+      { id: s.panes[0]!.id, label: s.panes[0]!.label, cli: 'hermes', cwd: '/home/operator' },
     ])
     // epoch is a client-only restart counter, never persisted into the definition.
     expect(Object.prototype.hasOwnProperty.call(defs[0], 'epoch')).toBe(false)
@@ -354,8 +354,8 @@ describe('fromDefinition / toPaneDefinitions (server is authoritative)', () => {
       id: 'w1',
       name: 'Build',
       panes: [
-        { id: 'p1', label: 'editor', cli: 'shell' as const, cwd: '/home/wonny' },
-        { id: 'p2', label: 'foreign', attach: 'victors_own' },
+        { id: 'p1', label: 'editor', cli: 'shell' as const, cwd: '/home/operator' },
+        { id: 'p2', label: 'foreign', attach: 'my_session' },
       ],
       createdAt: '2026-06-14T00:00:00.000Z',
       lastModifiedAt: '2026-06-14T00:00:00.000Z',
@@ -447,10 +447,10 @@ describe('panesFromSessions (Save-promote)', () => {
   })
 
   it('promotes a foreign attach session to an attach pane (no cli)', () => {
-    const s = openAttachSession(emptySessions(), 'victors_own')
+    const s = openAttachSession(emptySessions(), 'my_session')
     const panes = panesFromSessions(s.sessions)
     expect(panes).toHaveLength(1)
-    expect(panes[0]!.attach).toBe('victors_own')
+    expect(panes[0]!.attach).toBe('my_session')
     expect(panes[0]!.cli).toBeUndefined()
   })
 

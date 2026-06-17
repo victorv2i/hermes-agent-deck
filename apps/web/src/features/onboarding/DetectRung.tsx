@@ -74,7 +74,7 @@ export function DetectRung({
           <div className="ad-surface rounded-md bg-surface-1 px-3 py-2.5 text-xs leading-relaxed text-foreground-tertiary">
             <p>
               This installs the Hermes agent runtime from NousResearch. It puts the{' '}
-              <code className="font-mono">hermes</code> command on your system &mdash; nothing else.{' '}
+              <code className="font-mono">hermes</code> command on your system. Nothing else.{' '}
               <a
                 href="https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh"
                 target="_blank"
@@ -87,7 +87,7 @@ export function DetectRung({
             </p>
             {isWindows() && (
               <p className="mt-1.5 font-medium text-foreground">
-                On Windows: WSL2 is required first &mdash;{' '}
+                On Windows: WSL2 is required first,{' '}
                 <a
                   href="https://learn.microsoft.com/windows/wsl/install"
                   target="_blank"
@@ -104,7 +104,7 @@ export function DetectRung({
           <CopyCommandCard command={HERMES_INSTALL_COMMAND} ariaLabel="Copy install command" />
 
           <p className="text-xs leading-relaxed text-foreground-tertiary">
-            Once running, this page updates automatically &mdash; you do not need to reload.
+            Once running, this page updates automatically. You do not need to reload.
           </p>
 
           {/* Collapsible terminal help for newcomers */}

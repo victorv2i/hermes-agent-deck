@@ -12,7 +12,7 @@
  * unfinished parents), the caller rolls the optimistic move back and toasts the
  * real reason — this control just dispatches.
  *
- * Amber is governed: the trigger is a muted ghost (never an amber fill); the
+ * The action accent is governed: the trigger is a muted ghost (never a sky-blue fill); the
  * checkmark on the current column is neutral. The trigger is touch-sized on
  * narrow screens and fully keyboard reachable (radix Popover gives focus +
  * arrow-key roving for free).

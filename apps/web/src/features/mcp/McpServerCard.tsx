@@ -172,13 +172,13 @@ export function McpServerCard({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Badges — the enabled flag is SEMANTIC (not the amber action accent)        */
+/* Badges — the enabled flag is SEMANTIC (not the sky-blue action accent)     */
 /* -------------------------------------------------------------------------- */
 
 /**
  * The ENABLED flag badge. Enabled = a SEMANTIC success chip ("Enabled"), which
  * means "this server is configured to load" — NOT "connected" (a connection
- * isn't persisted). Disabled = a quiet neutral chip. Never the amber accent.
+ * isn't persisted). Disabled = a quiet neutral chip. Never the sky-blue accent.
  */
 function EnabledBadge({ enabled }: { enabled: boolean }) {
   if (enabled) {

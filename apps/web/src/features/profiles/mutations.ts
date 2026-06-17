@@ -73,6 +73,17 @@ export function renameProfile(oldName: string, newName: string): Promise<{ name:
   return apiPost<{ name: string }>(`/profiles/${encodeURIComponent(oldName)}/rename`, { newName })
 }
 
+/**
+ * Delete an agent. Sends DELETE to the profile route; the BFF canonicalizes +
+ * validates the name, refuses `default` and the ACTIVE agent (409), then runs
+ * guarded `hermes profile delete <name> --yes` (argv, no shell). Irreversible (the
+ * profile dir with its soul, memory, and skills is removed), so the caller MUST
+ * confirm first. The name is path-encoded.
+ */
+export function deleteProfile(name: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/profiles/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}
+
 export function writeAvatar(
   name: string,
   avatar: AvatarId,
@@ -128,6 +139,20 @@ export function useRenameProfile() {
   return useMutation({
     mutationFn: ({ oldName, newName }: { oldName: string; newName: string }) =>
       renameProfile(oldName, newName),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: profileKeys.all })
+    },
+  })
+}
+
+/**
+ * Delete an agent; refetch the roster so the removed agent's card disappears. The
+ * deleted agent's workbench is gone, so the caller navigates away on success.
+ */
+export function useDeleteProfile() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: deleteProfile,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: profileKeys.all })
     },

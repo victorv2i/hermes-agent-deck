@@ -1,16 +1,16 @@
 /**
- * ProviderBreakdown — per-PROVIDER token + cost rollup, the sibling of
+ * ProviderBreakdown – per-PROVIDER token + cost rollup, the sibling of
  * ModelBreakdown. Same visual language (row + calm teal share bar + trailing
  * share-of-TOTAL %), only grouped by the provider Hermes attributed each model's
  * spend to (`billingProvider`) instead of by the model name.
  *
  * HONESTY (mirrors CostInsights' plan card + billingMode handling): a
  * flat-subscription / OAuth provider (e.g. `openai-codex`) reports a $0 cost pair
- * even when busy, so its row reads "Included in subscription" — NOT a misleading
- * "$0" — while still showing the real token total. A row with no recorded
+ * even when busy, so its row reads "Included in subscription" – NOT a misleading
+ * "$0" – while still showing the real token total. A row with no recorded
  * attribution reads "Unattributed", never an invented provider name.
  *
- * The bar fill is the semantic teal (`--chart-2`), decorative magnitude — amber
+ * The bar fill is the semantic teal (`--chart-2`), decorative magnitude – the sky-blue
  * `--primary` stays reserved for action / active state per the accent-governance
  * rules, exactly as in ModelBreakdown.
  */
@@ -84,7 +84,7 @@ export function ProviderBreakdown({ byModel }: ProviderBreakdownProps) {
                         </span>{' '}
                         tok
                         {/* HONESTY: a subscription/OAuth seat bills a flat plan, so
-                            its $0 cost pair is NOT "no spend" — say so plainly
+                            its $0 cost pair is NOT "no spend" – say so plainly
                             instead of rendering a misleading $0. A metered provider
                             shows its real cost; a genuine $0 (local/no rate card)
                             omits the cost segment entirely. */}

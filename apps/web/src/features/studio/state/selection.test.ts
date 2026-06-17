@@ -2,8 +2,12 @@ import { describe, it, expect } from 'vitest'
 import {
   STUDIO_SECTIONS,
   DEFAULT_STUDIO_SECTION,
+  STUDIO_VIEWS,
+  DEFAULT_STUDIO_VIEW,
   isStudioSection,
+  isStudioView,
   resolveStudioSection,
+  resolveStudioView,
   resolveSelectedAgent,
   cloneName,
   type StudioSelection,
@@ -51,6 +55,41 @@ describe('resolveStudioSection', () => {
     expect(resolveStudioSection('nope')).toBe('identity')
     expect(resolveStudioSection(null)).toBe('identity')
     expect(resolveStudioSection(undefined)).toBe('identity')
+  })
+})
+
+describe('STUDIO_VIEWS', () => {
+  it('is the closed top-level view set (agents default, then connections)', () => {
+    expect(STUDIO_VIEWS).toEqual(['agents', 'connections'])
+    expect(DEFAULT_STUDIO_VIEW).toBe('agents')
+    expect(STUDIO_VIEWS).toContain(DEFAULT_STUDIO_VIEW)
+  })
+})
+
+describe('isStudioView', () => {
+  it('accepts every known view', () => {
+    for (const v of STUDIO_VIEWS) expect(isStudioView(v)).toBe(true)
+  })
+
+  it('rejects an unknown / malformed value', () => {
+    expect(isStudioView('settings')).toBe(false)
+    expect(isStudioView('')).toBe(false)
+    expect(isStudioView(null)).toBe(false)
+    expect(isStudioView(undefined)).toBe(false)
+    expect(isStudioView(2)).toBe(false)
+  })
+})
+
+describe('resolveStudioView', () => {
+  it('returns a valid requested view unchanged', () => {
+    expect(resolveStudioView('connections')).toBe('connections')
+    expect(resolveStudioView('agents')).toBe('agents')
+  })
+
+  it('falls back to the default (agents) for an unknown / missing view', () => {
+    expect(resolveStudioView('nope')).toBe('agents')
+    expect(resolveStudioView(null)).toBe('agents')
+    expect(resolveStudioView(undefined)).toBe('agents')
   })
 })
 

@@ -26,6 +26,7 @@ import { filesRoutes } from './files/routes'
 import { FilesService } from './files/filesService'
 import { registerModelsRoutes } from './models/modelsRoute'
 import { profilesRoutes } from './profiles/profilesRoute'
+import { profileTransferRoutes } from './profiles/profileTransferRoute'
 import { registerSettingsRoutes } from './settings/settingsRoutes'
 import { registerMessagingRoutes } from './messaging/messagingRoutes'
 import { registerVoiceRoutes } from './voice/voiceRoutes'
@@ -256,8 +257,12 @@ export async function buildApp(
       directives: {
         defaultSrc: ["'self'"],
         // 'unsafe-inline' covers the Vite-built runtime; v1 keeps this simple
-        // (no nonce plumbing).
-        scriptSrc: ["'self'", "'unsafe-inline'"],
+        // (no nonce plumbing). 'wasm-unsafe-eval' lets the syntax-highlighter's
+        // Oniguruma regex engine (Shiki) instantiate its WebAssembly module; it
+        // permits WASM compilation ONLY, never JS eval/new Function (unlike the
+        // broad 'unsafe-eval'). Without it, WebAssembly.instantiate throws a CSP
+        // CompileError and all code highlighting silently falls back to plain text.
+        scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:'],
         // Same-origin XHR/fetch + the Socket.IO websocket upgrade.
@@ -400,6 +405,12 @@ export async function buildApp(
         return null
       }
     },
+  })
+  // Profile export/import: guarded `hermes profile export|import` (argv, no shell),
+  // streaming the .tar.gz for download and accepting a base64 upload to import.
+  await app.register(profileTransferRoutes, {
+    hermesHome: config.hermesHome,
+    hermesBin: config.hermesBin,
   })
   await app.register(registerSettingsRoutes, { dashboard })
   // Messaging Hub: registry × live `/api/status` connection truth × `/api/env`

@@ -57,8 +57,8 @@ import { usePlatformModKey } from './platformMod'
  * takes its data + actions as props so it's hermetically testable; the connected
  * {@link CommandPalette} wires the NAV registry, the live session list, the
  * router, and the theme. Per the design language this is the keyboard heart of
- * the app: calm, fast, with a faint amber-tinted active row (active/highlight is
- * a sanctioned amber use) and amber "active" check markers.
+ * the app: calm, fast, with a faint sky-blue-tinted active row (active/highlight is
+ * a sanctioned accent use) and sky-blue "active" check markers.
  */
 
 export interface PaletteNavItem {
@@ -578,9 +578,9 @@ export function CommandPalette({
       onCheckHermesUpdates={handleCheckHermesUpdates}
       onOpenSystem={() => navigate('/system')}
       onOpenLogs={() => navigate('/logs')}
-      onOpenMessaging={() => navigate('/connections?tab=messaging')}
-      onOpenMcp={() => navigate('/connections?tab=mcp')}
-      onOpenVoice={() => navigate('/connections?tab=voice')}
+      onOpenMessaging={() => navigate('/?view=connections&tab=messaging')}
+      onOpenMcp={() => navigate('/?view=connections&tab=mcp')}
+      onOpenVoice={() => navigate('/?view=connections&tab=voice')}
       agents={profilesQuery.data?.profiles ?? []}
       activeAgent={profilesQuery.data?.active ?? ''}
       onSwitchAgent={handleSwitchAgent}

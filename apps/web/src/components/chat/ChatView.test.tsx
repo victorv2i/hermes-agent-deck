@@ -98,7 +98,7 @@ describe('ChatView', () => {
     })
     // The empty state is an identity HERO: the agent's face leads the greeting.
     const hero = screen.getByTestId('empty-hero-avatar')
-    // The governed Avatar primitive — a decorative <img>, never the amber accent.
+    // The governed Avatar primitive — a decorative <img>, never the sky-blue accent.
     const img = hero.querySelector('img')
     expect(img).not.toBeNull()
     expect(img).toHaveAttribute('src', '/avatars/v3.webp')
@@ -689,6 +689,76 @@ describe('ChatView — find in conversation', () => {
     await user.type(input, 'zzzznope')
     expect(within(search).getByText(/no matches/i)).toBeInTheDocument()
     expect(document.querySelector('[data-find-active="true"]')).toBeNull()
+  })
+})
+
+// --- Conversation outline (jump-list of the user's own prompts) --------------
+// The toggle shows when there are prompts; opening it lists the user turns and
+// jumping one requests a scroll-into-view through the windowing-aware seek.
+describe('ChatView, conversation outline', () => {
+  const outlineTurns: Turn[] = [
+    { id: 'u1', role: 'user', content: 'Summarize my morning and what needs attention.' },
+    {
+      id: 'a1',
+      role: 'assistant',
+      content: 'Here is your morning.',
+      toolCalls: [],
+      reasoning: [],
+      streaming: false,
+    },
+    { id: 'u2', role: 'user', content: 'Now help me plan my week.' },
+    { id: 'u3', role: 'user', content: '' }, // image-only turn → "Image" label
+  ]
+
+  it('does not show the outline toggle when there are no prompts', () => {
+    renderView({ turns: [] })
+    expect(screen.queryByTestId('outline-toggle')).not.toBeInTheDocument()
+  })
+
+  it('shows a toggle once there are prompts, and the panel is closed until toggled', () => {
+    renderView({ turns: outlineTurns })
+    expect(screen.getByTestId('outline-toggle')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('navigation', { name: /conversation outline/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens a list of ONLY the user prompts (one row per user turn, in order)', async () => {
+    const user = userEvent.setup()
+    renderView({ turns: outlineTurns })
+    await user.click(screen.getByTestId('outline-toggle'))
+    const nav = screen.getByRole('navigation', { name: /conversation outline/i })
+    // First line of each prompt, in order; the assistant turn is not listed.
+    expect(within(nav).getByRole('button', { name: /Summarize my morning/i })).toBeInTheDocument()
+    expect(within(nav).getByRole('button', { name: /plan my week/i })).toBeInTheDocument()
+    // The empty (image-only) user turn still gets a reachable row.
+    expect(within(nav).getByRole('button', { name: /Image/i })).toBeInTheDocument()
+    expect(within(nav).queryByText(/Here is your morning/i)).not.toBeInTheDocument()
+  })
+
+  it('jumping a prompt requests a scroll-into-view and marks it as the current place', async () => {
+    const user = userEvent.setup()
+    renderView({ turns: outlineTurns })
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
+    await user.click(screen.getByTestId('outline-toggle'))
+    const nav = screen.getByRole('navigation', { name: /conversation outline/i })
+    const target = within(nav).getByRole('button', { name: /plan my week/i })
+    await user.click(target)
+    expect(scrollSpy).toHaveBeenCalled()
+    expect(target).toHaveAttribute('aria-current', 'true')
+    scrollSpy.mockRestore()
+  })
+
+  it('toggles closed again', async () => {
+    const user = userEvent.setup()
+    renderView({ turns: outlineTurns })
+    const toggle = screen.getByTestId('outline-toggle')
+    await user.click(toggle)
+    expect(screen.getByRole('navigation', { name: /conversation outline/i })).toBeInTheDocument()
+    await user.click(toggle)
+    expect(
+      screen.queryByRole('navigation', { name: /conversation outline/i }),
+    ).not.toBeInTheDocument()
   })
 })
 

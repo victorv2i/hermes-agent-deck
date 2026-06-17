@@ -4,6 +4,7 @@ import {
   switchProfile,
   renameProfile,
   writeAvatar,
+  deleteProfile,
   switchAppliedLine,
   restartCommand,
 } from './mutations'
@@ -112,5 +113,21 @@ describe('writeAvatar', () => {
     await writeAvatar('atlas', 'v3', '')
     const [, init] = fetchMock.mock.calls[0]!
     expect(JSON.parse(init.body)).toEqual({ avatar: 'v3', displayName: '' })
+  })
+})
+
+describe('deleteProfile', () => {
+  it('sends DELETE to the profile route, name path-encoded', async () => {
+    const fetchMock = mockFetch({ ok: true })
+    const res = await deleteProfile('atlas')
+    expect(res).toEqual({ ok: true })
+    const [url, init] = fetchMock.mock.calls[0]!
+    expect(url).toBe('/api/agent-deck/profiles/atlas')
+    expect(init.method).toBe('DELETE')
+  })
+
+  it('surfaces the BFF error on a failed delete', async () => {
+    mockFetch({ error: 'conflict', message: 'Switch to another agent before deleting this one.' }, false, 409)
+    await expect(deleteProfile('atlas')).rejects.toThrow(/switch to another agent/i)
   })
 })

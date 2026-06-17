@@ -1,6 +1,6 @@
 /**
- * Period selector — the 7 / 14 / 30 day window switch, a thin wrapper over the
- * shared SegmentedControl (hairline pill, amber active segment, the roving-
+ * Period selector – the 7 / 14 / 30 day window switch, a thin wrapper over the
+ * shared SegmentedControl (hairline pill, sky-blue active segment, the roving-
  * tabindex radiogroup keyboard map). Disabled while a fresh range loads.
  */
 import { SegmentedControl } from '@/components/ui/segmented-control'

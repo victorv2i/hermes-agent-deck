@@ -39,13 +39,15 @@ const ENV_BODY = () => ({
  * /api/config + /api/env so the test can assert what we wrote — and that secrets
  * in other blocks round-trip verbatim.
  */
-function makeFakeDashboard(opts: { configFail?: boolean } = {}): {
+function makeFakeDashboard(opts: { configFail?: boolean; transcribeStatus?: number } = {}): {
   fetchImpl: typeof fetch
   configPuts: Array<{ config: Record<string, unknown> }>
   envPuts: Array<{ key: string; value: string }>
+  transcribePosts: Array<{ data_url: string; mime_type?: string }>
 } {
   const configPuts: Array<{ config: Record<string, unknown> }> = []
   const envPuts: Array<{ key: string; value: string }> = []
+  const transcribePosts: Array<{ data_url: string; mime_type?: string }> = []
   let config = CONFIG_BODY()
   let env = ENV_BODY()
   const token = 'tok_test_123'
@@ -88,10 +90,23 @@ function makeFakeDashboard(opts: { configFail?: boolean } = {}): {
       }
       return json(200, { ok: true, key: body.key })
     }
+    if (method === 'POST' && path === '/api/audio/transcribe') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        data_url: string
+        mime_type?: string
+      }
+      transcribePosts.push(body)
+      const status = opts.transcribeStatus ?? 200
+      if (status !== 200) {
+        // Hermes surfaces failures as { detail: "..." } (FastAPI HTTPException).
+        return json(status, { detail: 'no STT provider configured' })
+      }
+      return json(200, { ok: true, transcript: 'hello from the mic', provider: 'local' })
+    }
     return json(404, { error: 'not_found' })
   }) as typeof fetch
 
-  return { fetchImpl, configPuts, envPuts }
+  return { fetchImpl, configPuts, envPuts, transcribePosts }
 }
 
 async function buildApp(fetchImpl: typeof fetch): Promise<FastifyInstance> {
@@ -269,5 +284,59 @@ describe('audio routes', () => {
     app = await buildApp(fetchImpl)
     const res = await app.inject({ method: 'GET', url: '/api/agent-deck/voice/audio/nope.ogg' })
     expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('POST /api/agent-deck/voice/transcribe', () => {
+  const DATA_URL = 'data:audio/webm;base64,AAAA'
+
+  it('proxies the recording to hermes and returns the transcript', async () => {
+    const fake = makeFakeDashboard()
+    app = await buildApp(fake.fetchImpl)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/voice/transcribe',
+      payload: { dataUrl: DATA_URL, mimeType: 'audio/webm' },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({ transcript: 'hello from the mic' })
+    // The data URL + mime hint were forwarded under hermes's snake_case shape.
+    expect(fake.transcribePosts.at(-1)).toEqual({ data_url: DATA_URL, mime_type: 'audio/webm' })
+  })
+
+  it('forwards without a mime hint when omitted', async () => {
+    const fake = makeFakeDashboard()
+    app = await buildApp(fake.fetchImpl)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/voice/transcribe',
+      payload: { dataUrl: DATA_URL },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(fake.transcribePosts.at(-1)).toEqual({ data_url: DATA_URL })
+  })
+
+  it('400s a malformed body (no data URL) without calling hermes', async () => {
+    const fake = makeFakeDashboard()
+    app = await buildApp(fake.fetchImpl)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/voice/transcribe',
+      payload: {},
+    })
+    expect(res.statusCode).toBe(400)
+    expect(fake.transcribePosts).toHaveLength(0)
+  })
+
+  it('surfaces an upstream transcription failure as a 502 (no internals echoed)', async () => {
+    const fake = makeFakeDashboard({ transcribeStatus: 400 })
+    app = await buildApp(fake.fetchImpl)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/voice/transcribe',
+      payload: { dataUrl: DATA_URL },
+    })
+    expect(res.statusCode).toBe(502)
+    expect(res.json().error).toBe('transcribe_failed')
   })
 })

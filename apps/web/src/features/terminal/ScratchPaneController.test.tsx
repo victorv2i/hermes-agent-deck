@@ -117,14 +117,14 @@ describe('ScratchPaneController parity', () => {
           sessions: [
             { name: expectedTmuxName(survivor), deckOwned: true },
             { name: 'adk_forgotten-7', deckOwned: true },
-            { name: 'victors_own', deckOwned: false },
+            { name: 'my_session', deckOwned: false },
           ],
         }}
       />,
     )
     expect(screen.getAllByRole('tab')).toHaveLength(2)
-    expect(screen.getByRole('tab', { name: /forgotten-7/i })).toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: /victors_own/i })).toBeNull()
+    expect(screen.getByRole('tab', { name: /recovered shell/i })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /my_session/i })).toBeNull()
   })
 
   it('recoverOnly mounts only the server-recovered sessions (no fresh shell)', () => {
@@ -140,7 +140,7 @@ describe('ScratchPaneController parity', () => {
       />,
     )
     expect(screen.getAllByRole('tab')).toHaveLength(1)
-    expect(screen.getByRole('tab', { name: /lost-1/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /recovered shell/i })).toBeInTheDocument()
   })
 
   it('opens a foreign attach tab when given an attach target', () => {
@@ -155,12 +155,12 @@ describe('ScratchPaneController parity', () => {
     render(
       <ScratchPaneController
         initialCli="shell"
-        initialAttach="victors_own"
+        initialAttach="my_session"
         viewComponent={CapturingView}
       />,
     )
-    expect(seenAttach).toContain('victors_own')
-    expect(screen.getByRole('tab', { name: /victors_own/i })).toBeInTheDocument()
+    expect(seenAttach).toContain('my_session')
+    expect(screen.getByRole('tab', { name: /my_session/i })).toBeInTheDocument()
   })
 
   /* -- expectResume plumbing (the fresh-shell honesty signal) ----------------- */

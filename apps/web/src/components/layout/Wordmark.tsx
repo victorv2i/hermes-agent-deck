@@ -13,16 +13,15 @@ export function BrandMark({ className }: { className?: string }) {
 
 /**
  * Brand wordmark lockup: the brand-mark image + the "Agent Deck" text. The mark
- * is the fixed-identity flourish; the text stays in PP Mondwest (Nous identity
- * font, Inter fallback) as LIVE TEXT via `font-wordmark` (never baked into an
- * image, so it stays crisp + themeable). The visible text carries the accessible
- * name; the mark image is decorative.
+ * is the fixed-identity flourish; the text stays as LIVE TEXT via `font-wordmark`
+ * (the body sans, bold + tracked — never baked into an image, so it stays crisp +
+ * themeable). The visible text carries the accessible name; the mark is decorative.
  */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex select-none items-center gap-2', className)}>
       <BrandMark />
-      <span className="font-wordmark text-[17px] leading-none uppercase tracking-[0.06em] text-foreground">
+      <span className="font-wordmark text-[17px] leading-none font-bold uppercase tracking-[0.08em] text-foreground">
         Agent Deck
       </span>
     </span>

@@ -8,9 +8,9 @@
  * with the repo's existing trademark notice. We do NOT hand-author marks (a
  * hand-drawn logo is unreliable; a garbled mark is worse than a clean monogram).
  *
- * DESIGN SPINE — a brand mark is IDENTITY, never the amber `--primary` action
+ * DESIGN SPINE — a brand mark is IDENTITY, never the sky-blue `--primary` action
  * accent. Marks render in `currentColor` (neutral, inheriting the section header's
- * foreground, AA on light + dark), never wired to amber. For the Mono variant we
+ * foreground, AA on light + dark), never wired to the accent. For the Mono variant we
  * use `currentColor`; for the Color variant where used, the brand's own color
  * reads as identity, not the app's action accent.
  *
@@ -22,20 +22,23 @@
  * Resolution (alias folding, fallback decision) lives in the render-free sibling
  * `providerBrands.ts`; this file maps the resolved brand `key` to its mark.
  */
-import {
-  Anthropic,
-  Cohere,
-  DeepSeek,
-  Gemini,
-  Meta,
-  Mistral,
-  Ollama,
-  OpenAI,
-  OpenRouter,
-  Perplexity,
-  Qwen,
-  XAI,
-} from '@lobehub/icons'
+// Deep-import ONLY the Mono variant of each mark. The package barrel
+// (`@lobehub/icons`) attaches `.Avatar`/`.Text` to every export, which drags a
+// CSS-in-JS runtime (antd-style + polished) onto the eager critical path for 12
+// tiny monochrome logos. We only ever render Mono, so importing it directly keeps
+// that runtime out of the bundle (a measured ~28 kB gzip off first paint).
+import Anthropic from '@lobehub/icons/es/Anthropic/components/Mono'
+import Cohere from '@lobehub/icons/es/Cohere/components/Mono'
+import DeepSeek from '@lobehub/icons/es/DeepSeek/components/Mono'
+import Gemini from '@lobehub/icons/es/Gemini/components/Mono'
+import Meta from '@lobehub/icons/es/Meta/components/Mono'
+import Mistral from '@lobehub/icons/es/Mistral/components/Mono'
+import Ollama from '@lobehub/icons/es/Ollama/components/Mono'
+import OpenAI from '@lobehub/icons/es/OpenAI/components/Mono'
+import OpenRouter from '@lobehub/icons/es/OpenRouter/components/Mono'
+import Perplexity from '@lobehub/icons/es/Perplexity/components/Mono'
+import Qwen from '@lobehub/icons/es/Qwen/components/Mono'
+import XAI from '@lobehub/icons/es/XAI/components/Mono'
 import { resolveProviderBrand } from './providerBrands'
 
 /** Props the @lobehub/icons Mono components accept at runtime. */
@@ -51,7 +54,7 @@ type MarkFn = (props: LobehubIconProps) => React.ReactElement
 /**
  * Wrap a @lobehub/icons Mono component into our MarkFn interface. The Mono
  * variant renders in `currentColor` so it inherits the surrounding foreground
- * (AA on light + dark, never wired to the amber `--primary` accent).
+ * (AA on light + dark, never wired to the sky-blue `--primary` accent).
  */
 function fromLobehub(Icon: React.ComponentType<LobehubIconProps>): MarkFn {
   return (props) => <Icon {...props} />
@@ -83,7 +86,7 @@ const MARKS: Record<string, MarkFn> = {
 /**
  * A tasteful neutral monogram for a vendor we have no accurate mark for: the
  * initial in a soft rounded square. Neutral `currentColor` only — identity, not
- * the amber accent. A clean monogram beats a wrong/ambiguous logo.
+ * the sky-blue accent. A clean monogram beats a wrong/ambiguous logo.
  */
 const MonogramMark = (slug: string): MarkFn => {
   const initial = (slug.match(/[a-z0-9]/i)?.[0] ?? '?').toUpperCase()
@@ -125,7 +128,7 @@ const MonogramMark = (slug: string): MarkFn => {
 /**
  * Render a provider's brand mark inline. Decorative by default (`aria-hidden`) —
  * the adjacent text label carries the accessible name. Neutral `currentColor`
- * (identity), never the amber action accent. A vendor with no accurate mark
+ * (identity), never the sky-blue action accent. A vendor with no accurate mark
  * renders the neutral monogram fallback (never a garbled logo).
  */
 export function ProviderBrandIcon({

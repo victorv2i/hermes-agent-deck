@@ -14,8 +14,8 @@ import { ContextRing } from './ContextRing'
  * ring. On "Continue", the resumed session's title/model are threaded through so
  * resuming never drops you into an empty, identity-less header (T1.3).
  *
- * Amber is governed (action/active only): the model reads as a quiet muted label
- * and the agent face is IDENTITY, never the amber accent (the Avatar primitive
+ * The action accent is governed (action/active only): the model reads as a quiet muted label
+ * and the agent face is IDENTITY, never the sky-blue accent (the Avatar primitive
  * enforces the `--border-strong` ring + neutral fallback).
  */
 export function ChatHeader({

@@ -14,12 +14,12 @@ import { cn } from '@/lib/utils'
  *    ok → success · info → info · warn → warning · error → destructive ·
  *    idle → foreground-tertiary.
  *  - The ONE sanctioned exception is `live`: a genuine LIVE DATA-STREAM dot may
- *    carry the `--primary` accent, because the spine reserves amber for "PRIMARY
+ *    carry the `--primary` accent, because the spine reserves the action accent for "PRIMARY
  *    ACTION + LIVE/ACTIVE state." This is opt-in and pairs with `pulse`. It is
- *    the ONLY place a status dot is amber — and it is documented here so the
+ *    the ONLY place a status dot is the action accent — and it is documented here so the
  *    canonical mapping is unambiguous.
  *
- * The canonical "connected vs live" decision (the header-green-vs-Kanban-amber
+ * The canonical "connected vs live" decision (the header-green-vs-Kanban-sky-blue
  * clash): a gateway/connection being *connected* is a SEMANTIC STATUS → `ok`
  * (success), shown as a calm green dot. A *live data stream* (Kanban's board
  * socket actively pushing updates) is the sanctioned `live` accent pulse. They

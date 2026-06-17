@@ -10,7 +10,7 @@ import { formatDuration } from './format'
  *
  * Honest + calm: renders NOTHING on an idle board (no running or ready work) so it
  * never adds noise, and shows the "oldest waiting" line only when something is
- * actually queued. The running spinner is a sanctioned live/active amber use.
+ * actually queued. The running spinner is a sanctioned live/active accent use.
  */
 export function BoardStatsBar({ stats }: { stats: KanbanStats | null }) {
   if (!stats) return null

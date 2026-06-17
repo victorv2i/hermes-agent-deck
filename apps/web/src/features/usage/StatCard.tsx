@@ -1,9 +1,9 @@
 /**
- * StatCard — a single headline metric tile (e.g. Total tokens, Est. cost).
+ * StatCard – a single headline metric tile (e.g. Total tokens, Est. cost).
  * Uses the shared shadcn Card vocabulary (lifted border + top highlight via
  * `.ad-surface`), themed to the warm-void palette. The label is the canonical
- * 11px section label; the value is large, tabular, and neutral (no amber — accent
- * governance reserves amber for primary actions and live/active state).
+ * 11px section label; the value is large, tabular, and neutral (no accent – accent
+ * governance reserves the sky-blue accent for primary actions and live/active state).
  */
 import type { ReactNode } from 'react'
 import { Info } from 'lucide-react'
@@ -18,7 +18,7 @@ export interface StatCardProps {
   /**
    * Optional one-line explanation of what the metric counts / how it's derived
    * (e.g. cost basis, what "cache + reasoning" sums). Surfaced as a small,
-   * keyboard-reachable info affordance with a hover/title tooltip — so the
+   * keyboard-reachable info affordance with a hover/title tooltip – so the
    * headline number doesn't have to carry the caveat inline (T3.9).
    */
   info?: string
@@ -37,7 +37,7 @@ export function StatCard({ label, value, sub, icon, info }: StatCardProps) {
             <button
               type="button"
               // A non-actionable explainer: it carries the tooltip text on hover
-              // (title) and announces what it's about to SRs. No popover — the
+              // (title) and announces what it's about to SRs. No popover – the
               // title + accessible name keep it dependency-free and robust.
               // (The title tooltip is hover/focus only; touch gets no tooltip.)
               // The ::before overlay gives the 14px glyph a 44px hit area

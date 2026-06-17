@@ -36,7 +36,7 @@ export interface UsageModelBreakdown {
   /**
    * The provider Hermes attributed this model's spend to (`billing_provider`,
    * joined from `/api/analytics/models` by the BFF). '' when unavailable. This is
-   * the authoritative attribution — NOT inferred from the active provider.
+   * the authoritative attribution – NOT inferred from the active provider.
    *
    * Optional on the web type only so older/synthetic payloads (and fixtures) that
    * predate the field still type-check; the live BFF always emits it.

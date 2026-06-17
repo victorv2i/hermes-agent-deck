@@ -4,7 +4,7 @@ The built-in agent-avatar set for the identity feature: **6 flat two-tone EMBLEM
 avatars**, each a single bold celestial or classical Hermes symbol on its own solid
 color ground, in a varied jewel palette. Every avatar uses **two colors by design**
 (a flat figure on a flat ground), so it reads cleanly at any size. Rendered as
-**identity** color, **never** the amber `--primary` action accent; identity rings use
+**identity** color, **never** the sky-blue `--primary` action accent; identity rings use
 `--border-strong`.
 
 The set:
@@ -24,7 +24,7 @@ Files:
   app references.
 
 Regenerate by running `.design-gen/gen-flat-avatars.sh`, which generates each emblem
-individually with gpt-image-2 (flat, two-tone, centered) into `.design-gen/avatars-flat-v4/`,
+individually as flat, two-tone, centered art into `.design-gen/avatars-flat-v4/`,
 then resizing each to the served 256² webp and the archival 384² png:
 
 ```sh

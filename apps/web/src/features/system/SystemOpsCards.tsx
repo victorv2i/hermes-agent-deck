@@ -108,7 +108,9 @@ export function SystemStatsCard({
                 <StatItem label="OS" value={stats.os} icon={<Server className="size-3.5" />} />
               )}
               {stats.arch && <StatItem label="Arch" value={stats.arch} />}
-              {stats.hermes_version && <StatItem label="Hermes" value={stats.hermes_version} />}
+              {stats.hermes_version && (
+                <StatItem label="Hermes" value={`v${stats.hermes_version}`} />
+              )}
               {stats.memory && (
                 <StatItem
                   label="Memory"

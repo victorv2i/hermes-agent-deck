@@ -149,7 +149,7 @@ describe('AppShell', () => {
     // paths redirect to '/' via router.tsx, so they no longer reach the shell.)
     renderShell({}, '/')
     const banner = screen.getByRole('banner')
-    expect(within(banner).getByTestId('surface-title')).toHaveTextContent('Agent Studio')
+    expect(within(banner).getByTestId('surface-title')).toHaveTextContent('Home')
   })
 
   it('does NOT show a surface-title label on the Chat surface (it projects its own header)', () => {
@@ -405,7 +405,7 @@ describe('AppShell', () => {
       // Agent Studio (Home) is a stable always-visible labeled link, standing in as
       // the proof that labels render, not icon-only rows. (The old Agents link
       // folded into the Studio.)
-      expect(within(nav).getByRole('link', { name: /^agent studio$/i })).toBeInTheDocument()
+      expect(within(nav).getByRole('link', { name: /^home$/i })).toBeInTheDocument()
       // The dedicated sessions pane stays beside it.
       expect(screen.getByTestId('sessions-pane')).toBeInTheDocument()
       // The labeled column does NOT collapse to the slim icon-nav.

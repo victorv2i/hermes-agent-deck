@@ -9,7 +9,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
 } from 'react'
-import { ArrowUp, Mic, Paperclip, Square, X } from 'lucide-react'
+import { ArrowUp, Loader2, Mic, Paperclip, Square, X } from 'lucide-react'
 import type { RunAttachment } from '@agent-deck/protocol'
 import { usePrefersReducedMotion } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
@@ -58,7 +58,7 @@ const NO_VISION_MESSAGE = 'This model can’t see images. Switch to a vision-cap
 
 /**
  * The single, honest message for "a run is in flight" image handling. Text typed
- * mid-run queues (C2), but image turns are deliberately NOT queued — so instead
+ * mid-run queues (C2), but image turns are deliberately NOT queued - so instead
  * of silently firing an overlapping run (the old behavior) or silently dropping
  * the image, attach/paste/drop are disabled mid-run with this one message on
  * the tooltip AND the paste/drop toast.
@@ -71,7 +71,7 @@ const RUNNING_ATTACH_MESSAGE =
  * index and the query text (after the `@`), or null when the caret is not inside
  * a mention token. A mention starts at `@` that is either at the very start of
  * the text or preceded by whitespace, and runs up to the caret with no
- * intervening whitespace — so an email address (`a@b`) or a settled reference
+ * intervening whitespace - so an email address (`a@b`) or a settled reference
  * never re-opens the picker.
  */
 function mentionAt(value: string, caret: number): { start: number; query: string } | null {
@@ -108,6 +108,7 @@ export function Composer({
   onNewChat,
   onClearChat,
   onToggleTheme,
+  onOpenUsage,
 }: {
   /** Submit the trimmed message plus any image attachments. The composer clears
    * itself (text + attachments) on success. `attachments` is omitted when none
@@ -115,7 +116,7 @@ export function Composer({
   onSend: (text: string, attachments?: RunAttachment[]) => void
   /** Abort the in-flight run (the send button becomes Stop while running). */
   onStop: () => void
-  /** True while a run is streaming — flips Send → Stop. */
+  /** True while a run is streaming - flips Send → Stop. */
   running?: boolean
   /** The gateway's model list for the picker (omit/empty hides the picker). */
   models?: ModelEntry[]
@@ -126,13 +127,13 @@ export function Composer({
   /** Tokens consumed so far, for the context ring. */
   contextTokens?: number
   /** The model's real context window, when known (else the ring is honest /
-   * approximate — see {@link ContextRing}). */
+   * approximate - see {@link ContextRing}). */
   contextLimit?: number
   /** Disable input entirely (e.g. socket disconnected). */
   disabled?: boolean
   /**
    * Whether it is honest to auto-flush a queued message right now. False when the
-   * connection is down OR the last run ended in error/cancellation — flushing then
+   * connection is down OR the last run ended in error/cancellation - flushing then
    * would fire the queued message into a dead or just-failed channel. The queue
    * holds the message instead, and flushes once this turns true again (reconnect /
    * a clean run). Defaults to true (always-flush).
@@ -140,7 +141,7 @@ export function Composer({
   canFlushQueue?: boolean
   /**
    * Whether the active model can accept images (vision). When false the attach
-   * button is shown DISABLED with an honest tooltip and paste/drop are ignored —
+   * button is shown DISABLED with an honest tooltip and paste/drop are ignored -
    * we never silently swallow an image the agent can't see (HONEST UI). Defaults
    * to false so a host that doesn't know the capability shows no false promise.
    */
@@ -161,14 +162,16 @@ export function Composer({
    */
   sessionKey?: string | null
   /**
-   * Slash-command UI actions. The composer's `/` menu (client-side, UI-only —
-   * the gateway exposes no command set) offers a command ONLY when its handler is
-   * wired here, so the menu never shows an inert row. `/model` is self-contained
-   * (opens the picker), so it needs no handler — only models + onModelChange.
+   * Slash-command UI actions. The composer's `/` menu offers a command ONLY
+   * when its handler is wired here, so the menu never shows an inert row.
+   * `/model` is self-contained (opens the picker), so it needs no handler - only
+   * models + onModelChange.
    */
   onNewChat?: () => void
   onClearChat?: () => void
   onToggleTheme?: () => void
+  /** Open the Usage view (for `/usage`). Wired by the host to its router. */
+  onOpenUsage?: () => void
 }) {
   // The composer text is the per-session DRAFT: seeded from storage on mount,
   // persisted (debounced) on change, cleared on send. `value`/`setValue` below
@@ -179,7 +182,7 @@ export function Composer({
 
   // Send-while-busy queue (C2): while a run is in flight the composer holds the
   // message in a FIFO queue (shown as "Queued" pills) instead of blocking, and the
-  // queue auto-flushes the head — one at a time — via onSend when the run
+  // queue auto-flushes the head - one at a time - via onSend when the run
   // completes. A thin layer over the run pump: it only observes `running` and
   // fires the existing onSend (text-only; queuing image turns is out of scope).
   const queue = useMessageQueue({ running, send: onSend, canFlush: canFlushQueue })
@@ -208,9 +211,25 @@ export function Composer({
       const joiner = base.length > 0 && !/\s$/.test(base) ? ' ' : ''
       setValue(base + joiner + transcript)
     },
+    // Surface a failed mic so dictation never fails silently. Benign codes
+    // (no-speech / aborted on stop) are ignored. A permission denial toasts, and a
+    // server-side transcription failure (Web Speech absent → recorded clip path)
+    // toasts honestly too.
+    onError: (err) => {
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        toast.error('Microphone access is blocked. Allow it in your browser to dictate.')
+      } else if (err === 'transcribe-failed') {
+        toast.error('Couldn’t transcribe that recording. Check the agent’s speech-to-text setup.')
+      } else if (err === 'no-recorder') {
+        toast.error('This browser can’t record audio for voice input.')
+      }
+    },
   })
 
   const toggleRecording = () => {
+    // While a recorded clip is being transcribed (server path), the toggle is a
+    // no-op - the cycle finishes on its own and fills the text.
+    if (speech.transcribing) return
     if (speech.recording) {
       speech.stop()
       return
@@ -223,7 +242,7 @@ export function Composer({
   // --- Image attachments (attach / paste / drag-drop) ---------------------------
   // Pending image attachments shown as removable pills above the input and carried
   // on the next send as native multimodal content. Stock hermes routes vision
-  // inline (data:image/... URLs) — there is NO upload endpoint, so an attachment
+  // inline (data:image/... URLs) - there is NO upload endpoint, so an attachment
   // is just the base64 data URL. Gated on `canAttachImages`: when the active model
   // can't see, attach is disabled (honest) and paste/drop are ignored.
   const [attachments, setAttachments] = useState<PendingAttachment[]>([])
@@ -260,7 +279,7 @@ export function Composer({
   }
 
   // Whether attaching is possible RIGHT NOW. Mid-run attaching is disabled
-  // (image turns can't queue — sending one would overlap the in-flight run), with
+  // (image turns can't queue - sending one would overlap the in-flight run), with
   // {@link RUNNING_ATTACH_MESSAGE} explaining why.
   const canAttachNow = canAttachImages && !running
 
@@ -315,7 +334,7 @@ export function Composer({
     if (disabled) return
     const images = imageFilesFromDrop(e.dataTransfer)
     if (!canAttachNow) {
-      // The drag affordances never lit up, but a drop can still land here — give
+      // The drag affordances never lit up, but a drop can still land here - give
       // honest feedback rather than silently swallowing the image.
       if (images.length > 0) notifyImageIgnored()
       return
@@ -370,7 +389,7 @@ export function Composer({
 
   // First-run focus hand-off: when asked (e.g. Home seeded a starter prompt),
   // land the cursor in the input once on mount so the user can send/edit right
-  // away. Mount-only by design — a later prop flip never steals focus.
+  // away. Mount-only by design - a later prop flip never steals focus.
   useEffect(() => {
     if (autoFocus && !disabled) ref.current?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -385,19 +404,21 @@ export function Composer({
   }, [value])
 
   // A send is allowed with prose OR with at least one image (an image-only turn
-  // is valid — the agent sees the image). Disabled gates everything.
+  // is valid - the agent sees the image). Disabled gates everything.
   const canSend = (value.trim().length > 0 || attachments.length > 0) && !disabled
   // Threaded into the lazy Send/Stop morph + the mic pulse so reduced-motion is
   // honored without framer-motion's hook (which would re-eager the chunk).
   const reduce = usePrefersReducedMotion()
 
   // Which slash commands the host actually wired (so we never offer an inert
-  // row). `/model` is offered when the picker exists (models + onModelChange).
+  // row). `/model` is offered when the picker exists (models + onModelChange);
+  // each of the rest gates on its own handler being passed.
   const canRun: Record<SlashActionId, boolean> = {
     model: models.length > 0 && !!onModelChange,
     new: !!onNewChat,
     clear: !!onClearChat,
     theme: !!onToggleTheme,
+    usage: !!onOpenUsage,
   }
   const wiredCommands = SLASH_COMMANDS.filter((c) => canRun[c.id])
 
@@ -426,7 +447,7 @@ export function Composer({
     const hasImages = attachments.length > 0
     if ((!text && !hasImages) || disabled) return
     // Send-while-busy (C2): while a run is in flight, a text submit is QUEUED (FIFO)
-    // rather than blocked — it flushes when the run completes. Image turns are NOT
+    // rather than blocked - it flushes when the run completes. Image turns are NOT
     // queued: submitting one mid-run would start an OVERLAPPING run, so we hold the
     // composer as-is (text + pills intact) and say so honestly. The user sends it
     // once the reply finishes (or after Stop).
@@ -440,7 +461,7 @@ export function Composer({
       return
     }
     // Only attach the second arg when images are present, so a plain text send is
-    // byte-identical to before (onSend(text) — keeps existing call sites/tests).
+    // byte-identical to before (onSend(text) - keeps existing call sites/tests).
     if (hasImages) onSend(text, attachments.map(toRunAttachment))
     else onSend(text)
     resetInput()
@@ -457,6 +478,8 @@ export function Composer({
   const runSlash = (cmd: SlashCommand) => {
     // Clear the command text first so the composer is clean for the next message.
     resetInput()
+    // Every command is a local UI action the deck performs itself (the menu
+    // carries no agent-passthrough commands; see slashCommands.ts).
     switch (cmd.id) {
       case 'model':
         // Open the existing picker by clicking its trigger (Radix opens on click).
@@ -472,6 +495,9 @@ export function Composer({
         break
       case 'theme':
         onToggleTheme?.()
+        break
+      case 'usage':
+        onOpenUsage?.()
         break
     }
   }
@@ -507,7 +533,7 @@ export function Composer({
         return
       }
       if (e.key === 'Enter' && !e.shiftKey) {
-        // Enter runs the highlighted command — it does NOT send the message.
+        // Enter runs the highlighted command - it does NOT send the message.
         e.preventDefault()
         const cmd = slashMatches[highlight]
         if (cmd) runSlash(cmd)
@@ -554,11 +580,15 @@ export function Composer({
   }
 
   return (
-    <div className={cn(floating && 'pointer-events-none sticky bottom-0 z-10 px-1 pb-4')}>
+    <div
+      className={cn(
+        floating && 'pointer-events-none sticky bottom-0 z-10 px-1 pb-[max(1rem,env(safe-area-inset-bottom))]',
+      )}
+    >
       {/* Send-while-busy queue (C2): pending messages typed while a run is in
           flight, shown as subtle "Queued" pills above the composer. Queued is a
-          PENDING state, not an action or a live accent — so the pill is neutral
-          (border + muted text), never amber. Each pill's × cancels that message
+          PENDING state, not an action or a live accent - so the pill is neutral
+          (border + muted text), never the action accent. Each pill's × cancels that message
           before it can send (honest: cancel really removes it from the queue). */}
       {queue.queue.length > 0 && (
         <ul
@@ -609,7 +639,7 @@ export function Composer({
       >
         {/* Drag-drop overlay: a calm, dashed dropzone hint while an image drag is
             over the composer. Identity/selection uses border-strong; this is an
-            ACTION affordance (dropping attaches), so amber is appropriate. */}
+            ACTION affordance (dropping attaches), so the sky-blue accent is appropriate. */}
         {dragActive && (
           <div
             data-testid="composer-drop-overlay"
@@ -701,7 +731,7 @@ export function Composer({
           onKeyDown={onKeyDown}
           onPaste={onPaste}
           // Clicking/arrowing within the text can move the caret out of (or into)
-          // a mention token — re-sync on selection changes.
+          // a mention token - re-sync on selection changes.
           onSelect={(e) => syncMention(value, e.currentTarget.selectionStart)}
           placeholder="Message your agent..."
           aria-label="Message your agent"
@@ -713,7 +743,7 @@ export function Composer({
           aria-activedescendant={
             slashOpen ? `composer-slash-${slashMatches[highlight]?.id}` : undefined
           }
-          className="max-h-[200px] min-h-11 w-full resize-none bg-transparent px-2 pt-2 text-[15px] leading-relaxed text-foreground outline-none placeholder:text-foreground-tertiary disabled:opacity-60"
+          className="max-h-[200px] min-h-11 w-full resize-none bg-transparent px-2 pt-2 text-[13px] leading-relaxed text-foreground outline-none placeholder:text-foreground-tertiary disabled:opacity-60"
         />
 
         <div className="flex items-center gap-2 pl-1">
@@ -748,16 +778,19 @@ export function Composer({
           />
 
           {/* Voice dictation: a small footer icon button next to the model chip.
-              Always rendered; when dictation can't run (no Web Speech API or an
+              Always rendered; when dictation can't run (no capture API or an
               insecure origin) it is DISABLED with an honest tooltip
-              (`unavailableReason`) so the user understands why, rather than
-              silently disappearing. */}
+              (`unavailableReason` + `unavailableHint`) so the user understands why,
+              rather than silently disappearing. While a recorded clip is being
+              transcribed (server path) it shows a brief "Transcribing…" state. */}
           <MicButton
             recording={speech.recording}
+            transcribing={speech.transcribing}
             onClick={toggleRecording}
             disabled={disabled || !speech.available}
             available={speech.available}
             unavailableReason={speech.unavailableReason}
+            unavailableHint={speech.unavailableHint}
           />
 
           {models.length > 0 && onModelChange && (
@@ -822,61 +855,79 @@ function MentionMenu({
 }
 
 /**
- * The composer's mic button (voice DICTATION). Reserved-for-action amber marks
+ * The composer's mic button (voice DICTATION). Reserved-for-action sky-blue marks
  * the RECORDING state only; idle it's a quiet tertiary glyph. While recording it
  * pulses (suppressed under prefers-reduced-motion) and carries `aria-pressed` +
  * a polite `aria-live` "Listening…" cue so AT announces the live state. Sits as a
  * small icon button beside the model chip per the spec.
  *
- * HONEST unavailable state: when dictation can't run (no Web Speech API or an
+ * HONEST unavailable state: when dictation can't run (no capture API or an
  * insecure origin), the button is DISABLED and its tooltip + accessible name
- * carry the `unavailableReason` so the user understands why — never hidden.
+ * carry the `unavailableReason` (+ `unavailableHint`) so the user understands why -
+ * never hidden. While a recorded clip is uploading + being transcribed (the
+ * server-STT path), it shows a brief spinner + "Transcribing…" and ignores clicks.
  */
 function MicButton({
   recording,
+  transcribing,
   onClick,
   disabled,
   available,
   unavailableReason,
+  unavailableHint,
 }: {
   recording: boolean
+  transcribing: boolean
   onClick: () => void
   disabled: boolean
   available: boolean
   unavailableReason: string | null
+  unavailableHint: string | null
 }) {
   const reduce = usePrefersReducedMotion()
-  // The accessible name + tooltip: the honest reason when unavailable, else the
-  // toggle action. (`unavailableReason` is non-null exactly when `!available`.)
+  // The accessible name + tooltip: the honest reason (+ hint) when unavailable,
+  // else the live/toggle action. (`unavailableReason` is non-null exactly when
+  // `!available`.)
+  const unavailableLabel = unavailableHint
+    ? `${unavailableReason ?? 'Voice input is unavailable'}. ${unavailableHint}`
+    : (unavailableReason ?? 'Voice input is unavailable')
   const label = !available
-    ? (unavailableReason ?? 'Voice input is unavailable')
-    : recording
-      ? 'Stop voice input'
-      : 'Start voice input'
+    ? unavailableLabel
+    : transcribing
+      ? 'Transcribing your voice…'
+      : recording
+        ? 'Stop voice input'
+        : 'Start voice input'
   return (
     <>
       <button
         type="button"
         onClick={onClick}
-        disabled={disabled}
+        // Ignore clicks while transcribing (the cycle completes on its own).
+        disabled={disabled || transcribing}
         aria-pressed={recording}
         aria-label={label}
         title={!available ? label : undefined}
         data-testid="composer-mic"
         data-recording={recording || undefined}
+        data-transcribing={transcribing || undefined}
         className={cn(
           'grid size-11 shrink-0 place-items-center rounded-lg transition-[transform,background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-strong)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:size-10',
-          recording
+          recording || transcribing
             ? 'bg-primary/15 text-primary'
             : 'text-foreground-tertiary hover:bg-foreground/10 hover:text-foreground',
           recording && !reduce && 'motion-safe:animate-pulse',
         )}
       >
-        <Mic className="size-4" aria-hidden />
+        {transcribing ? (
+          <Loader2 className={cn('size-4', !reduce && 'motion-safe:animate-spin')} aria-hidden />
+        ) : (
+          <Mic className="size-4" aria-hidden />
+        )}
       </button>
-      {/* A polite live region so AT announces the recording state change. */}
+      {/* A polite live region so AT announces the recording / transcribing state. */}
       <span className="sr-only" role="status" aria-live="polite">
-        {recording ? 'Listening…' : ''}
+        {recording ? 'Listening…' : transcribing ? 'Transcribing…' : ''}
       </span>
     </>
   )
@@ -884,8 +935,8 @@ function MicButton({
 
 /**
  * The composer's attach-image button. A quiet tertiary glyph (a paperclip) that
- * opens the file picker. When the active model can't see images — or a run is in
- * flight (image turns can't queue) — it renders DISABLED with an honest tooltip +
+ * opens the file picker. When the active model can't see images - or a run is in
+ * flight (image turns can't queue) - it renders DISABLED with an honest tooltip +
  * an `aria-label` that says why (HONEST UI). Sits beside the mic.
  */
 function AttachButton({
@@ -963,8 +1014,8 @@ function SendStopButtonStatic({
 
 /**
  * The composer's client-side slash-command popover. A calm, keyboard-navigable
- * listbox (UI-only commands — see {@link SLASH_COMMANDS}) anchored above the
- * input. Mouse hover + click also run a command. Governed amber marks only the
+ * listbox (UI-only commands - see {@link SLASH_COMMANDS}) anchored above the
+ * input. Mouse hover + click also run a command. The governed sky-blue accent marks only the
  * highlighted row (the one Enter will run), per the design language.
  */
 function SlashMenu({
@@ -983,10 +1034,10 @@ function SlashMenu({
       aria-label="Commands"
       className="ad-surface absolute bottom-full left-0 z-50 mb-2 w-[min(320px,calc(100%-0.5rem))] overflow-hidden rounded-xl bg-popover p-1 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)]"
     >
-      {/* A small section label orients the user: these are UI commands the deck
-          runs locally (not agent commands). aria-hidden — the listbox already
-          carries the "Commands" accessible name, so this is sighted-only chrome
-          and never a focusable/selectable option. */}
+      {/* A small section label orients the user. Every command runs locally in
+          the deck (each row's hint says what it does). aria-hidden - the listbox
+          already carries the "Commands" accessible name, so this is sighted-only
+          chrome and never a focusable/selectable option. */}
       <p
         aria-hidden
         className="px-2 pt-1 pb-1.5 text-[11px] font-medium tracking-wide text-foreground-tertiary uppercase"

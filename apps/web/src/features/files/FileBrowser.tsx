@@ -5,7 +5,7 @@
  * selects it for the preview pane. Suppressed entries (secrets / unsupported)
  * render disabled with a quiet reason.
  *
- * Design-language: calm warm-void surface, hairline rows, amber active state,
+ * Design-language: calm warm-void surface, hairline rows, sky-blue active state,
  * generous hit targets, focus-visible rings. Folders sort before files (the BFF
  * already sorts; we keep its order).
  */
@@ -88,8 +88,10 @@ function formatSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/** Estimated listing-row height (px) before measurement — one entry button. */
-const FILE_ROW_ESTIMATE = 36
+/** Estimated listing-row height (px) before measurement (one entry button).
+ * Tracks the dense row rhythm (#4: py-1.5 + 12px text); the virtualizer
+ * re-measures the real DOM via measureElement, so this only seeds initial math. */
+const FILE_ROW_ESTIMATE = 30
 
 export function FileBrowser({
   roots,
@@ -445,7 +447,7 @@ export function FileBrowser({
       >
         {error ? (
           // The shared error vocabulary (state.tsx): a governed tile + an OUTLINE
-          // retry (never amber), wired to the tree query refetch (onRefresh, which
+          // retry (never the action accent), wired to the tree query refetch (onRefresh, which
           // refetches the listing + roots) so a transient failure is recoverable
           // in place rather than a dead red line.
           <ErrorState
@@ -458,7 +460,7 @@ export function FileBrowser({
         ) : loading && entries.length === 0 ? (
           <ul className="space-y-1 px-2 py-1" aria-hidden>
             {Array.from({ length: 8 }).map((_, i) => (
-              <li key={i} className="h-8 animate-pulse rounded-md bg-muted/40" />
+              <li key={i} className="h-7 animate-pulse rounded-md bg-muted/40" />
             ))}
           </ul>
         ) : entries.length === 0 ? (
@@ -546,16 +548,19 @@ export function FileBrowser({
                     aria-current={isSelected ? true : undefined}
                     title={blocked ? `Hidden (${entry.reason ?? 'restricted'})` : entry.path}
                     className={cn(
-                      'relative flex w-full items-center gap-2.5 rounded-md py-2 pr-16 pl-3 text-left text-13 transition-colors focus-visible:ad-focus',
+                      // Density (#4): mirror the chat rail's dense rows (12px text
+                      // + a tight py-1.5 rhythm) so the Files tree packs the same
+                      // way the sessions rail does instead of reading oversized.
+                      'relative flex w-full items-center gap-2.5 rounded-md py-1.5 pr-16 pl-3 text-left text-[12px] leading-tight transition-colors focus-visible:ad-focus',
                       !blocked && !readOnly && 'pr-24 md:pr-16',
                       // Active row mirrors the rail's active-nav pattern: a 3px
-                      // amber accent bar on the leading edge + a faint amber tint.
+                      // sky-blue accent bar on the leading edge + a faint sky-blue tint.
                       'before:pointer-events-none before:absolute before:inset-y-1 before:left-0 before:w-[3px] before:rounded-full before:bg-primary before:opacity-0 before:transition-opacity',
                       blocked
                         ? 'cursor-not-allowed text-foreground-tertiary/70'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       // §2(c) — the SAME selection wash as the sessions rail rows
-                      // (bg-primary/10 + the amber accent bar), so a selected file
+                      // (bg-primary/10 + the sky-blue accent bar), so a selected file
                       // and a selected session read identically.
                       isSelected && 'bg-primary/10 font-medium text-foreground before:opacity-100',
                     )}
@@ -634,8 +639,8 @@ export function FileBrowser({
  * drive glyph + the root label that jumps to the root directory. With SEVERAL
  * roots it's a quiet picker (a popover of the roots) so switching workspace stays
  * one click without a whole header band. Selecting a root is the active state — a
- * faint amber tint — but the persistent selection ring stays neutral
- * `border-strong` per the spine (amber rings are focus-visible only).
+ * faint sky-blue tint — but the persistent selection ring stays neutral
+ * `border-strong` per the spine (sky-blue rings are focus-visible only).
  */
 function RootCrumb({
   roots,

@@ -40,6 +40,7 @@ class FakeEngine implements TerminalEngine {
   opened = false
   disposed = false
   cleared = 0
+  themeSets = 0
   private dataCb?: (d: string) => void
   open(_el?: HTMLElement) {
     this.opened = true
@@ -59,6 +60,9 @@ class FakeEngine implements TerminalEngine {
   }
   fit() {
     return { cols: this.cols, rows: this.rows }
+  }
+  setTheme() {
+    this.themeSets += 1
   }
   type(d: string) {
     this.dataCb?.(d)
@@ -81,6 +85,26 @@ function renderView(engine: FakeEngine, socket: FakeSocket) {
 }
 
 describe('TerminalView', () => {
+  it('re-skins the live terminal when the <html> theme attribute flips', async () => {
+    const engine = new FakeEngine()
+    const socket = new FakeSocket()
+    renderView(engine, socket)
+    await waitFor(() => expect(engine.opened).toBe(true))
+    const before = engine.themeSets
+    // Flip the theme the way ThemeProvider does (data-theme + the .dark class on
+    // <html>); the MutationObserver should re-skin the live engine in place.
+    act(() => {
+      document.documentElement.classList.remove('dark')
+      document.documentElement.setAttribute('data-theme', 'light')
+    })
+    await waitFor(() => expect(engine.themeSets).toBeGreaterThan(before))
+    // Restore so the attribute change does not leak into sibling tests.
+    act(() => {
+      document.documentElement.setAttribute('data-theme', 'dark')
+      document.documentElement.classList.add('dark')
+    })
+  })
+
   it('opens the engine and starts a shell with the fitted geometry (deferred a frame)', async () => {
     const engine = new FakeEngine()
     const socket = new FakeSocket()

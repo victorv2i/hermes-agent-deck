@@ -1,0 +1,38 @@
+# Run Agent Deck against your own Hermes gateway.
+#
+#   docker compose up --build
+#   open http://127.0.0.1:7878
+#
+# The deck talks to a STOCK hermes-agent over HTTP and never modifies it.
+services:
+  agent-deck:
+    build: .
+    image: agent-deck:local
+    # Published on loopback by default, so only this machine can reach it.
+    # Change to "7878:7878" to expose on the LAN, and set AGENT_DECK_TOKEN below.
+    ports:
+      - '127.0.0.1:7878:7878'
+    environment:
+      # Point at YOUR running Hermes gateway. From inside the container,
+      # host.docker.internal reaches the host where `hermes gateway` runs.
+      # Stock Hermes binds 8642; set your port if you relocated it.
+      HERMES_GATEWAY_URL: 'http://host.docker.internal:8642'
+      # The container binds a non-loopback host, so it ALWAYS requires an access
+      # token. Either pin your own here (stays stable across recreations), or read
+      # the auto-generated one from `docker compose logs` (the `access token:`
+      # line) and enter it in the browser unlock screen.
+      # AGENT_DECK_TOKEN: 'set-a-long-random-token'
+      # The interactive terminal is OFF in remote/container mode by default; it
+      # would open a shell INSIDE this container, not on your host. Opt in only
+      # if you understand that:
+      # AGENT_DECK_ENABLE_TERMINAL: '1'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+    # On Linux, if your Hermes gateway binds loopback only (127.0.0.1), the
+    # container cannot reach it through host.docker.internal. The simplest fix is
+    # host networking: uncomment the line below, drop the `ports` mapping above
+    # (host networking ignores it), and set HERMES_GATEWAY_URL to
+    # http://127.0.0.1:8642. On Docker Desktop (macOS/Windows) keep the default
+    # bridge networking above.
+    # network_mode: host

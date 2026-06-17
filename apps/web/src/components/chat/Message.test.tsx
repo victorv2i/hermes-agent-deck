@@ -127,7 +127,7 @@ describe('Message', () => {
       },
     )
     const gutter = screen.getByTestId('assistant-avatar')
-    // The governed Avatar primitive (a decorative <img>, never the amber accent).
+    // The governed Avatar primitive (a decorative <img>, never the sky-blue accent).
     // The face is presentational (empty alt) so the adjacent prose carries meaning.
     const img = gutter.querySelector('img')
     expect(img).not.toBeNull()

@@ -209,7 +209,7 @@ describe('FileBrowser', () => {
     // The shared "couldn't load" vocabulary: a titled tile + the failing detail.
     expect(screen.getByText(/Couldn.t load workspace/i)).toBeInTheDocument()
     expect(screen.getByText('Permission denied')).toBeInTheDocument()
-    // The retry is a GOVERNED outline button (never amber) wired to onRefresh,
+    // The retry is a GOVERNED outline button (never the action accent) wired to onRefresh,
     // which refetches the listing + roots queries.
     const retry = screen.getByRole('button', { name: /retry/i })
     expect(retry).toHaveAttribute('data-variant', 'outline')

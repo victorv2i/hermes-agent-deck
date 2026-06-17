@@ -40,7 +40,7 @@ function renderAt(initial: string) {
   )
 }
 
-describe('UsageRoute — period in the URL', () => {
+describe('UsageRoute – period in the URL', () => {
   it('defaults to the 7-day window when `?period=` is absent', () => {
     renderAt('/usage')
     expect(useUsage).toHaveBeenCalledWith(7)

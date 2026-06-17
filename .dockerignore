@@ -1,0 +1,18 @@
+# Keep the build context small and reproducible: never ship local installs,
+# stale build output, VCS history, test artifacts, or internal dev notes.
+node_modules
+**/node_modules
+**/dist
+.git
+.gitignore
+test-results
+playwright-report
+**/coverage
+**/*.log
+.design-gen
+docs/superpowers
+# Internal, gitignored dev handoff; not for the published image.
+CLAUDE.md
+Dockerfile
+.dockerignore
+docker-compose.yml

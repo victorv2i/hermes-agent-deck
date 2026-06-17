@@ -45,7 +45,8 @@ import {
   type StudioEnvResponse,
   type AvatarId,
 } from '@agent-deck/protocol'
-import { apiFetch, apiPost } from '@/lib/apiFetch'
+import { apiFetch, apiPost, API_BASE, ApiError } from '@/lib/apiFetch'
+import { authHeaders } from '@/lib/authToken'
 import { profileQuery, profileBody } from './profileScope'
 
 const asString = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v : fallback)
@@ -382,4 +383,75 @@ export async function switchActiveProfile(name: string): Promise<{ active: strin
   const raw = await apiPost<unknown>('/profiles/switch', { name })
   const obj = asRecord(raw)
   return { active: asString(obj.active) || name }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Profile export / import (the BFF shells out to `hermes profile export|import`) */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Export an agent as a `.tar.gz` and trigger a browser download. The BFF streams
+ * the archive hermes' CLI produces; hermes EXCLUDES credentials (`.env`,
+ * `auth.json`) from the archive, so the download is a credential-free snapshot.
+ *
+ * apiFetch always parses JSON, so this uses a raw fetch (with the same auth
+ * header) to read the binary body as a Blob and saves it via an object URL.
+ */
+export async function exportAgent(name: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/profiles/${encodeURIComponent(name)}/export`, {
+    headers: { ...authHeaders() },
+  })
+  if (!res.ok) {
+    // Surface the BFF's clean message (generic on failure; never raw stderr).
+    let message = `Couldn't export ${name}.`
+    try {
+      const body = (await res.json()) as { message?: string; error?: string }
+      message = body.message ?? body.error ?? message
+    } catch {
+      // non-JSON error body — keep the generic message
+    }
+    throw new ApiError(message, res.status)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  try {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${name}.tar.gz`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+/** Read a File as a base64 string (no data-URL prefix), for the import upload. */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the file.'))
+    reader.onload = () => {
+      const result = reader.result
+      if (typeof result !== 'string') {
+        reject(new Error('Could not read the file.'))
+        return
+      }
+      // result is a data URL ("data:...;base64,<payload>"); strip the prefix.
+      const comma = result.indexOf(',')
+      resolve(comma >= 0 ? result.slice(comma + 1) : result)
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+/**
+ * Import an agent from a `.tar.gz` archive. The bytes are sent as base64 in the
+ * JSON body (the BFF stages them to a temp file and runs `hermes profile import
+ * <tmp> --name <name>`). Returns the created agent name.
+ */
+export async function importAgent(name: string, archiveBase64: string): Promise<{ name: string }> {
+  const raw = await apiPost<unknown>('/profiles/import', { name, archive: archiveBase64 })
+  const obj = asRecord(raw)
+  return { name: asString(obj.name) || name }
 }

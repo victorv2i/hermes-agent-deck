@@ -40,7 +40,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * SystemPage — the Maintenance dock (`/system`): three stacked cards on the one
- * Card primitive, each a status row + a single amber action whose enabled state
+ * Card primitive, each a status row + a single sky-blue action whose enabled state
  * is driven by a REAL check. The HONESTY rules of the design spine live here in
  * their sharpest form:
  *
@@ -49,7 +49,7 @@ import { cn } from '@/lib/utils'
  *    restart is in flight it reuses the calm reconnecting UX (the ConnectionDot's
  *    pulsing amber + "Restarting…"), never a fake "done".
  *  - HermesUpdateCard — the apply is DISABLED + "Up to date" when the read reports
- *    current, and ACTIVE amber ONLY when the read reports update-available. The
+ *    current, and ACTIVE sky-blue ONLY when the read reports update-available. The
  *    confirm states the real cost (restarts the gateway, keeps a backup). The
  *    apply streams a secret-scrubbed log into a collapsible disclosure.
  *  - AgentDeckUpdateCard — DISABLED with a visible reason ("No update channel
@@ -58,7 +58,7 @@ import { cn } from '@/lib/utils'
  *
  * Presentational by design: the connected {@link ./SystemRoute} wires the query +
  * mutations and feeds status/result/error in, so each card is exercisable across
- * idle / in-flight / result without a query client. The single amber accent is
+ * idle / in-flight / result without a query client. The single sky-blue accent is
  * spent on the one real action per card; identity is never involved.
  */
 
@@ -265,7 +265,7 @@ function HermesUpdateCard({
       }
       description="The Hermes agent itself. Updating restarts your agent and keeps a backup."
       action={
-        // ACTIVE amber ONLY when the SELECTED channel reports an update; else DISABLED.
+        // ACTIVE sky-blue ONLY when the SELECTED channel reports an update; else DISABLED.
         <Button disabled={!available || applying} onClick={() => setConfirming(true)}>
           {applying ? (
             <>
@@ -403,7 +403,7 @@ function UpdateResultLog({ result }: { result: HermesUpdateApplyResult }) {
 /* DoctorCard                                                                 */
 /* -------------------------------------------------------------------------- */
 
-/** Map the doctor verdict to a calm one-line status with a semantic glyph (no amber). */
+/** Map the doctor verdict to a calm one-line status with a semantic glyph (no action accent). */
 function doctorStatusLine(report: HermesDoctorReport): ReactNode {
   if (report.status === 'unavailable') {
     return (
@@ -454,7 +454,7 @@ function DoctorCard({ action }: { action: DoctorActionState }) {
       }
       description="Run Hermes's own diagnostics: config, auth, tools, and connectivity. Read-only; nothing is changed."
       action={
-        // Read-only action → not the amber primary; a neutral outline button.
+        // Read-only action → not the sky-blue primary; a neutral outline button.
         <Button variant="outline" disabled={running} onClick={action.onRun}>
           {running ? (
             <>

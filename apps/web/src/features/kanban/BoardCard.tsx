@@ -10,8 +10,8 @@
  * quiet metadata row (comments · link counts · child progress), an optional
  * warnings chip (semantic tint only), and — for a card in the RUNNING column —
  * the live worker/run strip so you can watch the work happen. A RUNNING worker is
- * a LIVE state, a sanctioned amber use (accent governance §2): the strip reads as
- * a faint amber-tinted panel with an amber spinning glyph.
+ * a LIVE state, a sanctioned accent use (accent governance §2): the strip reads as
+ * a faint sky-blue-tinted panel with a sky-blue spinning glyph.
  */
 import { MessageSquare, GitBranch, Loader2, AlertTriangle, User, Square } from 'lucide-react'
 import type { KanbanCard, KanbanMoveTarget } from '@agent-deck/protocol'
@@ -143,7 +143,7 @@ export function BoardCard({
       </div>
 
       {/* Live worker strip — running cards only; a RUNNING worker is a LIVE state
-          (a sanctioned amber use): a faint amber-tinted panel + amber glyph. When a
+          (a sanctioned accent use): a faint sky-blue-tinted panel + sky-blue glyph. When a
           live run id is present and onStop is wired, a quiet Stop control rides the
           strip so you can terminate the worker from the board itself (it stops
           propagation so it doesn't open the drawer). */}

@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils'
 
 /*
   GOVERNED badge vocabulary (color = meaning):
-  - `active`  amber, solid — the ONE live/active/primary marker. Brightens on
+  - `active`  sky-blue, solid — the ONE live/active/primary marker. Brightens on
     hover. (`default` aliases it so existing call sites stay correct.)
   - `muted`   a quiet neutral chip — the everyday metadata pill (no color).
   - `success` / `warning` / `info` / `destructive` — semantic status only,
     rendered as a tinted chip with a same-hue label.
   - `outline` / `secondary` / `ghost` / `link` — structural variants retained.
-  Amber is reserved for `active`; never use it as decoration.
+  The action accent is reserved for `active`; never use it as decoration.
 */
 const badgeVariants = cva(
   // tabular-nums (P2.6): badges are the app's numeric chip (counts/metrics) — fixed-width

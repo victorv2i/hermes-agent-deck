@@ -39,9 +39,9 @@ grid engine `PaneGrid.tsx`, so they look and behave identically:
 
 `PaneGrid` shows many live shells with a TAB view (one active at a time, "+" to
 open up to 12) and a GRID view (several at once; the focused one carries the
-sanctioned amber ring). A calm toggle switches modes; inactive tabs stay MOUNTED
+sanctioned sky-blue ring). A calm toggle switches modes; inactive tabs stay MOUNTED
 (hidden) so their shells keep running. Tabs/grid carry the CLI's local-SVG BRAND
-mark (`cliBrandIcons.tsx`, identity, never the amber accent; Hermes uses a tasteful
+mark (`cliBrandIcons.tsx`, identity, never the sky-blue accent; Hermes uses a tasteful
 monogram fallback).
 
 Each pane = ONE mounted `TerminalView` → its own `TerminalSocket` → its own

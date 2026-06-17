@@ -26,6 +26,7 @@ const toggleSkill = vi.fn((_vars: { name: string; enabled: boolean }, opts?: { o
   opts?.onSettled?.(),
 )
 const setEnv = vi.fn().mockResolvedValue({ ok: true, key: 'K', restartRequired: false })
+const exportProfile = vi.fn()
 
 vi.mock('./hooks', () => ({
   // The shape the fetched config has AFTER the client unwraps the BFF's
@@ -76,6 +77,8 @@ vi.mock('./hooks', () => ({
     error: null,
   }),
   useSetStudioEnv: () => ({ mutateAsync: setEnv, isPending: false }),
+  // IdentitySection's Export action uses this mutation (mutate + isPending only).
+  useExportStudioProfile: () => ({ mutate: exportProfile, isPending: false }),
 }))
 
 const PROFILE: ProfileSummary = {
@@ -123,6 +126,15 @@ describe('StudioWorkbench', () => {
     for (const label of ['Identity', 'Soul', 'Model', 'Tools', 'Memory', 'Skills', 'Env']) {
       expect(within(tablist).getByRole('tab', { name: label })).toBeInTheDocument()
     }
+  })
+
+  it('pins the section nav to the top of the page scroll container (sticky)', () => {
+    renderWorkbench()
+    // The switcher must stay reachable on a long section, so its wrapper sticks
+    // to the page scroll container's top with the panel surface masking content.
+    const wrapper = screen.getByRole('tablist', { name: /workbench sections/i })
+      .parentElement as HTMLElement
+    expect(wrapper).toHaveClass('sticky', 'top-0', 'bg-card')
   })
 
   it('opens the Identity section by default (shows the agent name)', () => {

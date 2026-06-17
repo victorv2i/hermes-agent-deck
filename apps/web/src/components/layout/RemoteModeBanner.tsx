@@ -7,9 +7,9 @@ import { TriangleAlert } from 'lucide-react'
  * it is NOT a network boundary — anyone who can reach this server can drive the
  * agent.
  *
- * Styled with the DESTRUCTIVE semantic color (not the amber accent): a tinted
+ * Styled with the DESTRUCTIVE semantic color (not the sky-blue accent): a tinted
  * surface + a hairline, so it reads as a standing caution rather than a flashing
- * alarm. Amber is reserved for primary/active state (design language §2), so a
+ * alarm. The action accent is reserved for primary/active state (design language §2), so a
  * security caution must use a semantic color instead.
  */
 export function RemoteModeBanner() {

@@ -22,7 +22,7 @@ describe('ErrorState', () => {
     ).toHaveAccessibleDescription('Your agent didn’t respond.')
 
     const retry = screen.getByRole('button', { name: /retry/i })
-    // Amber governance: the retry is the OUTLINE variant, never raw amber.
+    // Accent governance: the retry is the OUTLINE variant, never the raw action accent.
     expect(retry).toHaveAttribute('data-variant', 'outline')
 
     await userEvent.click(retry)

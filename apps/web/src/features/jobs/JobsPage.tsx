@@ -2,7 +2,7 @@
  * JobsPage — the presentational Jobs (cron) surface. Pure props in (jobs + loading/
  * error + the per-job pending action) / callbacks out; the route (JobsRoute) owns
  * the queries + mutations. Layout follows the design language: a calm PageHeader
- * with a governed-amber "New task" action, an optional inline create/edit form, and
+ * with a governed sky-blue "New task" action, an optional inline create/edit form, and
  * the job list (or a skeleton / empty / error state).
  */
 import { useEffect, useRef } from 'react'

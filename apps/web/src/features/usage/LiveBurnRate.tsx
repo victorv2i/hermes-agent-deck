@@ -8,11 +8,11 @@ import { useUsage } from './useUsage'
 import { approxHourlyRate, monthToDateSpend, todaySpend } from './burnRate'
 
 /**
- * LiveBurnRate — a small, glanceable header pill showing TODAY's spend (the
+ * LiveBurnRate – a small, glanceable header pill showing TODAY's spend (the
  * loudest real user pain is cost shock; this surfaces it before the bill does).
  *
  * Calm by default: a muted "$4.32 today" chip. It turns to the WARNING token
- * (warm amber, NOT alarm-red) the moment a soft budget is crossed — a signal,
+ * (warm amber, NOT alarm-red) the moment a soft budget is crossed – a signal,
  * not a siren. Hover/tap reveals an approximate $/hr (honest about the window:
  * "spread over today"), and clicking jumps to the Usage surface for the full
  * picture.
@@ -21,7 +21,7 @@ import { approxHourlyRate, monthToDateSpend, todaySpend } from './burnRate'
  * number stays live without a reload, and the budget store for the warning
  * threshold. Renders nothing until there's a real number to show (no "$0.00"
  * clutter on a fresh/idle install, and nothing while the first fetch is in
- * flight or errored — the pill is a bonus signal, never a blocker).
+ * flight or errored – the pill is a bonus signal, never a blocker).
  */
 export const BURN_RATE_POLL_MS = 60_000
 
@@ -46,7 +46,7 @@ export function LiveBurnRate({ now }: LiveBurnRateProps = {}) {
   const label = formatCost(spend)
 
   // Nothing to show until there's a genuine, billed number today. A $0 / unbilled
-  // / not-yet-loaded day yields null from formatCost — we render nothing rather
+  // / not-yet-loaded day yields null from formatCost – we render nothing rather
   // than a wall of zeros in the header.
   if (label === null) return null
 
@@ -64,10 +64,10 @@ export function LiveBurnRate({ now }: LiveBurnRateProps = {}) {
   const title = [
     `${label} spent today`,
     hourlyLabel ? `≈ ${hourlyLabel}/hr (today's spend so far, spread over elapsed hours)` : null,
-    overDaily ? `Over your daily budget (cap ${formatCost(budget.daily!) ?? '—'})` : null,
+    overDaily ? `Over your daily budget (cap ${formatCost(budget.daily!) ?? '–'})` : null,
     overMonthly
-      ? `Over your monthly budget: ${formatCost(monthSpend) ?? '—'} this month (cap ${
-          formatCost(budget.monthly!) ?? '—'
+      ? `Over your monthly budget: ${formatCost(monthSpend) ?? '–'} this month (cap ${
+          formatCost(budget.monthly!) ?? '–'
         })`
       : null,
     'Click to open Usage',
@@ -90,7 +90,7 @@ export function LiveBurnRate({ now }: LiveBurnRateProps = {}) {
       className={cn(
         'inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[11.5px] font-medium tabular-nums transition-colors focus-visible:ad-focus',
         warned
-          ? // WARNING token — warm amber, not alarm-red: a budget is a soft signal.
+          ? // WARNING token – warm amber, not alarm-red: a budget is a soft signal.
             'border-warning/40 bg-warning/12 text-warning hover:bg-warning/20'
           : // Calm at rest: a quiet, muted chip that doesn't compete for attention.
             'border-border bg-surface-1 text-muted-foreground hover:text-foreground hover:bg-surface-2',

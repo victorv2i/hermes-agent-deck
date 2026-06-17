@@ -21,11 +21,13 @@ describe('DmAuthPanel — owner-gated inbound DM authorization (points at the in
     expect(within(region).getByText(/only you, the owner, can approve/i)).toBeInTheDocument()
   })
 
-  it('links to the Connections > Pairing tab where approval actually happens', () => {
+  it('links to the Studio Connections > Pairing tab where approval actually happens', () => {
     renderPanel()
     const region = screen.getByRole('region', { name: /direct message|dm/i })
     const link = within(region).getByRole('link', { name: /pairing tab/i })
-    expect(link).toHaveAttribute('href', '/connections?tab=pairing')
+    // Connections folded into the Studio as a global view, so the link targets
+    // the Studio's Connections view on the Pairing sub-tab.
+    expect(link).toHaveAttribute('href', '/?view=connections&tab=pairing')
   })
 
   it('no longer claims approval is terminal-only or prints CLI commands', () => {

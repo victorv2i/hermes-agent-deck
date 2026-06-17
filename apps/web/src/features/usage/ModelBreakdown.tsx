@@ -1,19 +1,19 @@
 /**
- * ModelBreakdown — per-model token + cost rollup, sorted by total tokens. Each
+ * ModelBreakdown – per-model token + cost rollup, sorted by total tokens. Each
  * row shows the model name, a calm teal share bar with a trailing share-of-TOTAL
  * %, the humanized token count, and the cost.
  *
  * HONESTY (INFO-ACC-1): the bar width and % shown is each model's share of the
- * GRAND TOTAL for the period — never share-of-peak (which forces the widest bar
+ * GRAND TOTAL for the period – never share-of-peak (which forces the widest bar
  * to 100% and can make the sum exceed 100%). Share-of-peak would be an
  * info-accuracy lie (an impossible %). Grand-total ensures all %s add up to ≤100.
  *
- * The bar fill is the semantic teal (`--chart-2`), NOT amber: it's decorative
+ * The bar fill is the semantic teal (`--chart-2`), NOT the accent: it's decorative
  * (a magnitude indicator, not an action/active state), so per the accent-
- * governance rules amber stays reserved for primary action / live state.
+ * governance rules the sky-blue accent stays reserved for primary action / live state.
  *
  * VISUAL SCANNABILITY: each model row shows the vendor's brand mark (from
- * @lobehub/icons via ProviderBrandIcon) beside the model name — people read
+ * @lobehub/icons via ProviderBrandIcon) beside the model name – people read
  * logos faster than text. The mark is decorative (aria-hidden) and the model
  * name carries the accessible meaning.
  */

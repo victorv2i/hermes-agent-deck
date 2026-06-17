@@ -9,7 +9,7 @@ import {
 } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Sidebar } from './Sidebar'
-import { NAV_GROUP_LABELS, pinnedNavItems } from '@/app/navigation'
+import { flatNavItems, pinnedNavItems } from '@/app/navigation'
 
 // The Sidebar hosts the AgentChip (reads the profile roster via React Query), so
 // it needs a QueryClient. With no fetch backend the chip stays empty (renders
@@ -33,23 +33,12 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('list', { name: /sessions/i })).not.toBeInTheDocument()
   })
 
-  it('shows the friendly group headers (no raw workspace/agent/system jargon)', () => {
+  it('renders a FLAT rail with no section headings', () => {
     const { container } = renderSidebar()
-    // The group headers are the `.ad-section-label` spans. Their text spells the
-    // friendly labels. Home + Chat are pinned-top standalone items, so there's no
-    // "Conversations"/chat group header.
-    const headers = Array.from(container.querySelectorAll('.ad-section-label')).map(
-      (el) => el.textContent,
-    )
-    // The collapsible "Advanced" group was removed; its surfaces flattened into the
-    // three visible groups, so the rail now shows Workspace · Your agent · Activity.
-    expect(headers).toContain(NAV_GROUP_LABELS.workspace)
-    expect(headers).toContain(NAV_GROUP_LABELS.agent)
-    expect(headers).toContain(NAV_GROUP_LABELS.activity)
-    // No raw jargon survived.
-    expect(headers).not.toContain('system')
-    expect(headers).not.toContain('workspace')
-    expect(headers).not.toContain('agent')
+    // The rail is now one flat, well-ordered list — no `.ad-section-label` group
+    // headers at all (the friendly "Workspace"/"Your agent"/"Activity" headings
+    // were removed; grouping now lives only in the ⌘K palette).
+    expect(container.querySelectorAll('.ad-section-label').length).toBe(0)
   })
 
   it('promotes Chat to a primary rail link and lists no History link (folded into Chat)', () => {
@@ -159,16 +148,30 @@ describe('Sidebar', () => {
     vi.unstubAllGlobals()
   })
 
-  it('groups the surface nav under the friendly headers in order', () => {
-    const { container } = renderSidebar()
-    const headers = Array.from(container.querySelectorAll('.ad-section-label')).map(
-      (el) => el.textContent,
+  it('lists the surface nav as one flat ordered list, Terminal directly under Chat', () => {
+    renderSidebar()
+    const nav = screen.getByRole('navigation', { name: /main navigation/i })
+    // The in-nav rail links (the pinned-bottom Usage/Settings render outside this
+    // <nav>), in DOM order. The flat list leads with Studio · Chat · Terminal,
+    // then Files · Tasks · Board · System — exactly flatNavItems().
+    const linkLabels = Array.from(nav.querySelectorAll('a')).map((a) =>
+      a.textContent?.trim().toLowerCase(),
     )
-    expect(headers).toEqual([
-      NAV_GROUP_LABELS.agent,
-      NAV_GROUP_LABELS.workspace,
-      NAV_GROUP_LABELS.activity,
+    expect(linkLabels).toEqual(
+      flatNavItems().map((i) => i.label.toLowerCase()),
+    )
+    expect(linkLabels).toEqual([
+      'home',
+      'chat',
+      'terminal',
+      'files',
+      'tasks',
+      'board',
+      'system',
     ])
+    // The headline requirement: Terminal sits immediately under Chat.
+    const chatIdx = linkLabels.indexOf('chat')
+    expect(linkLabels[chatIdx + 1]).toBe('terminal')
   })
 
   it('renders all surfaces as flat top-level rail links — no collapsible "Advanced" group', () => {
@@ -176,18 +179,20 @@ describe('Sidebar', () => {
     renderSidebar()
     // The "Advanced" collapsible toggle is gone entirely.
     expect(screen.queryByRole('button', { name: /^advanced$/i })).not.toBeInTheDocument()
-    // The ex-Advanced surfaces are now visible top-level links (no expand needed):
-    // Files + Terminal (Workspace), Usage (Activity).
+    // The daily surfaces are visible top-level links (no expand needed):
+    // Files + Terminal, Usage.
     expect(screen.getByRole('link', { name: /^files$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^terminal$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^usage$/i })).toBeInTheDocument()
-    // The promoted Tasks · Board · Connections remain visible top-level links.
+    // Tasks · Board remain visible top-level links.
     expect(screen.getByRole('link', { name: /^tasks$/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /^board$/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /^connections$/i })).toBeInTheDocument()
+    // Connections folded INTO the Agent Studio (Home) as a global view, so it's no
+    // longer a rail link.
+    expect(screen.queryByRole('link', { name: /^connections$/i })).not.toBeInTheDocument()
     // The Agents + Tools surfaces FOLDED into the Agent Studio (Home), which leads
     // the rail as a pinned-top link; they are no longer their own rail rows.
-    expect(screen.getByRole('link', { name: /^agent studio$/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /^home$/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /^tools$/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /^agents$/i })).not.toBeInTheDocument()
   })

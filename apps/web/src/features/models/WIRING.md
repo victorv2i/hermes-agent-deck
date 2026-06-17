@@ -6,7 +6,7 @@ highlights the active one. Backed by the hermes dashboard's model-state.
 ## One-line description
 
 A `/models` page listing the configured models (provider-qualified ids) with
-the active model highlighted in amber, plus a provider · reasoning-effort ·
+the active model highlighted in sky-blue, plus a provider · reasoning-effort ·
 scope summary strip. Read-only in v1.
 
 ## NAV entry (apps/web/src/app/navigation.tsx)

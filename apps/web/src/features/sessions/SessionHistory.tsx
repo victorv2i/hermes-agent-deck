@@ -31,7 +31,7 @@ type ImportedTranscript = { session: SessionDetail | null; messages: SessionMess
  * The History (opened-session) view. Renders a persisted transcript as read-only
  * conversation history using the EXACT M1b chat vocabulary (Message → Markdown /
  * ToolCard / ReasoningBlock), under a calm sticky header (title · model ·
- * cost/tokens). A prominent amber "Continue" resumes the conversation: it calls
+ * cost/tokens). A prominent sky-blue "Continue" resumes the conversation: it calls
  * `onContinue(sessionId)`, which the integrator wires to a `/chat-run` run that
  * carries `session_id` so the gateway resumes IN THE SAME hermes session — that
  * is how you sprint across sessions.
@@ -159,7 +159,7 @@ export function SessionHistoryView({
  * `/sessions/:id` detail route — so it reads as a child of History, not an
  * orphan. The first crumb is the Back affordance (a real button → the History
  * browser); the current session title is the inert trailing crumb. Neutral, never
- * amber; the amber accent stays on the page's one action (Continue).
+ * the accent; the sky-blue accent stays on the page's one action (Continue).
  */
 function Breadcrumb({ title, onBack }: { title: string; onBack: () => void }) {
   return (
@@ -264,7 +264,7 @@ function Header({
  * session reads as a destructive-tinted "Failed" chip (warning-triangle glyph);
  * a handed-off session reads as a neutral "Handed off" chip (branch glyph).
  * State is conveyed by SHAPE/ICON + a TEXT label + an aria-label — governed
- * semantic color, never amber, never color alone (colorblind-safe).
+ * semantic color, never the action accent, never color alone (colorblind-safe).
  */
 function StateBadge({ detail }: { detail: SessionDetail }) {
   const indicator = sessionStateIndicator(detail)
@@ -339,7 +339,7 @@ function ContinueBar({
 /**
  * A calm strip shown above an imported transcript. It states the honest boundary
  * plainly (a local read-only view, not a hermes session) and offers a way back
- * to the live session. Neutral/muted styling — this is informational, not amber.
+ * to the live session. Neutral/muted styling — this is informational, not the action accent.
  */
 function ImportedBanner({ onExit }: { onExit: () => void }) {
   return (

@@ -40,13 +40,49 @@ function DialogContent({
   className,
   children,
   showClose = true,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & { showClose?: boolean }) {
+  // Consumers open dialogs CONTROLLED, without a <DialogTrigger> (the command
+  // palette, New Agent, the row-action popover). Radix only snapshots the opener
+  // when its OWN Trigger is used, and a parent re-render can swap the node Radix
+  // snapshotted, so on close it can't restore focus and it falls to <body>
+  // (WCAG 2.4.3). We snapshot the focused element ourselves in onOpenAutoFocus
+  // (which Radix fires while the opener is still focused, just before it moves
+  // focus into the dialog) and restore it in onCloseAutoFocus.
+  const openerRef = React.useRef<HTMLElement | null>(null)
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onOpenAutoFocus={(event) => {
+          // Capture the opener BEFORE Radix moves focus inward. Compose any
+          // consumer handler first; if it opts out (preventDefault) we still want
+          // our snapshot, so we capture regardless.
+          const active = document.activeElement
+          openerRef.current =
+            active instanceof HTMLElement && active !== document.body ? active : null
+          onOpenAutoFocus?.(event)
+        }}
+        // Restore focus to the captured opener on close (preventDefault so Radix
+        // doesn't first send it to <body>). Compose any consumer handler: theirs
+        // runs first and can preventDefault to opt out of our restore.
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event)
+          if (event.defaultPrevented) return
+          event.preventDefault()
+          const opener = openerRef.current
+          if (opener && opener.isConnected) {
+            opener.focus()
+          } else {
+            // Fallback: keep focus in the document (not on <body>) so keyboard
+            // users keep a sane tab origin even if the opener is gone.
+            const fallback = document.querySelector<HTMLElement>('#main-content')
+            fallback?.focus()
+          }
+        }}
         className={cn(
           'fixed top-[clamp(3rem,15vh,8rem)] left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 gap-4',
           // Never exceed the viewport on short/mobile-landscape screens — the body

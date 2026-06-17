@@ -6,7 +6,6 @@ import {
   FolderTree,
   SquareTerminal,
   IdCard,
-  Cable,
   Settings,
   BarChart3,
   CalendarClock,
@@ -67,33 +66,34 @@ const KanbanRoute = lazy(() =>
 const SystemRoute = lazy(() =>
   import('@/features/system').then((m) => ({ default: m.SystemRoute })),
 )
-// Voice + Messaging + MCP fold into ONE tabbed Connections surface — those three
-// Routes are now MOUNTED (unchanged) as tabs inside ConnectionsRoute, not as
-// standalone rail surfaces. The old /voice · /messaging · /mcp paths redirect
-// here (router.tsx) so deep-links + Settings' "Configured on the X page →" land.
-const ConnectionsRoute = lazy(() =>
-  import('@/features/connections').then((m) => ({ default: m.ConnectionsRoute })),
-)
+// Connections (Voice · Messaging · MCP · Pairing · Webhooks · Credentials) is no
+// longer a standalone rail surface — it folded INTO the Agent Studio (Home) as a
+// GLOBAL view switch (`/?view=connections`), because those settings apply to ALL
+// agents, not one. The Studio mounts the existing ConnectionsRoute; the
+// `/connections` path (and the old /voice · /messaging · /mcp paths) redirect to
+// the Studio's Connections view (router.tsx) so deep-links + the command palette
+// + Settings' "Configured on the X page →" links still land.
 
 /**
  * Surface registry — the SINGLE source of truth for the app's navigable
- * surfaces. The rail (Sidebar) renders these grouped, and the router
- * (app/router.tsx) turns each entry into a route. Registering a new surface is a
- * purely additive edit here: append a `NavItem` and provide its `element`.
+ * surfaces. The rail (Sidebar) renders these as ONE flat, well-ordered list (no
+ * section headings — see {@link flatNavItems}), and the router (app/router.tsx)
+ * turns each entry into a route. Registering a new surface is a purely additive
+ * edit here: append a `NavItem` and provide its `element`.
  *
  * Agent Studio owns the index ('/') — the Home front door — and Chat lives at
  * '/chat'. Every other surface maps its own path.
  */
 
 /**
- * The rail groups surfaces under these section keys, in this order. The KEY is a
- * stable internal identifier; the human-facing rail HEADER is {@link NAV_GROUP_LABELS}:
- * friendly words ("Your agent", "Workspace", "Activity") instead of raw jargon.
- *
- * Agent Studio (Home) + Chat are PINNED-TOP standalone items (not group members),
- * so there's no "chat"/"Conversations" group: the rail leads with the two primary
- * destinations, then "Your agent" first (identity + capabilities, the product's
- * personalization core), then Workspace, then Activity.
+ * Stable section keys used to GROUP surfaces — now only in the ⌘K command palette
+ * ("Go to …" sections), not the rail. The KEY is a stable internal identifier;
+ * the friendly palette HEADER is {@link NAV_GROUP_LABELS} ("Your agent",
+ * "Workspace", "Activity"). The RAIL no longer groups: it renders one flat list
+ * (Agent Studio · Chat · Terminal · Files · Tasks · Board · System, then the
+ * pinned-bottom Usage · Settings), so a newcomer reads top-to-bottom without
+ * section headings. Each NavItem keeps its `group` tag purely for the palette's
+ * grouping (and as routing metadata).
  */
 export const NAV_GROUPS = ['agent', 'workspace', 'activity'] as const
 export type NavGroup = (typeof NAV_GROUPS)[number]
@@ -111,9 +111,9 @@ export const NAV_GROUP_LABEL_KEYS = {
   activity: 'navigation.group.activity.label',
 } satisfies Record<NavGroup, NavGroupLabelKey>
 
-/** The friendly section header shown in the rail for each group (recognition over
- * jargon). Keep these warm + plain so a newcomer reads the rail without a glossary.
- * The KEYS stay internal/stable; only these LABELS are user-facing. */
+/** The friendly section header shown for each group in the ⌘K palette's "Go to"
+ * sections (the rail itself is flat now). Keep these warm + plain. The KEYS stay
+ * internal/stable; only these LABELS are user-facing. */
 export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   workspace: navMessage(NAV_GROUP_LABEL_KEYS.workspace),
   agent: navMessage(NAV_GROUP_LABEL_KEYS.agent),
@@ -150,28 +150,29 @@ export interface NavItem {
    */
   hidden?: boolean
   /**
-   * When true this surface is PINNED to the bottom of the rail (below the grouped
-   * nav, above the fold), separated by a hairline. Settings uses this — the
-   * conventional "anchored at the bottom" home for app preferences.
+   * When true this surface is PINNED to the bottom of the flat rail (below the
+   * main list, above the fold), separated by a hairline. Usage + Settings use
+   * this — the conventional "anchored at the bottom" home for metering + app
+   * preferences.
    */
   pinned?: boolean
   /**
-   * When true this surface is PINNED to the TOP of the rail — a STANDALONE item
-   * ABOVE the grouped nav (mirror of {@link pinned}), not under any section
-   * header. Home + Chat use this: the two primary destinations lead the rail
-   * (Home is the front door; Chat is the surface opened most), not as members of
-   * any group.
+   * When true this surface leads the flat rail — rendered FIRST, above the rest
+   * of the list (mirror of {@link pinned}). Agent Studio · Chat · Terminal use
+   * this: the three primary destinations lead the rail (Home is the front door;
+   * Chat is the surface opened most; Terminal sits immediately under Chat). The
+   * order among them follows registry order.
    */
   pinnedTop?: boolean
 }
 
 export const NAV: NavItem[] = [
   {
-    // Agent Studio is Home — a STANDALONE top item, the index ('/') front door.
-    // `pinnedTop` floats it ABOVE the grouped nav (mirror of how Settings is
-    // `pinned` below). Its `group` is just a stable routing tag (the rail never
-    // lists it there); `agent` is the natural bucket (it's the personalization
-    // core). The Agents + Tools surfaces folded INTO it (see router.tsx redirects).
+    // Agent Studio is Home — the index ('/') front door, leading the flat rail.
+    // `pinnedTop` renders it FIRST (mirror of how Settings is `pinned` last). Its
+    // `group` is just a stable routing/palette tag; `agent` is the natural bucket
+    // (it's the personalization core). The Agents + Tools surfaces folded INTO it,
+    // and Connections now lives inside it as a view (see router.tsx redirects).
     key: 'studio',
     label: navMessage('navigation.item.studio.label'),
     labelKey: 'navigation.item.studio.label',
@@ -192,6 +193,26 @@ export const NAV: NavItem[] = [
     icon: MessagesSquare,
     group: 'workspace',
     element: <ChatRoute />,
+    pinnedTop: true,
+  },
+  {
+    // Terminal is PROMOTED to a primary pinned-top item, immediately UNDER Chat:
+    // the three leading destinations are Agent Studio · Chat · Terminal. Registry
+    // order places it right after Chat so `pinnedTopNavItems()` (which preserves
+    // registry order) yields [studio, chat, terminal]. It is the UNIFIED surface:
+    // the ephemeral quick terminal ("Scratch") AND the named, server-saved
+    // workspaces, in ONE page with a workspace switcher. The separate Workspaces
+    // rail entry is gone (saved sets live in the switcher); the `/workspaces` +
+    // `/workspaces/:id` paths alias to this surface via router.tsx so existing
+    // links and deep links keep working. The `group` tag is just stable routing
+    // metadata (the rail is flat now; the command palette still groups by it).
+    key: 'terminal',
+    label: navMessage('navigation.item.terminal.label'),
+    labelKey: 'navigation.item.terminal.label',
+    path: '/terminal',
+    icon: SquareTerminal,
+    group: 'workspace',
+    element: <TerminalSurface />,
     pinnedTop: true,
   },
   {
@@ -257,35 +278,6 @@ export const NAV: NavItem[] = [
     element: <KanbanRoute />,
   },
   {
-    // Terminal is the UNIFIED surface: the ephemeral quick terminal ("Scratch")
-    // AND the named, server-saved workspaces, in ONE page with a workspace
-    // switcher. The separate Workspaces rail entry is gone (saved sets live in the
-    // switcher); the `/workspaces` + `/workspaces/:id` paths alias to this surface
-    // via router.tsx so existing links and deep links keep working.
-    key: 'terminal',
-    label: navMessage('navigation.item.terminal.label'),
-    labelKey: 'navigation.item.terminal.label',
-    path: '/terminal',
-    icon: SquareTerminal,
-    group: 'workspace',
-    element: <TerminalSurface />,
-  },
-  {
-    // Connections — ONE tabbed home for the agent's outward reach: Voice ·
-    // Messaging · MCP (folded from three separate rail rows). These are
-    // settings-shaped (Settings deep-links "Configured on the X page →"), not
-    // daily destinations, so they collapse into one surface. Each tab MOUNTS the
-    // existing surface Route unchanged (re-house, not rewrite); the old
-    // /voice · /messaging · /mcp paths redirect here with the right ?tab=.
-    key: 'connections',
-    label: navMessage('navigation.item.connections.label'),
-    labelKey: 'navigation.item.connections.label',
-    path: '/connections',
-    icon: Cable,
-    group: 'agent',
-    element: <ConnectionsRoute />,
-  },
-  {
     // Usage = cost + token metering, not the agent's "Activity" (Tasks/Board). It is
     // floated to the pinned-bottom cluster, just above Settings, where metering and
     // preferences sit together. `group` stays a routing tag; `pinned` floats it out.
@@ -328,9 +320,9 @@ export const NAV: NavItem[] = [
     element: <SystemRoute />,
   },
   {
-    // Settings is PINNED to the bottom of the rail (the conventional anchored
-    // home for app preferences), so it's grouped 'activity' for routing but the
-    // rail floats it below the fold via {@link pinned}.
+    // Settings is PINNED to the bottom of the flat rail (the conventional anchored
+    // home for app preferences), so it's grouped 'activity' for routing/palette but
+    // the rail floats it below the fold via {@link pinned}.
     key: 'settings',
     label: navMessage('navigation.item.settings.label'),
     labelKey: 'navigation.item.settings.label',
@@ -345,13 +337,12 @@ export const NAV: NavItem[] = [
   // so deep links survive, mirroring how `/memory` was folded in.
 ]
 
-/** NAV grouped + ordered by {@link NAV_GROUPS}, dropping empty groups. The
- * Sidebar consumes this so the grouping logic lives next to the registry.
- * `hidden` surfaces (the dynamic Sessions route, the demoted Logs) are
- * routed but never shown as rail links; `pinned` surfaces (Settings) are pulled
- * OUT of the grouped flow — the rail floats them at the bottom via
- * {@link pinnedNavItems}; `pinnedTop` surfaces (Home + Chat) are floated ABOVE the
- * grouped nav via {@link pinnedTopNavItems}. */
+/** NAV grouped + ordered by {@link NAV_GROUPS}, dropping empty groups. Consumed
+ * ONLY by the ⌘K command palette's "Go to …" sections now (the rail is flat).
+ * `hidden` surfaces (the dynamic Sessions route, the demoted Logs) are routed but
+ * never listed; `pinned` (Usage + Settings) + `pinnedTop` (Studio · Chat ·
+ * Terminal) surfaces are pulled OUT of the grouped flow (the palette lists them
+ * once, in their group). */
 export function navByGroup(): { group: NavGroup; label: string; items: NavItem[] }[] {
   return NAV_GROUPS.map((group) => ({
     group,
@@ -362,14 +353,32 @@ export function navByGroup(): { group: NavGroup; label: string; items: NavItem[]
   })).filter((g) => g.items.length > 0)
 }
 
-/** The rail-link surfaces PINNED to the TOP (Home + Chat), in registry order.
- * Rendered ABOVE the grouped nav as standalone items (mirror of {@link pinnedNavItems}). */
+/**
+ * The rail's FLAT, ordered surface list — the single ordering the Sidebar
+ * renders (no section headings). `pinnedTop` surfaces (Agent Studio · Chat ·
+ * Terminal) lead, then the remaining grouped surfaces in registry order (Files ·
+ * Tasks · Board · System). `hidden` surfaces (the dynamic Sessions route, the
+ * demoted Logs) and the `pinned`-bottom surfaces (Usage · Settings, rendered in
+ * their own anchored slot via {@link pinnedNavItems}) are excluded. Because both
+ * halves preserve registry order, "Terminal sits immediately under Chat" is
+ * guaranteed by the registry placing Terminal right after Chat. */
+export function flatNavItems(): NavItem[] {
+  const top = NAV.filter((item) => item.pinnedTop && !item.hidden)
+  const rest = NAV.filter(
+    (item) => !item.pinnedTop && !item.pinned && !item.hidden,
+  )
+  return [...top, ...rest]
+}
+
+/** The rail-link surfaces PINNED to the TOP (Agent Studio · Chat · Terminal), in
+ * registry order. Still exported for the palette / tests; the rail consumes the
+ * combined {@link flatNavItems} instead. */
 export function pinnedTopNavItems(): NavItem[] {
   return NAV.filter((item) => item.pinnedTop && !item.hidden)
 }
 
-/** The rail-link surfaces PINNED to the bottom (Settings), in registry order.
- * Rendered below the grouped nav, separated by a hairline. */
+/** The rail-link surfaces PINNED to the bottom (Usage · Settings), in registry
+ * order. Rendered below the flat list, separated by a hairline. */
 export function pinnedNavItems(): NavItem[] {
   return NAV.filter((item) => item.pinned && !item.hidden)
 }

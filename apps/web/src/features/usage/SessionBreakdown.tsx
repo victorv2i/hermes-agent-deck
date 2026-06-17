@@ -1,10 +1,10 @@
 /**
- * SessionBreakdown — the Usage page's per-session drill-down: sessions active in
+ * SessionBreakdown – the Usage page's per-session drill-down: sessions active in
  * the selected window, ranked by total tokens (desc), each linking back to its
  * conversation at `/chat/:id`.
  *
  * SOURCE + HONESTY: rows come from the SAME dashboard sessions API the deck
- * already serves (`GET /api/agent-deck/sessions` → state.db `sessions` rows —
+ * already serves (`GET /api/agent-deck/sessions` → state.db `sessions` rows –
  * the very table the Usage analytics SUM over, so the numbers share one source
  * of truth). Two honest caveats are surfaced, not hidden:
  *  - a session's token/cost figures are WHOLE-SESSION totals; a session that

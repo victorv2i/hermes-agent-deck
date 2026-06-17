@@ -10,7 +10,7 @@
  * fix both halves of that:
  *
  *  - `parseHighlight` splits a snippet into plain / matched segments so the view
- *    can STYLE the match (amber + bold) as safe React nodes — never
+ *    can STYLE the match (sky-blue + bold) as safe React nodes — never
  *    dangerouslySetInnerHTML on untrusted content.
  *  - `humanizeSnippet` turns a raw-JSON-ish fragment into a readable line so the
  *    result reads like prose, not a serialized payload.

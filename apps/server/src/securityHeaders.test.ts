@@ -110,6 +110,11 @@ describe('security headers on responses', () => {
     const csp = res.headers['content-security-policy']
     expect(csp).toBeTruthy()
     expect(String(csp)).toContain("frame-ancestors 'none'")
+    // 'wasm-unsafe-eval' must stay in script-src so the syntax-highlighter's
+    // Oniguruma WASM regex engine (Shiki) can instantiate. Removing it makes
+    // WebAssembly.instantiate throw a CSP CompileError and ALL code highlighting
+    // silently falls back to plain text. It permits WASM only, never JS eval.
+    expect(String(csp)).toContain("'wasm-unsafe-eval'")
   })
 
   it('sets hardening headers on the health JSON response too', async () => {

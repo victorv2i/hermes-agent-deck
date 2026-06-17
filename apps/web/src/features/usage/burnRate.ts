@@ -1,5 +1,5 @@
 /**
- * Burn-rate math — the pure, testable core of the Cost Cockpit.
+ * Burn-rate math – the pure, testable core of the Cost Cockpit.
  *
  * Every cost figure the cockpit shows (the header burn pill, the budget alert,
  * the Usage trend line + cost share) derives from the same normalized
@@ -52,7 +52,7 @@ export function monthToDateSpend(daily: UsageDailyPoint[], now: Date = new Date(
 
 /**
  * The rolling daily-average spend across the period's days that actually had
- * spend. Averaging only spend-bearing days keeps the "typical day" honest — a
+ * spend. Averaging only spend-bearing days keeps the "typical day" honest – a
  * long tail of quiet $0 days shouldn't drag the average toward zero and make a
  * real burn rate look tiny. Returns 0 when there's no spend at all.
  */
@@ -72,8 +72,8 @@ export function dailyAverageSpend(daily: UsageDailyPoint[]): number {
 /**
  * An APPROXIMATE $/hour for today, derived from today's spend spread across the
  * hours ELAPSED so far in the UTC day (min 1h so an early-morning spike doesn't
- * divide by a fraction and read as an absurd rate). This is deliberately rough —
- * the pill labels it "approx" and names the window — because agent-deck only
+ * divide by a fraction and read as an absurd rate). This is deliberately rough –
+ * the pill labels it "approx" and names the window – because agent-deck only
  * sees a daily rollup, not per-minute telemetry. Returns 0 when today is idle.
  */
 export function approxHourlyRate(daily: UsageDailyPoint[], now: Date = new Date()): number {
@@ -97,7 +97,7 @@ export interface ModelCostRow {
 /**
  * Per-model spend, ordered by cost (largest first). Uses each model's
  * estimatedCost (the per-model breakdown carries no actualCost). Models with no
- * cost are dropped — a cost-share view of $0 rows is noise. Returns [] when
+ * cost are dropped – a cost-share view of $0 rows is noise. Returns [] when
  * nothing was billed.
  */
 export function costByModel(byModel: UsageModelBreakdown[]): ModelCostRow[] {
@@ -128,7 +128,7 @@ export function costByModel(byModel: UsageModelBreakdown[]): ModelCostRow[] {
 /**
  * The single dominant model by cost when its share is "most of the spend"
  * (>= the given fraction of total, default 60%) AND total spend is non-trivial.
- * Drives the gentle efficiency nudge ("Most spend is Opus — try Sonnet"); we
+ * Drives the gentle efficiency nudge ("Most spend is Opus – try Sonnet"); we
  * only nudge when one model clearly dominates, never on a balanced spread.
  * Returns null when there's no clear leader or spend is below the floor.
  */

@@ -2,7 +2,7 @@
  * Date formatters for the Usage trend axis/tooltips. The token and cost
  * formatters now live in the shared `lib/format` module (one source of truth);
  * they're re-exported here so existing Usage imports keep working unchanged.
- * Pure functions — unit-tested.
+ * Pure functions – unit-tested.
  */
 
 export { formatTokens, formatTokensFull, formatCost } from '@/lib/format'

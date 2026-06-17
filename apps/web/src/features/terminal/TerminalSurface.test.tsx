@@ -362,7 +362,7 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
         ackStorage: ackedStorage(),
       })
       fireEvent.click(await screen.findByRole('button', { name: /reattach/i }))
-      expect(await screen.findByRole('tab', { name: /lost-1/i })).toBeInTheDocument()
+      expect(await screen.findByRole('tab', { name: /recovered shell/i })).toBeInTheDocument()
     })
   })
 })

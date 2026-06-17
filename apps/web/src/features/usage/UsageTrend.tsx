@@ -1,5 +1,5 @@
 /**
- * UsageTrend — a per-day token trend as a stacked bar chart (input + output),
+ * UsageTrend – a per-day token trend as a stacked bar chart (input + output),
  * hand-rolled in SVG-free divs (no chart lib in the workspace). Both series are
  * decorative magnitude, not actions, so neither spends the reserved --primary
  * accent: output uses --chart-3, input a quieter --chart-2. Calm but legible:
@@ -31,7 +31,7 @@ const MIN_BAR = 2
 /** Target count of x-axis ticks; we thin labels to roughly this many. */
 const X_TICKS = 6
 
-/** A full spoken label for one bar — the hover figures, made reachable. */
+/** A full spoken label for one bar – the hover figures, made reachable. */
 function barLabel(point: UsageDailyPoint): string {
   return `${formatDayFull(point.day)}: ${formatTokensFull(point.inputTokens)} input, ${formatTokensFull(
     point.outputTokens,
@@ -50,7 +50,7 @@ export function UsageTrend({ daily }: UsageTrendProps) {
   // the aria summary.
   const axisMax = niceAxisMax(max)
 
-  // Indexes of the days that should show an x-axis label — first, last, and an
+  // Indexes of the days that should show an x-axis label – first, last, and an
   // even spread between, so dense periods (30d) stay uncrowded but readable.
   const labelIndexes = useMemo(() => {
     const n = daily.length
@@ -93,7 +93,7 @@ export function UsageTrend({ daily }: UsageTrendProps) {
       </CardHeader>
       <CardContent>
         <div className="relative flex gap-3">
-          {/* Y-axis scale — peak / mid / zero, right-aligned against the plot. */}
+          {/* Y-axis scale – peak / mid / zero, right-aligned against the plot. */}
           <div
             className="flex w-9 shrink-0 flex-col justify-between py-px text-right text-[11px] text-muted-foreground tabular-nums"
             style={{ height: CHART_HEIGHT }}
@@ -175,7 +175,7 @@ export function UsageTrend({ daily }: UsageTrendProps) {
               })}
             </div>
 
-            {/* X-axis labels — thinned to ~6 ticks, aligned under their bars. */}
+            {/* X-axis labels – thinned to ~6 ticks, aligned under their bars. */}
             <div className="mt-2 flex gap-[3px] text-[11px] text-muted-foreground tabular-nums">
               {daily.map((d, i) => (
                 <span key={d.day} className="min-w-0 flex-1 text-center">

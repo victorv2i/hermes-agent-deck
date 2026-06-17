@@ -11,7 +11,7 @@
  * own rules) — we don't claim a column we don't control, so the form offers no
  * column picker (that's what the per-card MoveMenu is for once it exists).
  *
- * Amber is governed: the primary Create button is the ONE sanctioned accent here
+ * The action accent is governed: the primary Create button is the ONE sanctioned accent here
  * (a primary action); everything else is neutral.
  */
 import { useId, useState } from 'react'

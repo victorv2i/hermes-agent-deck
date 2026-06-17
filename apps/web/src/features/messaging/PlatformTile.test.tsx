@@ -10,7 +10,7 @@ import { PlatformTile, type PlatformTileProps } from './PlatformTile'
  *  - a tile shows a REAL SEMANTIC status dot driven by the gateway's `connection`
  *    (+ gateway liveness) — connected = success, error = destructive, connecting =
  *    a quiet working dot, not_configured/unknown = idle, gateway-down = honest;
- *  - the dot is NEVER the amber `--primary` action accent;
+ *  - the dot is NEVER the sky-blue `--primary` action accent;
  *  - the tile is COLLAPSED by default (setup steps + token field hidden) and
  *    EXPANDS on click (accessible disclosure: aria-expanded + aria-controls);
  *  - on expand the EXISTING honest behavior is preserved: the BYO-bot copy, the
@@ -68,7 +68,7 @@ describe('PlatformTile — compact, at-a-glance status (gateway truth)', () => {
     const region = screen.getByRole('region', { name: /telegram/i })
     const dot = within(region).getByTestId('messaging-status')
     expect(dot.getAttribute('data-tone')).toBe('ok')
-    // The status dot is semantic — never the primary/active amber accent.
+    // The status dot is semantic — never the primary/active sky-blue accent.
     expect(dot.className).not.toContain('bg-primary')
     expect(within(region).getByText(/connected/i)).toBeInTheDocument()
   })

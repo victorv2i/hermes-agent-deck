@@ -19,7 +19,7 @@ describe('Avatar primitive', () => {
     render(<Avatar avatarId="v3" name="Atlas" />)
     const img = document.querySelector('img')!
     expect(img.getAttribute('src')).toBe('/avatars/v3.webp')
-    // <img> (not <svg>) so it escapes the ⌘K active-row svg amber tint.
+    // <img> (not <svg>) so it escapes the ⌘K active-row svg sky-blue tint.
     expect(img.tagName.toLowerCase()).toBe('img')
   })
 
@@ -31,9 +31,10 @@ describe('Avatar primitive', () => {
     expect(img.className).toContain('object-cover')
     expect(img.className).toContain('object-top')
     expect(img.className).not.toContain('object-contain')
-    // The frame is a SQUARE rounded-full crest, so the cover crop is symmetric.
+    // The frame is a squared crest (rounded-md, matching the squared design), so
+    // the cover crop is symmetric.
     const frame = container.firstElementChild as HTMLElement
-    expect(frame.className).toContain('rounded-full')
+    expect(frame.className).toContain('rounded-md')
     expect(frame.className).toContain('overflow-hidden')
   })
 

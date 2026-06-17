@@ -66,6 +66,12 @@ vi.mock('@/features/profiles/NewAgentDialog', () => ({
     open ? <div data-testid="hatch-dialog">hatch</div> : null,
 }))
 
+// The embedded global Connections surface is heavy (mounts Voice/Messaging/MCP/…);
+// stub it to a marker so the view-switch wiring is what we test.
+vi.mock('@/features/connections', () => ({
+  ConnectionsRoute: () => <div data-testid="stub-connections">connections</div>,
+}))
+
 function LocationProbe() {
   const loc = useLocation()
   return <div data-testid="location">{loc.pathname + loc.search}</div>
@@ -127,5 +133,28 @@ describe('StudioRoute', () => {
     renderRoute('/')
     await userEvent.click(screen.getByRole('button', { name: /new agent/i }))
     expect(screen.getByTestId('hatch-dialog')).toBeInTheDocument()
+  })
+
+  it('opens the embedded global Connections surface for ?view=connections', async () => {
+    renderRoute('/?view=connections')
+    // The lazy Connections surface resolves behind Suspense.
+    expect(await screen.findByTestId('stub-connections')).toBeInTheDocument()
+    // The Agents view's workbench is not shown in the Connections view.
+    expect(screen.queryByTestId('stub-workbench')).not.toBeInTheDocument()
+  })
+
+  it('the launchpad Connections action writes ?view=connections to the URL', async () => {
+    renderRoute('/')
+    await userEvent.click(screen.getByRole('button', { name: /connections/i }))
+    expect(screen.getByTestId('location')).toHaveTextContent('view=connections')
+    expect(await screen.findByTestId('stub-connections')).toBeInTheDocument()
+  })
+
+  it('the Connections back link clears ?view= (clean default URL)', async () => {
+    renderRoute('/?view=connections')
+    await userEvent.click(await screen.findByRole('button', { name: /^agent studio$/i }))
+    // The default view drops the param rather than leaving ?view=agents lingering.
+    expect(screen.getByTestId('location')).not.toHaveTextContent('view=')
+    expect(screen.getByTestId('stub-workbench')).toBeInTheDocument()
   })
 })

@@ -9,7 +9,7 @@ import { SystemPage, type SystemPageProps } from './SystemPage'
  * ever fake a state. These tests pin:
  *  - GatewayCard: always-available restart behind an honest confirm, the
  *    reconnecting UX while in flight.
- *  - HermesUpdateCard: DISABLED + "Up to date" when current; ACTIVE amber ONLY
+ *  - HermesUpdateCard: DISABLED + "Up to date" when current; ACTIVE sky-blue ONLY
  *    when the read reports update-available; the confirm states the real cost.
  *  - AgentDeckUpdateCard: DISABLED with "No update channel configured" on
  *    no-channel (the git flow stays gated off).

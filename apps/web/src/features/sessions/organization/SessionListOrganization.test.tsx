@@ -300,11 +300,11 @@ describe('SessionList organization (connected)', () => {
       name: /(Organize|More actions for) Gamma three/,
     })
 
-    // Governance: the metadata state must NOT borrow the amber action accent.
+    // Governance: the metadata state must NOT borrow the sky-blue action accent.
     expect(organizedTrigger).not.toHaveClass('text-primary')
     // Instead a quiet neutral marker signals "this session is organized"…
     expect(organizedTrigger.querySelector('[data-testid="organize-indicator"]')).not.toBeNull()
-    // …and the marker uses a neutral/categorical tone, never amber.
+    // …and the marker uses a neutral/categorical tone, never the action accent.
     const dot = organizedTrigger.querySelector('[data-testid="organize-indicator"]')!
     expect(dot.className).toContain('bg-foreground-tertiary')
     expect(dot.className).not.toContain('bg-primary')

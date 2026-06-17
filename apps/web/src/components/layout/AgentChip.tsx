@@ -12,11 +12,12 @@ import { restartPending } from './restartPending'
  * answering "which agent am I on?" at a glance (recognition over recall), and the
  * entry to the {@link ProfileSwitcher}.
  *
- * Rendered in the labeled Sidebar as a full-width quiet button: a 28px face +
- * name + muted-mono model, under the Wordmark.
+ * Rendered in the labeled Sidebar as a full-width quiet button: a 36px face +
+ * name + muted-mono model, under the Wordmark. The 36px face matches the two
+ * stacked lines (name + model) so the text block centers cleanly against it.
  *
- * Governance: the avatar is IDENTITY (never the amber action accent). The
- * "restart to apply" marker is MUTED (a quiet neutral dot — never amber, never a
+ * Governance: the avatar is IDENTITY (never the sky-blue action accent). The
+ * "restart to apply" marker is MUTED (a quiet neutral dot — never the action accent, never a
  * ConnectionDot color, no pulse): it's an honest hint that the named active agent
  * isn't the one the running gateway adopted, not an alarm.
  *
@@ -57,7 +58,7 @@ export function AgentChip() {
         )}
       >
         <span className="relative shrink-0">
-          <Avatar avatarId={resolveAvatar(active)} name={friendly} size={24} />
+          <Avatar avatarId={resolveAvatar(active)} name={friendly} size={32} />
           {restartHint && <RestartMarker />}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
@@ -94,7 +95,7 @@ function SwitcherFor({
   )
 }
 
-/** A small MUTED marker — neutral surface dot, no amber, no pulse. */
+/** A small MUTED marker — neutral surface dot, no action accent, no pulse. */
 function RestartMarker() {
   return (
     <span

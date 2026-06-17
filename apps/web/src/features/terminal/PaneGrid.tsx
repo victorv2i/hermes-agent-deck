@@ -29,7 +29,7 @@ import type { TerminalStatus } from './terminalSocket'
  * rendering BOTH the ephemeral Scratch session and saved workspaces, so the two
  * look and behave identically. It mounts one {@link TerminalView} per pane and
  * offers a TAB view (one pane visible, the rest kept MOUNTED so their shells keep
- * running), a GRID view (several at once, the focused one amber-ringed), and the
+ * running), a GRID view (several at once, the focused one sky-blue-ringed), and the
  * 1/2/3/4/6 layout PRESETS. Each pane can be added / renamed (double-click its
  * tab) / restarted / removed.
  *
@@ -48,7 +48,7 @@ import type { TerminalStatus } from './terminalSocket'
  * by `wireId`, so a restart (which changes the wireId) remounts a fresh shell
  * while a plain re-render reattaches the same one.
  *
- * SPINE: the single amber accent marks the LIVE/focused pane (active tab, grid
+ * SPINE: the single sky-blue accent marks the LIVE/focused pane (active tab, grid
  * cell ring) and the primary action; brand marks are IDENTITY (their own colors),
  * never the accent. Touch-first targets are >=44px where controls are dense.
  */
@@ -724,7 +724,7 @@ function LayoutPresetMenu({ onLayout }: { onLayout: (count: number) => void }) {
 }
 
 function ViewModeToggle({ mode, onSetView }: { mode: ViewMode; onSetView: (m: ViewMode) => void }) {
-  // A calm two-segment toggle. The selected segment carries the faint amber
+  // A calm two-segment toggle. The selected segment carries the faint sky-blue
   // active treatment (LIVE/selected state); the other is a neutral ghost.
   return (
     <div
@@ -815,7 +815,7 @@ function Tab({
           onActivate()
         }
       }}
-      // Active tab = the sanctioned faint amber LIVE/active treatment. Inactive
+      // Active tab = the sanctioned faint sky-blue LIVE/active treatment. Inactive
       // tabs are quiet and neutral. Min height is touch-sized on narrow screens.
       className={`group/tab relative flex h-11 min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-lg pr-1 pl-2.5 text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:h-10 md:pr-1.5 ${
         active
@@ -1035,7 +1035,7 @@ function TabPanels({
   )
 }
 
-/* -- Grid view: every pane visible at once; focused one is amber-ringed ----- */
+/* -- Grid view: every pane visible at once; focused one is sky-blue-ringed -- */
 
 /** Responsive column count by pane count (1/2/3/4-up). */
 function gridColsClass(count: number): string {
@@ -1095,7 +1095,7 @@ function GridPanels({
             tabIndex={0}
             onClick={() => onActivate(pane.id)}
             onFocus={() => onActivate(pane.id)}
-            // The focused/live cell gets the sanctioned amber active ring; others a
+            // The focused/live cell gets the sanctioned sky-blue active ring; others a
             // neutral hairline.
             className={`flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg outline-none transition-shadow duration-100 ${
               focused

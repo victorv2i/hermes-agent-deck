@@ -1,5 +1,5 @@
 /**
- * UsageRoute — the Usage surface route element (mounted at `/usage`). Owns the
+ * UsageRoute – the Usage surface route element (mounted at `/usage`). Owns the
  * period (7/14/30) selection and the react-query fetch, then hands data to the
  * presentational {@link UsagePage}.
  *
@@ -56,14 +56,14 @@ export function UsageRoute() {
   )
   const query = useUsage(period)
   // The per-session drill-down ("By session"): the most recently active sessions
-  // from the sessions BFF — the same state.db rows the analytics SUM over.
+  // from the sessions BFF – the same state.db rows the analytics SUM over.
   // Ordered by recent activity so the selected window's sessions come first;
-  // SessionBreakdown filters to the window and ranks by tokens. Best-effort —
+  // SessionBreakdown filters to the window and ranks by tokens. Best-effort –
   // the rest of the Usage page renders even if this fails.
   const sessionsQuery = useSessions({ limit: SESSION_FETCH_LIMIT, order: 'recent' })
   // The active provider is the authoritative billing signal: a subscription/OAuth
   // seat (e.g. openai-codex) reports $0 cost even when busy, so the Usage surface
-  // needs it to label cost honestly. Best-effort — usage still renders if it fails.
+  // needs it to label cost honestly. Best-effort – usage still renders if it fails.
   const models = useModels()
   const provider = models.data?.provider
   // The empty-state "Start a chat" CTA router-navigates to Chat (matching

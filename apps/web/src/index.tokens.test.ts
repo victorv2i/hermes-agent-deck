@@ -52,11 +52,11 @@ describe('P0.1 — named font-size scale tokens', () => {
   it('adds the 11px legibility floor (--text-2xs)', () => {
     expect(INDEX_CSS).toMatch(/--text-2xs:\s*11px/)
   })
-  it('names the 13px step (--text-13) without hijacking the 14px body --text-sm', () => {
+  it('keeps the named 13px step (--text-13) and a reduced 13px body (--text-sm)', () => {
     expect(INDEX_CSS).toMatch(/--text-13:\s*13px/)
-    // The body step stays 14px (0.875rem) — redefining it would shrink ~49 live consumers.
-    expect(INDEX_CSS).toMatch(/--text-sm:\s*0\.875rem/)
-    expect(INDEX_CSS).not.toMatch(/--text-sm:\s*13px/)
+    // The body step was intentionally reduced 14px → 13px (0.8125rem) for a denser,
+    // smaller-type UI (Victor asked for smaller fonts); it now matches the 13px step.
+    expect(INDEX_CSS).toMatch(/--text-sm:\s*0\.78125rem/)
   })
   it('keeps text-xs at the stock 12px (no shift)', () => {
     expect(INDEX_CSS).toMatch(/--text-xs:\s*0\.75rem/)

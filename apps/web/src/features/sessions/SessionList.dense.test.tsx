@@ -7,16 +7,19 @@ import { RAIL_PAGE_SIZE, setShowExternalSources } from './hooks'
 import { getPinnedSnapshot, unpinSession } from './pinStore'
 
 /**
- * §3 — the clean/dense chat rail. With `dense`, the connected rail must SUPPRESS
- * the power-user management UI (multi-select + bulk bar, the Projects/folders
- * section + active-filter row, the external-source "Other sessions" reveal, the
- * "Load more" pagination footer, and the duplicate "Label session (local)" rename)
- * while KEEPING the clean essentials (search box, titles, active highlight, and the
- * per-row overflow with the real Hermes Rename + Delete). A stubbed BFF feeds the
- * real connected component through a real QueryClient. We seed a mixed web/external
- * list (so the reveal WOULD show), a non-empty project store (so Folders WOULD
- * show), and a two-page total (so "Load more" WOULD show) — proving the dense flag
- * is what suppresses them, not an absence of data.
+ * §3 — the clean/dense chat rail. With `dense`, the connected rail SUPPRESSES the
+ * power-user management UI (multi-select + bulk bar, the Projects/folders section
+ * + active-filter row, the "Load more" pagination footer, and the duplicate
+ * "Label session (local)" rename) while KEEPING the clean essentials (search box,
+ * titles, active highlight, and the per-row overflow with the real Hermes Rename +
+ * Delete). It ALSO keeps the web-first default + the collapsed "Other sessions (N)"
+ * disclosure: only agent-deck (web) sessions show by default, and the external
+ * (cli/telegram/discord/cron/api) sessions fold under a closed toggle the user can
+ * expand. A stubbed BFF feeds the real connected component through a real
+ * QueryClient. We seed a mixed web/external list (so the reveal shows), a non-empty
+ * project store (so Folders WOULD show), and a two-page total (so "Load more" WOULD
+ * show) — proving the dense flag is what suppresses the power-user chrome, not an
+ * absence of data.
  */
 
 const NOW_SEC = Math.floor(Date.now() / 1000)
@@ -114,19 +117,33 @@ describe('SessionList dense rail (connected)', () => {
     expect(screen.queryByRole('button', { name: /^Select sessions$/i })).not.toBeInTheDocument()
   })
 
-  it('suppresses the external-source "Other sessions" reveal toggle (and shows all sessions)', async () => {
+  it('folds external sessions under a CLOSED "Other sessions (N)" reveal (web-first default)', async () => {
     renderDenseRail()
     await screen.findByText('Session 1')
-    expect(screen.queryByRole('button', { name: /other sessions/i })).not.toBeInTheDocument()
-    // With no reveal toggle, dense shows ALL sessions (web + external) by default.
-    expect(screen.getByText('CLI session')).toBeInTheDocument()
+    // Web-first default: the agent-deck (web) sessions show; the external (cli)
+    // session is folded away until revealed.
+    expect(screen.queryByText('CLI session')).not.toBeInTheDocument()
+    // The collapsed reveal toggle names the count of folded external sessions and
+    // is CLOSED by default (aria-pressed false).
+    const toggle = screen.getByRole('button', { name: /other sessions \(1\)/i })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('suppresses the "Load more" pagination footer', async () => {
+  it('reveals the folded external sessions when the "Other sessions" toggle is expanded', async () => {
+    const user = userEvent.setup()
     renderDenseRail()
     await screen.findByText('Session 1')
-    expect(screen.queryByRole('button', { name: /load more/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/loaded \d+ of/i)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /other sessions \(1\)/i }))
+    // Expanding the disclosure brings the external (cli) session into the rail.
+    expect(await screen.findByText('CLI session')).toBeInTheDocument()
+  })
+
+  it('shows the "Load more" pagination footer so older chats are reachable', async () => {
+    renderDenseRail()
+    await screen.findByText('Session 1')
+    // The dense rail used to suppress this; it now pages back like History so the
+    // user can reach older chats (the server reports a larger total than loaded).
+    expect(screen.getByRole('button', { name: /load more/i })).toBeInTheDocument()
   })
 
   it('keeps the search box and session titles', async () => {
@@ -154,6 +171,71 @@ describe('SessionList dense rail (connected)', () => {
     const row = screen.getByTestId('rail-new-chat-row')
     expect(row).toHaveTextContent(/new chat/i)
     expect(row).toHaveAttribute('aria-current', 'true')
+  })
+})
+
+// The real-install scenario the web-first fold must survive: the deck's OWN
+// (dashboard-sourced) chats are sparse + OLDER than the recency page, so a busy
+// install's first page is ALL external (cron/telegram) with zero deck sessions in
+// view. A pure client-side split would find no web sessions and fall back to
+// "show everything", defeating the fold. The dense rail fetches the deck's own
+// sessions BY SOURCE so they surface regardless of age and the fold still scopes
+// to them. A source-aware stub mimics this: ?source=dashboard returns an old deck
+// chat absent from the recency page, which returns only external sessions.
+describe('SessionList dense rail surfaces the deck\'s own (dashboard) sessions even when older than the recent page', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.includes('/organization'))
+          return jsonResponse({ projects: [], assignments: {} })
+        if (url.includes('/search/sessions')) return jsonResponse({ results: [] })
+        if (url.includes('/sessions')) {
+          const u = new URL(url, 'http://localhost')
+          if (u.searchParams.get('source') === 'dashboard') {
+            // The deck's own chat — absent from the recency page below.
+            return jsonResponse({
+              total: 1,
+              sessions: [{ ...webRow('deck-old', 'My deck chat'), source: 'dashboard' }],
+            })
+          }
+          // The recency page is ALL external — no deck sessions in view.
+          const offset = Number(u.searchParams.get('offset') ?? 0)
+          return jsonResponse({
+            total: RAIL_PAGE_SIZE,
+            sessions:
+              offset === 0
+                ? [
+                    { ...webRow('cron-1', 'Nightly Ops'), source: 'cron' },
+                    { ...webRow('tg-1', 'Telegram chat'), source: 'telegram' },
+                  ]
+                : [],
+          })
+        }
+        throw new Error(`unexpected fetch: ${url}`)
+      }),
+    )
+  })
+
+  it('shows the deck (dashboard) chat by default and folds the recent external ones', async () => {
+    renderDenseRail()
+    // The deck's own chat surfaces even though it's not in the recency page.
+    expect(await screen.findByText('My deck chat')).toBeInTheDocument()
+    // The recent external (cron/telegram) sessions fold away by default.
+    expect(screen.queryByText('Nightly Ops')).not.toBeInTheDocument()
+    expect(screen.queryByText('Telegram chat')).not.toBeInTheDocument()
+    // The closed "Other sessions (2)" reveal names the folded external count.
+    const toggle = screen.getByRole('button', { name: /other sessions \(2\)/i })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('reveals the folded recent external sessions when the toggle is expanded', async () => {
+    const user = userEvent.setup()
+    renderDenseRail()
+    await screen.findByText('My deck chat')
+    await user.click(screen.getByRole('button', { name: /other sessions \(2\)/i }))
+    expect(await screen.findByText('Nightly Ops')).toBeInTheDocument()
   })
 })
 

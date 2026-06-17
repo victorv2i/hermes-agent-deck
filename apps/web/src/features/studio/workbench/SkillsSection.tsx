@@ -36,7 +36,7 @@ import type { StudioSkill } from '../data/api'
  *
  * Presentational for the list: the skill list / loading / error + the `onToggle`
  * write arrive as props (the panel runs the scoped GET/PUT). The "on" switch is
- * the single amber accent; click a row to reveal its description.
+ * the single sky-blue accent; click a row to reveal its description.
  */
 export interface SkillsSectionProps {
   /** The selected agent (a Hermes profile name); scopes the on-disk skill paths. */
@@ -178,7 +178,7 @@ function ViewButton({
       className={cn(
         'inline-flex min-h-9 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-13 font-medium transition-colors',
         'focus-visible:ad-focus',
-        selected ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
+        selected ? 'bg-primary/12 text-primary-hover' : 'text-muted-foreground hover:text-foreground',
       )}
     >
       {children}
@@ -465,7 +465,7 @@ function DeleteSkillDialog({
   )
 }
 
-/** An accessible amber-accented enable/disable switch. Amber = the live "on" state. */
+/** An accessible sky-blue-accented enable/disable switch. Sky-blue = the live "on" state. */
 function ToggleSwitch({
   name,
   enabled,

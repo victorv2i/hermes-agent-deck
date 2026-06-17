@@ -1,5 +1,5 @@
 /**
- * UsagePage — the presentational Usage surface. Pure props in (data + period +
+ * UsagePage – the presentational Usage surface. Pure props in (data + period +
  * loading/error), callbacks out. The route component (UsageRoute) owns the query
  * and period state. Layout follows the design language: a calm header with the
  * title + period selector, headline stat cards, the per-day token trend, and the
@@ -44,11 +44,11 @@ export interface UsagePageProps {
   /**
    * Start a chat from the empty state. The route owns the navigate
    * (`navigate(CHAT_PATH)`, matching Home/History), so the empty-state CTA is a
-   * router push — never an `<a href="/">` hard reload. Omitted → no CTA.
+   * router push – never an `<a href="/">` hard reload. Omitted → no CTA.
    */
   onStartChat?: () => void
   /** Session rows for the per-session drill-down (most recently active first),
-   * from the sessions BFF — the same state.db table the analytics SUM over.
+   * from the sessions BFF – the same state.db table the analytics SUM over.
    * Omitted/failed → the drill-down shows its own honest empty/error state
    * without affecting the rest of the page. */
   sessions?: SessionSummary[]
@@ -78,7 +78,7 @@ export function UsagePage({
 }: UsagePageProps) {
   // Which breakdown the bottom section shows. Per-model is the default (the
   // historical view); per-provider rolls those same rows up by their recorded
-  // billing_provider. Local UI state — the data is identical either way.
+  // billing_provider. Local UI state – the data is identical either way.
   const [breakdownBy, setBreakdownBy] = useState<'model' | 'provider'>('model')
 
   const totals = data?.totals
@@ -87,12 +87,12 @@ export function UsagePage({
   const actualCost = totals?.actualCost ?? 0
   // The "Est. cost" headline prefers the rate-card estimate, but falls back to a
   // real billed actual_cost when there's no estimate, so a provider that reports
-  // actuals-without-estimates is never hidden behind "—" / "No billed cost". A
+  // actuals-without-estimates is never hidden behind "–" / "No billed cost". A
   // cost of EITHER kind counts as spend.
   const headlineCost = estimatedCost > 0 ? estimatedCost : actualCost
   const hasSpend = headlineCost > 0
   // A loaded period with zero sessions AND zero tokens is a true "nothing yet"
-  // (a fresh install, or a quiet window) — show a warm invitation, not a wall of
+  // (a fresh install, or a quiet window) – show a warm invitation, not a wall of
   // zeros or a blank screen. Missing data (no error, not loading) lands here too.
   const hasUsage = !!totals && (totals.sessions > 0 || totalTokens > 0)
   // The authoritative billing read: prefer the SERVER-derived mode (from the
@@ -101,7 +101,7 @@ export function UsagePage({
   // subscription/OAuth seat with real tokens is `subscription` even at $0 cost.
   const mode = resolveBillingMode(data?.billingMode, data?.daily ?? [], providerId)
   const isSubscription = mode === 'subscription'
-  // A zero cost while tokens WERE used isn't "no spend" — but WHY differs:
+  // A zero cost while tokens WERE used isn't "no spend" – but WHY differs:
   //   subscription → covered by a flat plan (say "Included in your subscription").
   //   otherwise    → a provider with no rate card (local/free): "No billed cost".
   const unbilled = !hasSpend && totalTokens > 0 && !isSubscription
@@ -157,7 +157,7 @@ export function UsagePage({
             {/* The one question a newcomer brings here ("what does this cost?")
                 answered first, in a plain sentence. Mirrors the cost tile's
                 billing flags exactly (subscription / unbilled / no spend), only
-                reworded — never recomputed. */}
+                reworded – never recomputed. */}
             <p className="text-sm text-muted-foreground" data-testid="cost-lead">
               {isSubscription && !hasSpend ? (
                 <>
@@ -185,7 +185,7 @@ export function UsagePage({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard
                 label="Est. cost"
-                value={(hasSpend && formatCost(headlineCost)) || '—'}
+                value={(hasSpend && formatCost(headlineCost)) || '–'}
                 sub={
                   isSubscription && !hasSpend ? (
                     <span
@@ -206,7 +206,7 @@ export function UsagePage({
                   ) : !hasSpend ? (
                     <span className="text-muted-foreground/70">No spend yet</span>
                   ) : estimatedCost > 0 && totals && totals.actualCost > 0 ? (
-                    `${formatCost(totals.actualCost) ?? '—'} actual`
+                    `${formatCost(totals.actualCost) ?? '–'} actual`
                   ) : estimatedCost > 0 ? (
                     'estimated'
                   ) : (
@@ -259,7 +259,7 @@ export function UsagePage({
             billingMode={data.billingMode}
           />
 
-          {/* Token analytics — the depth-on-demand half, below the cost view. */}
+          {/* Token analytics – the depth-on-demand half, below the cost view. */}
           <UsageTrend daily={data.daily} />
 
           {/* The same usage rows, viewed two ways: per-model (default) or rolled
@@ -303,7 +303,7 @@ export function UsagePage({
 
 function UsageSkeleton() {
   // Mirror the real stat section (the cost lead sentence + five tiles, sm:3 /
-  // lg:5) so the placeholder lands exactly where the loaded cards do — no
+  // lg:5) so the placeholder lands exactly where the loaded cards do – no
   // layout shift when the data arrives.
   return (
     <div className="flex flex-col gap-6" aria-hidden>

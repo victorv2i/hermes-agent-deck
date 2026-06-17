@@ -9,7 +9,7 @@
  *
  * Semantic variants (`toast.success/error/...`) use sonner's `richColors` so the
  * tinted bg/border come from `--success`/`--destructive`/`--warning`/`--info` —
- * the governed semantic palette. Amber is intentionally NOT a toast color: it
+ * the governed semantic palette. The action accent is intentionally NOT a toast color: it
  * stays reserved for primary action / live state.
  */
 import { Toaster as SonnerToaster } from 'sonner'

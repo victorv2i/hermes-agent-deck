@@ -23,7 +23,7 @@ export interface RadioCardGroupProps<T extends string = string> {
  * RadioCardGroup — the one selectable-card radiogroup (starting soul, update
  * channel …). Extracted from the hand-rolled tile pickers that had each drifted.
  * The SELECTED card carries the neutral IDENTITY ring (`--border-strong`) and a
- * neutral check — NEVER the amber `--primary` accent, which the spine reserves
+ * neutral check — NEVER the sky-blue `--primary` accent, which the spine reserves
  * for actions. Roving arrow-key navigation, one `.ad-focus` ring.
  */
 export function RadioCardGroup<T extends string = string>({

@@ -2,8 +2,8 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/plus-jakarta-sans';
 @import '@fontsource-variable/jetbrains-mono';
-@import '@fontsource-variable/space-grotesk';
 @import './features/themes/palettes.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -26,8 +26,10 @@
   --font-sans:
     'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-heading: var(--font-sans);
-  /* Wordmark + display headings — Space Grotesk (geometric display), Inter fallback. */
-  --font-wordmark: 'Space Grotesk Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  /* Wordmark + display headings: Plus Jakarta is kept as the distinctive DISPLAY
+     face for the brand lockup and the chat/Studio hero headings, paired with the
+     more readable Inter body. The AD mark image carries the fixed visual identity. */
+  --font-wordmark: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -65,11 +67,11 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 2px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 3px;
+  --radius-2xl: 4px;
 }
 
 /*
@@ -98,17 +100,17 @@
   --text-13--line-height: 1.5;
   --text-xs: 0.75rem; /* 12px — Tailwind default, restated */
   --text-xs--line-height: calc(1 / 0.75);
-  --text-sm: 0.875rem; /* 14px body — Tailwind default, restated */
+  --text-sm: 0.78125rem; /* 12.5px body */
   --text-sm--line-height: calc(1.25 / 0.875);
-  --text-base: 1rem; /* 16px — Tailwind default, restated */
+  --text-base: 0.875rem; /* 14px */
   --text-base--line-height: calc(1.5 / 1);
-  --text-lg: 1.125rem; /* 18px */
+  --text-lg: 1rem; /* 16px */
   --text-lg--line-height: calc(1.75 / 1.125);
-  --text-xl: 1.25rem; /* 20px */
+  --text-xl: 1.125rem; /* 18px */
   --text-xl--line-height: calc(1.75 / 1.25);
-  --text-2xl: 1.5rem; /* 24px */
+  --text-2xl: 1.25rem; /* 20px */
   --text-2xl--line-height: calc(2 / 1.5);
-  --text-3xl: 1.875rem; /* 30px */
+  --text-3xl: 1.5rem; /* 24px */
   --text-3xl--line-height: calc(2.25 / 1.875);
 }
 
@@ -124,7 +126,12 @@
 */
 :root,
 [data-theme='dark'] {
-  --radius: 0.75rem;
+  /* Squared by default — crisp ~2px corners, not soft 12px rounding. */
+  --radius: 2px;
+
+  /* Studio hero art — the pixel gateway banner, swapped by theme: the night
+     version here, the daytime version under [data-theme='light'] below. */
+  --studio-hero-art: url('/studio-hero-night.webp');
 
   /*
     Optional page-grain backdrop. `none` everywhere by default; only the
@@ -142,51 +149,50 @@
     as a same-value cut-out (the old base #16181c floated everything flat).
       base #101216  →  surface-1 #181b21  →  surface-2 #21252c  →  elevated #2b303a
   */
-  --background: #101216;
-  --foreground: #eceef2;
+  --background: #141b27;
+  --foreground: #e9eef6;
 
-  --surface-1: #181b21;
-  --surface-2: #21252c;
-  --surface-elevated: #2b303a;
+  --surface-1: #1a2333;
+  --surface-2: #222e42;
+  --surface-elevated: #2a3850;
 
-  --card: #2b303a;
-  --card-foreground: #eceef2;
-  --popover: #2b303a;
-  --popover-foreground: #eceef2;
+  --card: #1e2a3c;
+  --card-foreground: #e9eef6;
+  --popover: #1e2a3c;
+  --popover-foreground: #e9eef6;
 
-  --primary: #7ba7d9;
-  --primary-foreground: #0b1420;
-  --primary-hover: #93b8e4;
+  --primary: #6fb1ea;
+  --primary-foreground: #0e1f30;
+  --primary-hover: #84beef;
 
-  --secondary: #21252c;
-  --secondary-foreground: #eceef2;
+  --secondary: #222e42;
+  --secondary-foreground: #e9eef6;
 
-  --muted: #21252c;
-  /* Brightened a clear step (was #afb5bf) so secondary/body copy scans easily on
-     the darker base. */
-  --muted-foreground: #c2c8d2;
+  --muted: #222e42;
+  /* Body/secondary copy stays an easy read on the inviting slate-navy base. */
+  --muted-foreground: #9aa7b9;
 
-  --accent: #21252c;
-  --accent-foreground: #eceef2;
+  --accent: #222e42;
+  --accent-foreground: #e9eef6;
 
   /* Semantic palette — color carries MEANING (status dots/badges only). */
-  --destructive: #ff806d;
-  --success: #4fb58e;
-  --warning: #d9a03a;
-  --info: #6ba8d9;
+  --destructive: #e8736d;
+  --success: #56bd9c;
+  --warning: #e3b45a;
+  --info: #6fb1ea;
 
-  /* Tiny uppercase section labels read off this — brightened (was #9ca3b0) so
-     they stay legible-but-quiet on the darker base. */
-  --foreground-tertiary: #aeb4c0;
+  /* Tiny uppercase section labels read off this — quiet but legible (AA) on the
+     inviting slate-navy base + every raised surface. Nudged up so it clears
+     4.5:1 even on the lightest dark surface (surface-elevated #2a3850). */
+  --foreground-tertiary: #9aa7bb;
 
-  /* Hairlines — LIFTED so borders are visible on the near-black base. Default
-     0.09, elevated/hover 0.16. Cards also get a 1px inset top highlight
-     (--card-highlight, ~0.05) for a crisp lit top edge. */
-  --border: rgba(236, 238, 242, 0.09);
-  --border-strong: rgba(236, 238, 242, 0.16);
-  --card-highlight: rgba(255, 255, 255, 0.05);
-  --input: rgba(236, 238, 242, 0.16);
-  --ring: #7ba7d9;
+  /* Crisp 1px hairlines — the squared design leads with borders (no bevels), so
+     they sit a touch more present than a near-invisible hairline. */
+  --border: rgba(229, 236, 247, 0.12);
+  --border-strong: rgba(229, 236, 247, 0.2);
+  --card-highlight: transparent;
+  --input: rgba(229, 236, 247, 0.2);
+  --ring: #6fb1ea;
 
   /*
     P0.3 — shared elevation tokens for FLOATING surfaces (popovers, menus,
@@ -204,22 +210,22 @@
     .ad-raised`, NOT baked into every `.ad-surface`, so only the panels that
     should float (the Studio roster/workbench/launchpad) get it.
   */
-  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.22);
+  --shadow-raised: none;
 
-  --chart-1: #7ba7d9;
-  --chart-2: #4fb58e;
-  --chart-3: #93b8e4;
-  --chart-4: #afb5bf;
-  --chart-5: #ec6e5b;
+  --chart-1: #6fb1ea;
+  --chart-2: #56bd9c;
+  --chart-3: #84beef;
+  --chart-4: #9aa7b9;
+  --chart-5: #e8896d;
 
-  --sidebar: #1f2228;
-  --sidebar-foreground: #e6e8ec;
-  --sidebar-primary: #7ba7d9;
-  --sidebar-primary-foreground: #0b1420;
-  --sidebar-accent: #282c33;
-  --sidebar-accent-foreground: #e6e8ec;
-  --sidebar-border: rgba(230, 232, 236, 0.1);
-  --sidebar-ring: #7ba7d9;
+  --sidebar: #161e2b;
+  --sidebar-foreground: #dbe3ef;
+  --sidebar-primary: #6fb1ea;
+  --sidebar-primary-foreground: #0e1f30;
+  --sidebar-accent: #232f44;
+  --sidebar-accent-foreground: #dbe3ef;
+  --sidebar-border: rgba(229, 236, 247, 0.1);
+  --sidebar-ring: #6fb1ea;
 
   /* Curated CATEGORICAL palette (project colors) — the allowed data-grouping
      exception, NOT the primary action accent. Eight calm, distinct hues for small
@@ -244,58 +250,58 @@
   cleanly.
 */
 :root:not([data-palette])[data-theme='light'] {
-  --background: #eef1f5;
-  --foreground: #1e2228;
+  --background: #eef4fb;
+  --foreground: #2b3442;
 
-  --surface-1: #f6f8fb;
-  --surface-2: #e2e6ec;
+  --surface-1: #f5f9fd;
+  --surface-2: #e4edf7;
   --surface-elevated: #ffffff;
 
   --card: #ffffff;
-  --card-foreground: #1e2228;
+  --card-foreground: #2b3442;
   --popover: #ffffff;
-  --popover-foreground: #1e2228;
+  --popover-foreground: #2b3442;
 
-  --primary: #2f5c8c;
-  --primary-foreground: #f4f8fd;
-  --primary-hover: #274e78;
+  --primary: #2f74b8;
+  --primary-foreground: #ffffff;
+  --primary-hover: #285f9b;
 
-  --secondary: #e2e6ec;
-  --secondary-foreground: #1e2228;
+  --secondary: #e4edf7;
+  --secondary-foreground: #2b3442;
 
-  --muted: #e2e6ec;
-  --muted-foreground: #545963;
+  --muted: #e4edf7;
+  --muted-foreground: #515c69;
 
-  --accent: #e2e6ec;
-  --accent-foreground: #1e2228;
+  --accent: #e7f0fb;
+  --accent-foreground: #2b3442;
 
-  --destructive: #b8402c;
-  --success: #166f5f;
-  --warning: #8b5a0c;
-  --info: #2c5c82;
+  --destructive: #bf4035;
+  --success: #1a7d68;
+  --warning: #9a6a12;
+  --info: #2f74b8;
 
-  --foreground-tertiary: #5a6070;
+  --foreground-tertiary: #5e6979;
 
-  --border: rgba(30, 34, 40, 0.14);
-  --border-strong: rgba(30, 34, 40, 0.2);
-  --card-highlight: rgba(255, 255, 255, 0.6);
-  --input: rgba(30, 34, 40, 0.2);
-  --ring: #2f5c8c;
+  --border: rgba(43, 52, 66, 0.13);
+  --border-strong: rgba(43, 52, 66, 0.22);
+  --card-highlight: transparent;
+  --input: rgba(43, 52, 66, 0.2);
+  --ring: #2f74b8;
 
-  --chart-1: #2f5c8c;
-  --chart-2: #166f5f;
-  --chart-3: #4a7bb0;
+  --chart-1: #2f74b8;
+  --chart-2: #1f8a72;
+  --chart-3: #5a96cf;
   --chart-4: #646a78;
-  --chart-5: #b8402c;
+  --chart-5: #c4453a;
 
-  --sidebar: #e2e6ec;
-  --sidebar-foreground: #1e2228;
-  --sidebar-primary: #2f5c8c;
-  --sidebar-primary-foreground: #f4f8fd;
-  --sidebar-accent: #d6dbe3;
-  --sidebar-accent-foreground: #1e2228;
-  --sidebar-border: rgba(30, 34, 40, 0.14);
-  --sidebar-ring: #2f5c8c;
+  --sidebar: #e4edf7;
+  --sidebar-foreground: #2b3442;
+  --sidebar-primary: #2f74b8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d8e4f3;
+  --sidebar-accent-foreground: #2b3442;
+  --sidebar-border: rgba(43, 52, 66, 0.13);
+  --sidebar-ring: #2f74b8;
 }
 
 /*
@@ -307,6 +313,7 @@
   after the default-light block so it composes with any palette's light face.
 */
 [data-theme='light'] {
+  --studio-hero-art: url('/studio-hero-day.webp');
   --shadow-popover: 0 10px 28px -14px rgba(15, 23, 42, 0.22);
   --shadow-composer: 0 6px 22px -14px rgba(15, 23, 42, 0.18);
 
@@ -362,7 +369,7 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Amber selection tint */
+  /* Sky-blue --primary selection tint */
   ::selection {
     background-color: color-mix(in oklch, var(--primary) 28%, transparent);
     color: var(--foreground);
@@ -414,7 +421,7 @@
   everywhere. `ring-2` + `ring-ring/50` + a 2px offset on the background so the
   ring is legible on any surface (incl. cards/popovers). Defined with `@utility`
   (NOT `@layer utilities`) so it composes with variants — primitives apply it as
-  `focus-visible:ad-focus`. Amber focus rings are the ONE sanctioned amber use on
+  `focus-visible:ad-focus`. The sky-blue --primary focus ring is the one sanctioned accent use on
   inputs/buttons (the spine reserves `--ring`/`--primary` for focus + action/live).
 */
 @utility ad-focus {
@@ -433,7 +440,6 @@
   */
   .ad-surface {
     border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 0 var(--card-highlight);
   }
   /*
     Resting elevation for a genuine raised panel — composes the 1px top highlight
@@ -442,15 +448,7 @@
     light override keeps the drop a soft slate tint, never a muddy black smear.
   */
   .ad-surface.ad-raised {
-    box-shadow:
-      inset 0 1px 0 0 var(--card-highlight),
-      var(--shadow-raised);
-  }
-  [data-theme='light'] .ad-surface.ad-raised {
-    box-shadow:
-      inset 0 1px 0 0 var(--card-highlight),
-      0 1px 2px rgba(15, 23, 42, 0.08),
-      0 8px 24px -6px rgba(15, 23, 42, 0.12);
+    border-color: var(--border-strong);
   }
   .ad-surface-hover {
     transition:
@@ -463,24 +461,13 @@
     border-color: var(--border-strong);
   }
   /*
-    P0.5 — a real hover LIFT (not just a border tint). Every card that opts into
-    `.ad-surface-hover` rises 1px with a soft elevation step on hover, so Home /
-    Models / Starter cards feel alive. Motion-safe ONLY: under
-    prefers-reduced-motion neither the transform nor the shadow applies, so the
-    card never shifts (the border tint still reads). The light override keeps the
-    drop a soft slate tint, not muddy black. Kept ≤150ms (existing window).
+    Flat hover — the squared design avoids lift/shadow, so a hovered card warms
+    with a faint neutral wash instead of rising. Surface-agnostic via color-mix so
+    it reads on any base; the border-strong tint (above) firms up alongside it.
   */
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) {
     .ad-surface-hover:hover {
-      transform: translateY(-1px);
-      box-shadow:
-        inset 0 1px 0 0 var(--card-highlight),
-        0 6px 16px -10px rgba(0, 0, 0, 0.45);
-    }
-    [data-theme='light'] .ad-surface-hover:hover {
-      box-shadow:
-        inset 0 1px 0 0 var(--card-highlight),
-        0 6px 16px -12px rgba(15, 23, 42, 0.18);
+      background-color: color-mix(in oklab, var(--foreground) 5%, transparent);
     }
   }
 
@@ -497,7 +484,7 @@
     color: var(--foreground-tertiary);
   }
 
-  /* Streaming caret — a soft amber bar that pulses while tokens stream in.
+  /* Streaming caret — a soft sky-blue --primary bar that pulses while tokens stream in.
      Refined: a touch narrower + taller with a gentle glow so it reads as a live
      cursor, not a block. */
   .ad-caret {
@@ -538,7 +525,7 @@
     animation: ad-attention-pulse 1.6s ease-in-out infinite;
   }
 
-  /* Pre-token "thinking" indicator — three amber dots that pulse in sequence.
+  /* Pre-token "thinking" indicator — three sky-blue --primary dots that pulse in sequence.
      Shown while an assistant turn is streaming but no text has arrived yet. */
   .ad-dots {
     display: inline-flex;
@@ -580,6 +567,35 @@
       opacity: 0.7;
     }
   }
+
+  /*
+    Entrance: the ONE shared "content just appeared" motion. A calm fade with a
+    short 8px rise, transform + opacity ONLY (GPU-cheap, never reflows layout),
+    fast (~180ms) on a standard ease-out so it reads as settling-in, not a flourish.
+    A single one-shot keyframe (no infinite loop), so it costs one paint and stops.
+    Reuse this for first-appearance surfaces that lack an enter animation of their
+    own (the dialog/command/toaster already animate via tw-animate-css). Reduced
+    motion gets the final state INSTANTLY (no transform, no fade) so the UI is
+    static the moment it mounts.
+  */
+  @keyframes ad-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .ad-enter {
+    animation: ad-enter 0.18s ease-out both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ad-enter {
+      animation: none;
+    }
+  }
 }
 
 /*
@@ -591,7 +607,7 @@
   .ad-prose {
     max-width: 68ch;
     line-height: 1.7;
-    font-size: 0.9375rem; /* 15px body */
+    font-size: 0.8125rem; /* 13px body */
     color: var(--foreground);
     word-break: break-word;
   }

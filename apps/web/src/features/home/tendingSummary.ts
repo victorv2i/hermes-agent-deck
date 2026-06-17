@@ -7,7 +7,7 @@
  * HONESTY (the spine): every fact reflects a real check — a count is shown ONLY
  * when it is non-zero, and NOTHING is reported when the dashboard is unreachable
  * (status === undefined). The connection tone is a SEMANTIC status (ok / warn /
- * idle), never the amber action accent.
+ * idle), never the sky-blue action accent.
  */
 import type { AgentDeckStatus, CronJob, KanbanBoardResponse } from '@agent-deck/protocol'
 
@@ -36,7 +36,7 @@ export interface TendingInputs {
   now: number
 }
 
-/** A semantic connection headline — tone is a STATUS color, never amber. */
+/** A semantic connection headline — tone is a STATUS color, never the action accent. */
 export interface TendingConnection {
   label: string
   tone: 'ok' | 'warn' | 'idle'

@@ -8,7 +8,7 @@ import type { SessionSummary } from './types'
  * name/tooltip (color is never the only signal — colorblind-safe).
  *
  * Tones map to the design language's GOVERNED semantic palette tokens only
- * (`info` / `success` / `warning` / `muted` — never the amber action accent),
+ * (`info` / `success` / `warning` / `muted` — never the sky-blue action accent),
  * so a source dot can never be mistaken for the live/active marker. Unknown
  * sources fall back to a neutral muted dot rather than an arbitrary new color.
  */
@@ -46,13 +46,15 @@ export function sessionSourceMeta(session: SessionSummary): SourceMeta {
 }
 
 /**
- * The source values that count as "this UI / agent-deck-originated" — `web` and
- * its `ui` alias (mirroring {@link SOURCE_META}, where both map to the "Web"
- * channel). These are the sessions the pane + History default to; every other
- * channel (cli / telegram / discord / cron / api / handoff / …) is an EXTERNAL
- * source revealed only behind an opt-in toggle, never a default dump.
+ * The source values that count as "this UI / agent-deck-originated". `web` + its
+ * `ui` alias are the portable web markers; `dashboard` is what a real Hermes
+ * install tags a chat opened through this deck (the deck talks to the gateway's
+ * dashboard, so its own chats arrive as `dashboard`, not `web`). These are the
+ * sessions the chat rail + History default to; every other channel
+ * (cli / telegram / discord / cron / api_server / handoff / …) is an EXTERNAL
+ * source folded behind the closed "Other sessions" reveal, never a default dump.
  */
-const WEB_SOURCES = new Set(['web', 'ui'])
+const WEB_SOURCES = new Set(['web', 'ui', 'dashboard'])
 
 /** Whether a session opened in THIS web UI (web/ui), case-insensitively. */
 export function isWebOriginated(session: SessionSummary): boolean {

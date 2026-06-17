@@ -17,10 +17,10 @@ import { useWriteAvatar } from './mutations'
 /**
  * EditAvatarDialog — edit an existing agent's IDENTITY (its face + display name)
  * from its hub. Reuses the same keyboard/SR `AvatarPicker` (identity ring, never
- * amber). The display name is the friendly label shown everywhere the agent
+ * the action accent). The display name is the friendly label shown everywhere the agent
  * appears (the chip, the tab title, the hub heading); it does NOT rename the
  * underlying profile id (that's the separate, CLI-backed Rename). Clearing it
- * falls back to the real profile id. Confirm is the one amber action; on success
+ * falls back to the real profile id. Confirm is the one sky-blue action; on success
  * it persists via the partial-merge `PUT .../avatar` (sending the avatar always,
  * and the display name only when it changed — so a face-only edit never wipes the
  * name and vice-versa) and refetches so every surface updates at once.

@@ -35,7 +35,7 @@ describe('CliBrandMark', () => {
 
   it('brand marks render in their OWN brand color, never the amber --primary token', () => {
     // Identity is never the accent: the marks use pinned brand hex / currentColor,
-    // and must not reference the amber accent token.
+    // and must not reference the sky-blue accent token.
     const { container } = render(
       <>
         <CliBrandMark cli="claude" />

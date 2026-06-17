@@ -15,6 +15,7 @@ import {
   CalendarRange,
   FileSearch,
   GitBranch,
+  ListTree,
   RotateCcw,
   Sparkles,
   Unplug,
@@ -34,6 +35,7 @@ import { VirtualMessageList } from './VirtualMessageList'
 import { ApprovalCard } from './ApprovalCard'
 import { Composer } from './Composer'
 import { FindInConversation } from '@/features/chat-input/FindInConversation'
+import { ConversationOutline, type OutlineItem } from '@/features/chat-input/ConversationOutline'
 
 // Jump-to-latest lives in a lazy chunk so framer-motion stays off the eager
 // entry path. The Suspense fallback renders an un-animated button so the control
@@ -125,6 +127,8 @@ export interface ChatViewProps {
   onNewChat?: () => void
   onClearChat?: () => void
   onToggleTheme?: () => void
+  /** Open the Usage view (for the `/usage` command). */
+  onOpenUsage?: () => void
   /** The live run-state indicator (the LiveRunStateChip), rendered at the BOTTOM
    * above the composer instead of in the top bar. Null when idle. */
   runStateIndicator?: React.ReactNode
@@ -161,6 +165,7 @@ export function ChatView({
   onNewChat,
   onClearChat,
   onToggleTheme,
+  onOpenUsage,
   runStateIndicator,
 }: ChatViewProps) {
   const reduce = usePrefersReducedMotion()
@@ -216,6 +221,11 @@ export function ChatView({
   // through the windowing virtualizer. We own all the matching here; the overlay
   // (a Foundation module) is purely presentational.
   const find = useFindInConversation(turns, scrollElRef)
+
+  // Conversation outline (jump-list of the user's own prompts): a calm way to
+  // navigate a long chat. Toggled by the floating control; jumping scrolls the
+  // prompt's row into view through the same windowing-aware seek find uses.
+  const outline = useConversationOutline(turns, scrollElRef)
 
   // Lock the approval buttons after the first click so a double-tap can't
   // submit twice while the response round-trips. We key the busy flag to the
@@ -316,6 +326,7 @@ export function ChatView({
                 onNewChat={onNewChat}
                 onClearChat={onClearChat}
                 onToggleTheme={onToggleTheme}
+                onOpenUsage={onOpenUsage}
               />
               {/* A calm pull-revelation for newcomers: the slash + ⌘K affordances
                   spelled out once, under the empty composer. Suppressed for
@@ -358,6 +369,39 @@ export function ChatView({
             onPrev={find.prev}
             onClose={find.close}
           />
+        </div>
+      )}
+
+      {/* Conversation outline: a calm floating jump-list of the user's own
+          prompts. The toggle shows only when there are prompts to jump to AND
+          find isn't open (so the two top-right affordances never overlap). When
+          toggled open, the panel renders just below the toggle. */}
+      {outline.items.length > 0 && !find.open && (
+        <div className="pointer-events-none absolute top-2 right-2 z-30 flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={outline.toggle}
+            aria-label="Conversation outline"
+            aria-expanded={outline.open}
+            aria-pressed={outline.open}
+            title="Jump between your prompts"
+            data-testid="outline-toggle"
+            className={cn(
+              'pointer-events-auto grid size-9 place-items-center rounded-lg border border-border bg-popover text-muted-foreground shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)] transition-colors hover:text-foreground focus-visible:ad-focus motion-reduce:transition-none',
+              outline.open && 'bg-primary/10 text-primary',
+            )}
+          >
+            <ListTree className="size-4" aria-hidden />
+          </button>
+          {outline.open && (
+            <ConversationOutline
+              className="pointer-events-auto"
+              items={outline.items}
+              activeId={outline.activeId}
+              onJump={outline.jump}
+              onClose={outline.close}
+            />
+          )}
         </div>
       )}
 
@@ -548,6 +592,7 @@ export function ChatView({
           onNewChat={onNewChat}
           onClearChat={onClearChat}
           onToggleTheme={onToggleTheme}
+          onOpenUsage={onOpenUsage}
         />
       </div>
     </div>
@@ -713,6 +758,86 @@ function useFindInConversation(
     next,
     prev,
   }
+}
+
+export interface OutlineController {
+  open: boolean
+  items: readonly OutlineItem[]
+  /** The id of the last-jumped prompt (the "you are here" marker), or null. */
+  activeId: string | null
+  toggle: () => void
+  close: () => void
+  jump: (turnId: string) => void
+}
+
+/** The single-line label for a user prompt in the outline: the first non-empty
+ * line, whitespace-collapsed and capped so a long prompt stays one tidy row. */
+const OUTLINE_LABEL_MAX = 80
+function outlineLabel(content: string): string {
+  const firstLine = content.split('\n').find((l) => l.trim().length > 0) ?? content
+  const collapsed = firstLine.replace(/\s+/g, ' ').trim()
+  if (collapsed.length <= OUTLINE_LABEL_MAX) return collapsed
+  return `${collapsed.slice(0, OUTLINE_LABEL_MAX).trimEnd()}…`
+}
+
+/**
+ * Conversation-outline state + behavior, scoped to ChatView. It derives the list
+ * of the USER's own prompts from the rendered turns (with a one-line label each),
+ * and jumps to a chosen prompt, composing with `@tanstack/react-virtual`
+ * windowing exactly like find: seed the scroll offset by the turn's index so the
+ * virtualizer mounts that row, then `scrollIntoView` the real node. The
+ * last-jumped prompt is marked active (a calm "you are here"); we deliberately
+ * do NOT scroll-spy the whole list (that would fight the virtualizer for little
+ * gain). The panel (a Foundation module) is purely presentational.
+ */
+function useConversationOutline(
+  turns: Turn[],
+  scrollElRef: React.MutableRefObject<HTMLDivElement | null>,
+): OutlineController {
+  const [open, setOpen] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const items = useMemo<OutlineItem[]>(() => {
+    const out: OutlineItem[] = []
+    for (const turn of turns) {
+      if (turn.role !== 'user') continue
+      // An image-only turn (empty text) still gets a reachable row, with an
+      // honest placeholder rather than a blank label.
+      const label = turn.content.trim().length > 0 ? outlineLabel(turn.content) : 'Image'
+      out.push({ id: turn.id, label })
+    }
+    return out
+  }, [turns])
+
+  const jump = useCallback(
+    (turnId: string) => {
+      setActiveId(turnId)
+      const el = scrollElRef.current
+      const index = turns.findIndex((t) => t.id === turnId)
+      const selector = `[data-find-turn="${cssEscape(turnId)}"]`
+      const center = () => {
+        const node = el?.querySelector<HTMLElement>(selector)
+        node?.scrollIntoView({ block: 'center', behavior: 'auto' })
+        return !!node
+      }
+      // Seed the offset by index so an off-window prompt mounts (the virtualizer
+      // re-derives its window from scrollTop); precise centering follows.
+      if (el && index >= 0) el.scrollTop = index * ROW_ESTIMATE
+      if (center()) return
+      requestAnimationFrame(center)
+    },
+    [turns, scrollElRef],
+  )
+
+  const toggle = useCallback(() => setOpen((o) => !o), [])
+  const close = useCallback(() => setOpen(false), [])
+
+  // A prompt that scrolls out of existence (e.g. after edit-and-resend trims the
+  // tail) must not stay marked active. Clear the marker when its turn is gone.
+  const stillPresent = activeId != null && items.some((it) => it.id === activeId)
+  const safeActiveId = stillPresent ? activeId : null
+
+  return { open, items, activeId: safeActiveId, toggle, close, jump }
 }
 
 /** Minimal CSS.escape shim for the attribute selector (turn ids are safe ids in
@@ -887,7 +1012,7 @@ function EmptyHero({
       <div className="flex flex-col items-center gap-3 text-center">
         {/* Identity hero (A1): a NAMED agent's FACE leads the empty state, so a
             blank conversation reads as "your agent, ready" — not an anonymous text
-            box. Decorative (the headline names it); never the amber accent (the
+            box. Decorative (the headline names it); never the sky-blue accent (the
             Avatar primitive enforces the neutral `--border-strong` ring). The
             unnamed default has no face/name to surface, so it's omitted. */}
         {named && (

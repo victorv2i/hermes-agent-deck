@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Popover } from 'radix-ui'
+import { DropdownMenu } from 'radix-ui'
 import {
   Archive,
   ChevronDown,
@@ -34,6 +34,7 @@ import {
 import { groupSessions, formatRelative, splitRecent } from './grouping'
 import {
   useSessionsPaginated,
+  useDeckSessions,
   useSessionSearch,
   useDeleteSession,
   useRenameSession,
@@ -88,7 +89,7 @@ import { toast } from '@/lib/toast'
  * back to Hermes.
  *
  * Calm + quiet per the design language: hairline rows, a SANCTIONED faint
- * amber-tinted selection wash + the amber accent bar (selection is an amber use),
+ * sky-blue-tinted selection wash + the sky-blue accent bar (selection is an accent use),
  * skeletons (never spinners), generous spacing.
  */
 
@@ -195,6 +196,10 @@ export function SessionList({
   const showExternalSources = useShowExternalSources()
 
   const list = useSessionsPaginated()
+  // The deck's OWN (dashboard-sourced) sessions, fetched by source so they show
+  // even when older than the recency-paginated first page. Only the dense chat
+  // rail merges these in (below); History keeps pure recency pagination.
+  const deckSessions = useDeckSessions(dense)
   const searchQuery = useSessionSearch(debounced)
   const deleteMutation = useDeleteSession()
   const renameMutation = useRenameSession()
@@ -215,7 +220,17 @@ export function SessionList({
   const createProject = useCreateProject()
   const setSessionOrg = useSetSessionOrganization()
 
-  const sessions = list.sessions
+  // The dense chat rail UNIONS the deck's own (dashboard) sessions with the
+  // recency page so the web-first fold has the deck's chats to scope to even when
+  // they're older than the loaded page. Deck sessions lead (they're the default
+  // view); dedupe by id so a deck chat that IS recent appears once. History (not
+  // dense) shows the recency page as-is.
+  const sessions = useMemo(() => {
+    if (!dense || deckSessions.length === 0) return list.sessions
+    const seen = new Set(list.sessions.map((s) => s.id))
+    const olderDeck = deckSessions.filter((s) => !seen.has(s.id))
+    return olderDeck.length === 0 ? list.sessions : [...olderDeck, ...list.sessions]
+  }, [dense, deckSessions, list.sessions])
   // A title lookup so search results can LEAD with the real session title (the
   // search wire shape carries no title) when the matched session is loaded.
   const titleById = sessionTitleMap(sessions, localLabels)
@@ -235,11 +250,13 @@ export function SessionList({
   // a scary "No sessions yet — start a chat" over hundreds of real conversations.
   // The web-first default still applies whenever any web chat exists.
   const noWebSessions = webFiltered.length === 0 && externalFiltered.length > 0
-  // §3 — the dense (clean) rail has no "Other sessions" reveal toggle, so scoping
-  // to web-only would hide external sessions with no way back. Show ALL sessions in
-  // dense mode (least surprising). The full (History) rail keeps the web-first
-  // default + the toggle.
-  const sourceScoped = dense || showExternalSources || noWebSessions ? filtered : webFiltered
+  // §3 — scope the rail to web-originated (agent-deck) sessions by default; the
+  // external (cli/telegram/discord/cron/api) sessions fold under the collapsed
+  // "Other sessions (N)" toggle until the user reveals them. This web-first
+  // default applies in BOTH the dense chat rail AND the full History rail (the
+  // dense rail wires the same reveal toggle, below). The only escape hatch is
+  // `noWebSessions` — when there is no web-only view to fall back to, show all.
+  const sourceScoped = showExternalSources || noWebSessions ? filtered : webFiltered
 
   const pendingSession = pendingDelete
     ? (sessions.find((s) => s.id === pendingDelete) ?? null)
@@ -337,9 +354,9 @@ export function SessionList({
         loadedCount={list.loaded}
         hasMore={list.hasMore}
         isFetchingMore={list.isFetchingNextPage}
-        // The "Load more" pagination footer is suppressed in the clean dense rail
-        // (withholding the callback removes the footer chrome); History keeps it.
-        onLoadMore={dense ? undefined : list.fetchNextPage}
+        // "Load more" is wired in BOTH the dense rail and History so older chats
+        // are always reachable by paging back (the dense rail used to suppress it).
+        onLoadMore={list.fetchNextPage}
         isLoading={list.isLoading}
         error={list.isError ? 'error' : null}
         onRetry={list.refetch}
@@ -393,16 +410,14 @@ export function SessionList({
         tagSuggestions={dense ? undefined : tagSuggestions}
         onSetSessionOrganization={dense ? undefined : onSetSessionOrganization}
         onCreateProject={dense ? undefined : (input) => createProject.mutateAsync(input)}
-        // §3 — external-source reveal. In the dense rail the "Other sessions (N)"
-        // toggle is suppressed (count 0 hides it; the web-first default already
-        // applies); History keeps the toggle. When all sessions are external (no
-        // web-only view to toggle back to), suppress the reveal — they're already
-        // shown.
-        externalSourceCount={dense || noWebSessions ? 0 : externalFiltered.length}
+        // §3 — external-source reveal. BOTH the dense chat rail and History wire
+        // the collapsed "Other sessions (N)" toggle so external sessions fold away
+        // by default and the user can expand them. When all sessions are external
+        // (no web-only view to toggle back to), suppress the reveal — they're
+        // already shown (count 0 hides the toggle).
+        externalSourceCount={noWebSessions ? 0 : externalFiltered.length}
         showExternalSources={showExternalSources || noWebSessions}
-        onToggleExternalSources={
-          dense ? undefined : () => setShowExternalSources(!showExternalSources)
-        }
+        onToggleExternalSources={() => setShowExternalSources(!showExternalSources)}
         // Multi-select + bulk bar is power-user management UI — only ever wired
         // when the caller opts into bulk ops (History); dense rails never do.
         onBulkOps={dense ? undefined : bulkOps}
@@ -1043,8 +1058,10 @@ type SessionListItem =
   | { kind: 'header'; key: string; label: string }
   | { kind: 'row'; session: SessionSummary }
 
-/** Estimated row height (px) before measurement — a 2-line clamp row + meta. */
-const SESSION_ROW_ESTIMATE = 56
+/** Estimated row height (px) before measurement — a compact single-line title
+ *  row + meta line (py-1). Rows are MEASURED after mount, so this only seeds the
+ *  initial window; it tracks the tightened row so the first paint is close. */
+const SESSION_ROW_ESTIMATE = 40
 /** Estimated header height (px) — the small section label + its padding. */
 const SESSION_HEADER_ESTIMATE = 30
 
@@ -1140,7 +1157,7 @@ const EMPTY_SELECTION: Set<string> = new Set()
  * browser state until its first message creates a Hermes session, so it never
  * appears in the Hermes-backed list below; this synthetic row makes it visibly
  * present at the very top of the rail (ChatGPT/Claude-style). It carries the
- * canonical ACTIVE row treatment (the sanctioned faint-amber wash + the left amber
+ * canonical ACTIVE row treatment (the sanctioned faint sky-blue wash + the left sky-blue
  * accent bar) — the same treatment a selected SessionRow gets — because it IS the
  * active conversation while selectedId is null. Clicking it navigates to the new
  * chat. It yields to the real session row the moment the first message creates a
@@ -1158,9 +1175,10 @@ function NewChatRow() {
       data-testid="rail-new-chat-row"
       aria-current="true"
       className={cn(
-        // Mirror the canonical SELECTED rail-row treatment: the faint amber-tinted
-        // wash + the left amber accent bar (inset ::before, 3px).
-        'relative flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-left',
+        // Mirror the canonical SELECTED rail-row treatment: the faint sky-blue-tinted
+        // wash + the left sky-blue accent bar (inset ::before, 3px). Matches the
+        // compact SessionRow rhythm (py-1.5) so it sits flush with real rows.
+        'relative flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left',
         'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-100',
         'bg-primary/10',
       )}
@@ -1211,7 +1229,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
  * web UI (cli / telegram / cron / discord / api). A calm, full-row toggle pinned
  * at the BOTTOM of the rail that names the count of folded-away external sessions
  * ("Other sessions (N)") rather than dumping them inline with web chats. It's a
- * STATE toggle, not the one action accent, so it stays neutral (never amber): a
+ * STATE toggle, not the one action accent, so it stays neutral (never the accent): a
  * muted globe glyph + a chevron that rotates when expanded. `aria-pressed`
  * carries the on/off state for assistive tech.
  */
@@ -1400,11 +1418,15 @@ function SessionRow({
         aria-current={selected ? 'true' : undefined}
         aria-checked={selectMode ? rowSelected : undefined}
         className={cn(
-          // Canonical rail-row treatment: SELECTED is a sanctioned amber use — a
-          // FAINT amber-tinted wash (`bg-primary/10`) + the left amber accent BAR
+          // Canonical rail-row treatment: SELECTED is a sanctioned accent use — a
+          // FAINT sky-blue-tinted wash (`bg-primary/10`) + the left sky-blue accent BAR
           // (::before, 3px inset); hover stays a quiet neutral wash (hover is not
           // selection). The bar is an inset pseudo so it never shifts content.
-          'relative flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-2 text-left transition-colors',
+          // Compact rhythm: a single-line title + a compact meta line, so each row
+          // is a tight ~40px (px-2.5 py-1.5, no inter-line gap) for a decluttered
+          // rail. The compact density layer trims the vertical padding one notch
+          // further (the default read); comfortable keeps this airier baseline.
+          'relative flex w-full flex-col items-start gap-0 rounded-lg px-2.5 py-1.5 text-left transition-colors',
           'hover:bg-muted focus-visible:ad-focus',
           'before:absolute before:top-1/2 before:left-0 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:opacity-0 before:transition-opacity',
           selected && 'bg-primary/10 before:opacity-100',
@@ -1416,23 +1438,24 @@ function SessionRow({
           hasActions && 'pr-12',
         )}
       >
-        <span className="flex w-full items-start gap-1.5">
+        <span className="flex w-full items-center gap-1.5">
           {session.is_active && (
             <span
-              className="mt-1 size-1.5 shrink-0 rounded-full bg-success"
+              className="size-1.5 shrink-0 rounded-full bg-success"
               aria-label="Active"
               title="Active"
             />
           )}
-          {/* 2-line clamp (T2.5): a single-line truncate cuts before any
-              distinguishing content when sessions share a long prefix. */}
+          {/* Single-line title (truncate) for a dense, decluttered rail. The full
+              label is always available on hover via the title attribute, and the
+              meta line below keeps the row scannable. */}
           <span
             className={cn(
-              'line-clamp-2 min-w-0 flex-1 text-13 leading-snug',
+              'truncate min-w-0 flex-1 text-[12px] leading-tight',
               selected ? 'font-medium text-foreground' : 'text-foreground/90',
               localLabel && 'italic',
             )}
-            title={localLabel ? `Local label for "${originalLabel}"` : undefined}
+            title={localLabel ? `Local label for "${originalLabel}"` : label}
           >
             {label}
           </span>
@@ -1573,8 +1596,12 @@ function RowOverflowMenu({
     onViewTranscript || onRename || onStartInlineRename || onArchive,
   )
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
+    // Non-modal (like the Popover it replaces): a row-action menu must not
+    // aria-hide / scroll-lock the rest of the rail. Modal=true would mark the
+    // row (and its tag chips) aria-hidden while open, hiding them from AT and
+    // from queries.
+    <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
+      <DropdownMenu.Trigger asChild>
         <RowAction label={triggerLabel} className="relative">
           <MoreHorizontal className="size-3.5" />
           {organized && (
@@ -1585,9 +1612,13 @@ function RowOverflowMenu({
             />
           )}
         </RowAction>
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        {/* A real menu (role="menu") so the trigger advertises aria-haspopup="menu"
+            and the items get roving arrow-key focus + typeahead for free (WCAG
+            4.1.2 / 2.1.1). The row click that opened it must not bubble to the row
+            selection. */}
+        <DropdownMenu.Content
           align="end"
           side="bottom"
           sideOffset={6}
@@ -1595,80 +1626,73 @@ function RowOverflowMenu({
           className="ad-surface z-50 w-56 rounded-xl bg-popover p-1.5 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.6)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           {onStartInlineRename && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onStartInlineRename(sessionId)
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+            <DropdownMenu.Item
+              onSelect={() => onStartInlineRename(sessionId)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground focus-visible:ad-focus"
             >
               <PencilLine className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Rename</span>
-            </button>
+            </DropdownMenu.Item>
           )}
           {onArchive && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onArchive(sessionId)
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+            <DropdownMenu.Item
+              onSelect={() => onArchive(sessionId)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground focus-visible:ad-focus"
             >
               <Archive className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Archive</span>
-            </button>
+            </DropdownMenu.Item>
           )}
           {onRename && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onRename(sessionId)
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+            <DropdownMenu.Item
+              onSelect={() => onRename(sessionId)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground focus-visible:ad-focus"
             >
               <PencilLine className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">Label session</span>
               <span className="text-[11px] text-foreground-tertiary">local</span>
-            </button>
+            </DropdownMenu.Item>
           )}
           {onViewTranscript && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onViewTranscript(sessionId)
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+            <DropdownMenu.Item
+              onSelect={() => onViewTranscript(sessionId)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-13 text-muted-foreground transition-colors outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground focus-visible:ad-focus"
             >
               <ScrollText className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
               <span className="flex-1">View transcript</span>
               <span className="text-[11px] text-foreground-tertiary">read-only</span>
               <ChevronRight className="size-3.5 text-foreground-tertiary" aria-hidden />
-            </button>
+            </DropdownMenu.Item>
           )}
-          {organize && hasPrimaryMenuItems && <div className="my-1 h-px bg-border" />}
+          {organize && hasPrimaryMenuItems && (
+            <DropdownMenu.Separator className="my-1 h-px bg-border" />
+          )}
           {organize && (
-            <SessionOrganizeMenu
-              sessionId={sessionId}
-              projectId={organize.projectId}
-              tags={organize.tags}
-              projects={organize.projects}
-              tagSuggestions={organize.tagSuggestions}
-              onSetOrganization={(input) => organize.onSetSessionOrganization(sessionId, input)}
-              onCreateProject={organize.onCreateProject}
-              onClose={() => setOpen(false)}
-            />
+            // The organize flow is a stateful sub-view stack with a text input
+            // (Tags). It is rendered INLINE in the same menu surface (preserving
+            // the original one-surface behavior) rather than as flat menu items:
+            // its own buttons carry role="menuitem", now VALID because they sit
+            // inside this real role="menu". They are NOT DropdownMenu.Items, so
+            // Radix's roving focus never tracked them (they were Tab-only before
+            // too). We stop keydown from bubbling to the menu so the menu's own
+            // key model (typeahead / Enter-to-select / arrow nav) can't hijack
+            // the tag input's Enter-to-add or steal its keystrokes.
+            <div onKeyDown={(e) => e.stopPropagation()}>
+              <SessionOrganizeMenu
+                sessionId={sessionId}
+                projectId={organize.projectId}
+                tags={organize.tags}
+                projects={organize.projects}
+                tagSuggestions={organize.tagSuggestions}
+                onSetOrganization={(input) => organize.onSetSessionOrganization(sessionId, input)}
+                onCreateProject={organize.onCreateProject}
+                onClose={() => setOpen(false)}
+              />
+            </div>
           )}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   )
 }
 
@@ -1698,9 +1722,10 @@ const RowAction = forwardRef<
       title={label}
       onClick={onClick}
       className={cn(
-        // 44px touch target on mobile (min-h-11 min-w-11); compact on sm+ (p-1).
+        // 44px touch target on mobile (min-h-11 min-w-11); compact on sm+ but the
+        // desktop target still clears the 24px AA floor (min-h-6 min-w-6 = 24px).
         'flex min-h-11 min-w-11 touch-manipulation items-center justify-center rounded-md text-foreground-tertiary transition-colors',
-        'sm:min-h-0 sm:min-w-0 sm:p-1',
+        'sm:min-h-6 sm:min-w-6 sm:p-1',
         'hover:bg-surface-2 hover:text-foreground',
         'focus-visible:ad-focus',
         active && 'text-primary hover:text-primary',
@@ -1917,7 +1942,7 @@ function ArchiveSessionDialog({
  * common case (running/completed/normal) so calm rows stay calm; only a
  * failed/errored session (a destructive warning triangle) or a handed-off
  * session (a neutral branch glyph) earns a marker. State is conveyed by
- * SHAPE/ICON + an aria-label/title — governed semantic color, never amber, and
+ * SHAPE/ICON + an aria-label/title — governed semantic color, never the action accent, and
  * never color alone (colorblind-safe). Sized to sit quietly inside a dense rail
  * row beside the title.
  */
@@ -1927,7 +1952,7 @@ function SessionStateIcon({ session }: { session: SessionSummary }) {
   if (indicator.kind === 'failed') {
     return (
       <TriangleAlert
-        className="mt-0.5 size-3.5 shrink-0 text-destructive"
+        className="size-3.5 shrink-0 text-destructive"
         role="img"
         aria-label={indicator.label}
       >
@@ -1937,7 +1962,7 @@ function SessionStateIcon({ session }: { session: SessionSummary }) {
   }
   return (
     <GitBranch
-      className="mt-0.5 size-3.5 shrink-0 text-foreground-tertiary"
+      className="size-3.5 shrink-0 text-foreground-tertiary"
       role="img"
       aria-label={indicator.label}
     >
@@ -1946,7 +1971,7 @@ function SessionStateIcon({ session }: { session: SessionSummary }) {
   )
 }
 
-/** Maps a governed source tone to its semantic dot color (never amber). */
+/** Maps a governed source tone to its semantic dot color (never the action accent). */
 const SOURCE_DOT_TONE: Record<ReturnType<typeof sessionSourceMeta>['tone'], string> = {
   info: 'bg-info',
   success: 'bg-success',
@@ -1958,7 +1983,7 @@ const SOURCE_DOT_TONE: Record<ReturnType<typeof sessionSourceMeta>['tone'], stri
  * A small per-row dot signalling where the session opened (CLI / Web / API /
  * scheduled / …). The channel is conveyed by a governed semantic color PLUS an
  * accessible label/title (never color alone), so it's colorblind-safe and can
- * never be confused with the amber active marker.
+ * never be confused with the sky-blue active marker.
  */
 function SourceDot({ session }: { session: SessionSummary }) {
   const meta = sessionSourceMeta(session)
@@ -2065,7 +2090,7 @@ function SearchResultRow({
 
 /**
  * Render a search snippet with the backend's match markers STYLED (governed
- * amber + medium weight) rather than stripped — the one affordance that tells
+ * sky-blue + medium weight) rather than stripped — the one affordance that tells
  * you *why* a session matched. `parseHighlight` recognizes both the live
  * dashboard's `>>>…<<<` form and the legacy `<b>…</b>` form. Rendered as safe
  * React nodes (never dangerouslySetInnerHTML on untrusted content).

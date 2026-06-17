@@ -155,6 +155,44 @@ export function useSessionsPaginated(pageSize: number = RAIL_PAGE_SIZE): Paginat
   }
 }
 
+/**
+ * The Hermes `source` that tags a chat opened through THIS deck. The deck drives
+ * the gateway's DASHBOARD, so its own chats arrive as `dashboard` (never
+ * `cli` / `telegram` / `cron` / `api_server`). This is the canonical
+ * "agent-deck-originated" source on any install.
+ */
+export const DECK_SESSION_SOURCE = 'dashboard'
+
+/** Stable empty array so the hook returns a referentially-stable default. */
+const NO_DECK_SESSIONS: SessionSummary[] = []
+
+/**
+ * The deck's OWN sessions, fetched BY SOURCE so they surface regardless of age.
+ *
+ * The recency-paginated rail ({@link useSessionsPaginated}) loads only the first
+ * page of the most-recently-active sessions. On a busy install hundreds of
+ * recent cli/telegram/cron sessions push the deck's sparse, often-older chats
+ * far past that page, so a pure client-side split finds NO web-originated
+ * sessions and trips the rail's "nothing web here, show everything" fallback —
+ * defeating the web-first fold. This small, capped, source-filtered fetch gives
+ * the fold a stable non-empty default to scope to (the deck's own chats), so the
+ * automated/other-channel sessions can fold under "Other sessions (N)".
+ *
+ * `enabled` gates it to the dense chat rail; the full History surface keeps its
+ * pure recency pagination.
+ */
+export function useDeckSessions(enabled: boolean): SessionSummary[] {
+  const params: ListSessionsParams = { source: DECK_SESSION_SOURCE, limit: 100, order: 'recent' }
+  const query = useQuery({
+    queryKey: sessionKeys.list(params),
+    queryFn: ({ signal }) => fetchSessions(params, signal),
+    enabled,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  })
+  return query.data?.sessions ?? NO_DECK_SESSIONS
+}
+
 export function useSession(id: string | null): UseQueryResult<SessionDetail> {
   return useQuery({
     queryKey: sessionKeys.detail(id ?? ''),
@@ -385,9 +423,17 @@ export function useRailUrlState(): readonly [RailUrlState, (patch: Partial<RailU
 export const SHOW_EXTERNAL_SOURCES_STORAGE_KEY = 'agent-deck-show-external-sources'
 
 function readShowExternalSources(): boolean {
+  // Default FALSE (deck-primary): the rail leads with the deck's OWN chats and
+  // folds every other channel under the collapsed "Other sessions (N)" reveal, so
+  // the sparse, often-older deck chats are never buried by hundreds of recent
+  // cli/telegram/cron sessions. The fold is one click (count-labeled), so nothing
+  // is hidden; revealing it sticks as '1'. The deck-primary default never hides a
+  // user's only sessions: when there are no deck chats to lead with, the rail's
+  // noWebSessions escape hatch shows everything instead (see SessionList).
   if (typeof localStorage === 'undefined') return false
   try {
-    return localStorage.getItem(SHOW_EXTERNAL_SOURCES_STORAGE_KEY) === '1'
+    const v = localStorage.getItem(SHOW_EXTERNAL_SOURCES_STORAGE_KEY)
+    return v === null ? false : v === '1'
   } catch {
     return false
   }
@@ -411,8 +457,7 @@ export function setShowExternalSources(value: boolean): void {
   showExternalSnapshot = value
   if (typeof localStorage !== 'undefined') {
     try {
-      if (value) localStorage.setItem(SHOW_EXTERNAL_SOURCES_STORAGE_KEY, '1')
-      else localStorage.removeItem(SHOW_EXTERNAL_SOURCES_STORAGE_KEY)
+      localStorage.setItem(SHOW_EXTERNAL_SOURCES_STORAGE_KEY, value ? '1' : '0')
     } catch {
       // private mode / quota — the in-memory value still applies this session.
     }
@@ -422,8 +467,10 @@ export function setShowExternalSources(value: boolean): void {
 
 /**
  * Refresh-durable "show external sources" toggle backed by localStorage. Default
- * false (web-first), matching the prior `useState(false)`; a reload restores the
- * user's sticky choice.
+ * FALSE (deck-primary): the rail leads with the deck's own chats and folds every
+ * other channel under the collapsed "Other sessions (N)" reveal, so the deck chats
+ * are never buried among hundreds of recent external sessions. A reload restores
+ * the user's sticky reveal choice.
  */
 export function useShowExternalSources(): boolean {
   return useSyncExternalStore(

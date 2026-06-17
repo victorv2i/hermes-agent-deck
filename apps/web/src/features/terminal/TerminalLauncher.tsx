@@ -13,11 +13,11 @@ import type { CliId, DetectedCli } from './useTerminalClis'
  *
  * HONEST UI: only installed CLIs are actionable; a missing one is muted with a
  * plain "not installed" line + a real "Install →" link to that tool's docs. No
- * fake states, no emoji. The single amber action accent lands on the protagonist
+ * fake states, no emoji. The single sky-blue action accent lands on the protagonist
  * (Hermes); the rest use the neutral outline action — identity is never the accent.
  *
  * Each card carries the CLI's recognizable BRAND MARK (a local inline SVG in the
- * tool's own brand color — IDENTITY, never the amber accent); the raw shell uses a
+ * tool's own brand color — IDENTITY, never the sky-blue accent); the raw shell uses a
  * neutral line glyph. See {@link CliBrandMark}.
  *
  * Selecting a preset calls {@link onLaunch} with its id; the route then opens a
@@ -126,8 +126,8 @@ export function TerminalLauncher({
   const ordered = ORDER.map((id) => byId.get(id)).filter((c): c is DetectedCli => c != null)
 
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="flex min-h-0 flex-1 flex-col items-center overflow-y-auto p-4">
+      <div className="my-auto w-full max-w-2xl">
         <div className="text-center">
           <h2 id="terminal-launcher-heading" className="text-base font-medium text-foreground">
             Launch an agent
@@ -293,7 +293,7 @@ function SessionRow({
 
 function PresetCard({ cli, onLaunch }: { cli: DetectedCli; onLaunch: (id: CliId) => void }) {
   const meta = PRESET_META[cli.id]
-  // The protagonist (Hermes) carries the single amber action accent; everything
+  // The protagonist (Hermes) carries the single sky-blue action accent; everything
   // else uses the neutral outline action. Identity is never the accent.
   const variant = cli.id === 'hermes' ? 'default' : 'outline'
   // The shell glyph + the Codex mono mark use currentColor → tint them to a

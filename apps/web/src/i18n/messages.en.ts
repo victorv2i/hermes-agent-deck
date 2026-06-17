@@ -35,9 +35,10 @@ export const en = {
   'navigation.group.workspace.label': 'Workspace',
   'navigation.group.agent.label': 'Your agent',
   'navigation.group.activity.label': 'Activity',
-  // Agent Studio is Home (the index '/'). The Agents + Tools surfaces folded into
-  // it, so their label keys are gone (their old paths redirect via router.tsx).
-  'navigation.item.studio.label': 'Agent Studio',
+  // The index '/' surface is labeled "Home" in the nav + chrome (its page body
+  // carries the "Agent Studio" heading). Agents + Tools folded into it, so their
+  // label keys are gone (their old paths redirect via router.tsx).
+  'navigation.item.studio.label': 'Home',
   'navigation.item.chat.label': 'Chat',
   // The History destination folded into Chat in the nav; its route survives, so
   // the label key stays (read by surfaceTitle for /history + /sessions/:id).

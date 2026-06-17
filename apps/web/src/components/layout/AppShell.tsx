@@ -43,7 +43,7 @@ const PreviewDrawer = lazy(() =>
   import('./AppShellMotion').then((m) => ({ default: m.PreviewDrawer })),
 )
 
-const RAIL_WIDTH = 260
+const RAIL_WIDTH = 212
 /** The PREVIEW panel (#116) hosts a real iframe browser, so it wants room.
  * Mirrors PREVIEW_WIDTH in AppShellMotion. */
 const PREVIEW_WIDTH = 480
@@ -80,10 +80,11 @@ const SURFACES_WITH_OWN_HEADER = [
   // and brings its own SurfaceHeader, so suppress the chrome fallback title here.
   '/workspaces',
   '/jobs',
-  // Connections mounts the existing Voice/Messaging/MCP Routes as tabs, and each
-  // brings its OWN PageHeader — so the chrome fallback title is suppressed here
-  // too (the tab strip + the surface's own header are the page chrome).
-  '/connections',
+  // NOTE: Connections is no longer its own surface — it folded INTO the Agent
+  // Studio (Home) as a GLOBAL view (`/?view=connections`), and `/connections`
+  // redirects there. The Studio index '/' is intentionally ABSENT from this list
+  // (it keeps the chrome "Agent Studio" title while the embedded Connections view
+  // renders its own tab strip below), so no `/connections` entry is needed here.
   '/usage',
   '/logs',
   '/system',
@@ -192,8 +193,8 @@ export function AppShell({
   // width. It no longer shapeshifts to a slim icon-nav at a mid breakpoint (a
   // surprising change on resize); only the dedicated PANE is width-gated. The
   // icon/slide-over fallback happens solely at the true MOBILE breakpoint (handled
-  // by the `isMobile` branch above). Width budget at 1024px: labeled nav (260) +
-  // pane (280) + content (~484) is comfortable for the centered chat column.
+  // by the `isMobile` branch above). Width budget at 1024px: labeled nav (212) +
+  // pane (280) + content (~532) is comfortable for the centered chat column.
   // Content the active route projects into the header (title · model · ring).
   const headerContent = useHeaderContent()
   // When no route projects its own header content, fall back to the active
@@ -206,7 +207,14 @@ export function AppShell({
   const { pathname } = useLocation()
   const fallbackTitle =
     headerContent == null && !surfaceRendersOwnHeader(pathname) ? surfaceTitle(pathname) : null
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  // Persisted across pages + reloads so a collapsed nav stays collapsed everywhere.
+  const [railCollapsed, setRailCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('agent-deck-rail-collapsed') === '1'
+    } catch {
+      return false
+    }
+  })
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
   // The header's leading nav control (Menu trigger on mobile, collapse toggle on
   // desktop — the same slot). When a resize auto-closes the open slide-over, the
@@ -321,6 +329,16 @@ export function AppShell({
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
+      {/* Skip link (WCAG 2.4.1): the FIRST focusable element jumps a keyboard user
+          past the rail/header straight into the main content landmark. Visually
+          hidden until focused (focus-visible reveals it), mirroring the Files
+          skip-link pattern with the on-brand focus ring. */}
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-card px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-border focus-visible:not-sr-only focus-visible:absolute focus-visible:left-3 focus-visible:top-3 focus-visible:z-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Skip to main content
+      </a>
       {/* Left rail. Desktop: a width-animated column. Mobile: an off-canvas
           slide-over rendered above the content with a dismiss backdrop. */}
       {isMobile ? (
@@ -482,9 +500,24 @@ export function AppShell({
               ref={headerNavRef}
               variant="ghost"
               size="icon-sm"
-              onClick={() => setRailCollapsed((c) => !c)}
+              onClick={() =>
+                setRailCollapsed((c) => {
+                  const next = !c
+                  try {
+                    localStorage.setItem('agent-deck-rail-collapsed', next ? '1' : '0')
+                  } catch {
+                    // private mode / quota — the in-session toggle still applies.
+                  }
+                  return next
+                })
+              }
               aria-label={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="size-10 text-muted-foreground hover:text-foreground"
+              title={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              // Surfaced affordance (#2): the collapse control reads as a real,
+              // discoverable button at REST (a hairline border + faint surface
+              // fill), not a hover-only ghost glyph that users never find. Neutral
+              // tones only (never the sky-blue action accent); hover lifts the fill.
+              className="size-10 rounded-md border border-border bg-surface-1 text-muted-foreground hover:bg-surface-2 hover:text-foreground"
             >
               {railCollapsed ? (
                 <ChevronsRight className="size-4" />
@@ -569,7 +602,11 @@ export function AppShell({
           <ThemeToggle />
         </header>
 
-        <main className="relative flex min-h-0 flex-1 justify-center overflow-hidden">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative flex min-h-0 flex-1 justify-center overflow-hidden outline-none"
+        >
           {/* The conversation surfaces self-cap at ~720px and stay centered; the
               wide workspace/system surfaces (Files two-pane, Terminal, Usage) use
               their own intended widths, so the shell doesn't clamp them here.

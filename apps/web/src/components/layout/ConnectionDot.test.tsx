@@ -8,7 +8,7 @@ import { ConnectionDot } from './ConnectionDot'
  * *connection* being online is SUCCESS (a calm round green dot, not the live
  * accent), connecting is the in-progress `info` heartbeat (pulsing), offline is
  * `error`. The non-OK states carry a distinguishing SHAPE (not a hue alone) so a
- * colorblind / at-a-glance operator can't conflate them with the live amber
+ * colorblind / at-a-glance operator can't conflate them with the live sky-blue
  * accent. The chrome contract is preserved: `connection-dot` testid + a
  * `data-status` attribute.
  */

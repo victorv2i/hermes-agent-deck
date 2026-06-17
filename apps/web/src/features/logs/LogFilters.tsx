@@ -2,7 +2,7 @@
  * The Logs surface control strip: a file segmented-control, a min-level
  * segmented-control, a keyword text filter, an auto-refresh toggle, and a manual
  * refresh. Design-language styled (hairline pills, a NEUTRAL active segment so
- * selection stays distinct from the semantic level hues beside it, amber focus
+ * selection stays distinct from the semantic level hues beside it, sky-blue focus
  * ring). Keyboard-friendly: each segmented group is an ARIA radiogroup
  * with roving tabindex + arrow-key traversal (matching PeriodSelector).
  */

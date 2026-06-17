@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils'
  * Home hero, so a profile shows ONE face everywhere.
  *
  * GOVERNANCE (load-bearing — the spine's two identity traps):
- *  - Identity is NEVER the amber action accent. The selection/figure-ground ring
- *    uses `var(--border-strong)` (NOT `--ring`, which is byte-identical to amber
- *    `--primary` in every palette). The lettermark fallback is neutral
+ *  - Identity is NEVER the sky-blue action accent. The selection/figure-ground ring
+ *    uses `var(--border-strong)` (NOT `--ring`, which is byte-identical to the
+ *    `--primary` action accent in every palette). The lettermark fallback is neutral
  *    (`text-foreground` on `--surface-2`), never `text-primary`.
  *  - The face is an `<img>` (not an SVG), so when rendered inside a ⌘K
  *    CommandItem it does NOT inherit the active-row `[&_svg]:text-primary` tint.
@@ -62,7 +62,7 @@ export function Avatar({ avatarId, name, size = 32, label, className }: AvatarPr
   const decorative = label === undefined
 
   const frame = cn(
-    'relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full',
+    'relative inline-grid shrink-0 place-items-center overflow-hidden rounded-md',
     'border border-[var(--border-strong)]',
     SIZE_CLASS[size],
     className,

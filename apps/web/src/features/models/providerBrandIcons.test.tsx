@@ -6,9 +6,9 @@ import { resolveProviderBrand } from './providerBrands'
 /**
  * The provider brand marks identify a model's vendor (Anthropic, Google/Gemini, …)
  * for nominative use, using ACCURATE official marks from the `@lobehub/icons` package.
- * They are IDENTITY, never the amber action accent — so a mark must render an <svg>
+ * They are IDENTITY, never the sky-blue action accent — so a mark must render an <svg>
  * and must NOT be wired to `--primary` (no `text-primary`, `fill-primary`, or a
- * literal amber hex). A vendor whose icon is genuinely absent falls back to a tasteful
+ * literal accent hex). A vendor whose icon is genuinely absent falls back to a tasteful
  * neutral monogram rather than a garbled/hand-drawn logo.
  */
 describe('resolveProviderBrand', () => {
@@ -108,8 +108,8 @@ describe('ProviderBrandIcon', () => {
   })
 
   it('NEVER wires the mark to the amber action accent (identity, not action)', () => {
-    // The mark is identity: it must not reference `--primary`/`--ring` (amber) nor
-    // a literal amber hex. Brand color or neutral `currentColor` only.
+    // The mark is identity: it must not reference `--primary`/`--ring` (the action accent) nor
+    // a literal accent hex. Brand color or neutral `currentColor` only.
     for (const slug of ['openai', 'anthropic', 'google', 'xai', 'mistral', 'unknown-x']) {
       const { container } = render(<ProviderBrandIcon provider={slug} />)
       const html = container.innerHTML

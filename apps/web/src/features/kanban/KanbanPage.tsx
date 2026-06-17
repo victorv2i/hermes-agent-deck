@@ -408,7 +408,7 @@ const COLUMN_SELECT_META: Record<KanbanColumn['name'], string> = {
  * The board's live-connection dot, built on the shared {@link StatusDot}. The
  * board socket actively PUSHING updates is a genuine LIVE DATA STREAM, so
  * `connected` is the ONE sanctioned `--primary` live-accent pulse (the spine
- * reserves amber for live/active state) — distinct from a mere gateway
+ * reserves the accent for live/active state) — distinct from a mere gateway
  * *connection* being online, which reads success-green via ConnectionDot.
  * connecting → the `info` in-progress heartbeat; disconnected → `idle`.
  */

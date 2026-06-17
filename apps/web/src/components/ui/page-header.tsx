@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 /**
  * PageHeader — the single, shared surface header used by every system/workspace
  * page (Models, Settings, Profiles, Usage, …) so they all read with the same
- * rhythm. A Lucide LINE icon (never emoji) in a neutral muted tile (the amber
+ * rhythm. A Lucide LINE icon (never emoji) in a neutral muted tile (the sky-blue
  * action accent never wears as decoration), the title at a consistent
  * size/weight, an optional muted subtitle, and an optional
  * right-aligned actions slot (e.g. a period selector). Carries its own bottom

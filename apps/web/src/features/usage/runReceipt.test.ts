@@ -4,7 +4,7 @@ import { buildRunReceipt, receiptBillingSegment, receiptLine, receiptTitle } fro
 const USAGE = { input_tokens: 64321, output_tokens: 1234, total_tokens: 65555 }
 
 describe('buildRunReceipt', () => {
-  it('returns null when the run carried no usage — honest absence, never zeros', () => {
+  it('returns null when the run carried no usage – honest absence, never zeros', () => {
     expect(buildRunReceipt(undefined, 'subscription')).toBeNull()
   })
 
@@ -23,7 +23,7 @@ describe('buildRunReceipt', () => {
     expect(buildRunReceipt(USAGE, 'subscription')?.estCostUsd).toBeNull()
   })
 
-  it('degrades a missing or out-of-set billing signal to unknown — never invents free', () => {
+  it('degrades a missing or out-of-set billing signal to unknown – never invents free', () => {
     expect(buildRunReceipt(USAGE)?.billingMode).toBe('unknown')
     expect(buildRunReceipt(USAGE, 'included')?.billingMode).toBe('unknown')
   })

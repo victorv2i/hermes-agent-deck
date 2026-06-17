@@ -4,9 +4,9 @@
 
 <h1 align="center">Agent Deck</h1>
 
-<p align="center"><strong>Give your <a href="https://github.com/NousResearch/hermes-agent">Hermes</a> agent a home.</strong></p>
+<p align="center"><strong>Give your <a href="https://github.com/NousResearch/hermes-agent">Hermes</a> agents a home.</strong></p>
 
-<p align="center">A face, a name, and one calm browser tab where you watch it work, approve what matters,<br>and see what it costs. Chat, files, terminal, and schedules included.</p>
+<p align="center">An Agent Studio to shape each one, and one calm browser tab where you watch them work, approve<br>what matters, and see what it costs. Chat, files, terminal, and schedules included.</p>
 
 <p align="center">
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3da639">
@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/chat.png" alt="Agent Deck chat: your agent greets you by name in a calm, dark interface" width="920">
+  <img src="assets/readme/agents.png" alt="Agent Deck: the Agent Studio, where each agent gets a face, model, skills, and memory" width="920">
 </p>
 
 > **Never used a terminal?** Agent Deck is a friendly web page for talking to your own [Hermes](https://github.com/NousResearch/hermes-agent) AI agent. You need a computer (Mac or Linux) where Hermes runs, or will run; the one command in [Quickstart](#quickstart) below sets everything up for you, including Hermes itself, and makes it all start again on its own after a reboot.
@@ -42,9 +42,9 @@ It runs locally, next to the CLI and Telegram, and talks to the Hermes gateway a
 - **⌘K command palette** and deep keyboard support throughout, with navigation/command labels flowing through the i18n catalog. Full app translation is still pre-release work.
 - **Honest security and remote posture:** frictionless on loopback, bearer-gated and Host-allowlisted on a remote bind. No hand-waving; the boundaries are spelled out.
 
-| Every agent gets a face                                                                           | Three theme families, light and dark                           |
-| ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| ![The Agents roster: each agent with its own avatar, model, and skills](assets/readme/agents.png) | ![Settings: the theme family picker](assets/readme/themes.png) |
+| Streaming chat that greets you by name                                                          | Three theme families, light and dark                           |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| ![The chat surface: a calm greeting, starter prompts, and the composer](assets/readme/chat.png) | ![Settings: the theme family picker](assets/readme/themes.png) |
 
 ## Quickstart
 

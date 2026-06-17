@@ -9,7 +9,7 @@ import { PeriodSelector } from './PeriodSelector'
  * selection with ArrowLeft/ArrowRight (wrapping), per the WAI-ARIA radio group
  * keyboard contract.
  */
-describe('PeriodSelector — radiogroup a11y', () => {
+describe('PeriodSelector – radiogroup a11y', () => {
   it('uses roving tabindex: only the checked radio is tabbable', () => {
     render(<PeriodSelector value={14} onChange={() => {}} />)
     const radios = screen.getAllByRole('radio')

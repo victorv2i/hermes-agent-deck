@@ -57,8 +57,8 @@ function readDomMode(): ResolvedTheme {
  *     `data-palette` on <html> (features/themes/palette.ts), preserving governance
  *     (one action accent, semantic = status, lifted hairlines). Selection applies
  *     LIVE (no Apply button) + persists. The active tile carries a neutral
- *     border-strong selection ring (NOT amber — only focus rings are amber) + an
- *     amber "active" check.
+ *     border-strong selection ring (NOT the accent — only focus rings are sky-blue) + a
+ *     sky-blue "active" check.
  *   - MODE: a light/dark segmented toggle that drives the ONE app-mode source of
  *     truth (the ThemeProvider via useTheme) — never a divergent local copy — so a
  *     swatch previews the exact tone it will paint in the chosen mode.
@@ -156,8 +156,8 @@ function PaletteTile({
       className={cn(
         'ad-surface group relative flex items-center gap-3 rounded-md bg-surface-1 p-3 text-left transition-colors',
         'focus-visible:ad-focus',
-        // A persistent SELECTION ring must be neutral border-strong, never amber
-        // (focus-visible rings stay --ring; only those are amber). §2.
+        // A persistent SELECTION ring must be neutral border-strong, never the accent
+        // (focus-visible rings stay --ring; only those are sky-blue). §2.
         checked
           ? 'border-[var(--border-strong)] ring-1 ring-[var(--border-strong)]'
           : 'hover:border-border-strong',

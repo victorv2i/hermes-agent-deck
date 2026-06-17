@@ -6,9 +6,9 @@
  * Files surface stays lean on first paint. Language support is best-effort
  * (javascript/typescript, json, markdown); everything else edits as plain text.
  *
- * Theming: minimal warm-void overrides via CodeMirror's `theme` extension so the
- * editor reads as part of the app (transparent background, amber caret/selection,
- * JetBrains Mono). No external CSS import needed.
+ * Theming: minimal token-driven overrides via CodeMirror's `theme` extension so
+ * the editor reads as part of the app (transparent background, sky-blue
+ * caret/selection from --primary, JetBrains Mono). No external CSS import needed.
  */
 import { useMemo } from 'react'
 import CodeMirror, { EditorView, Prec, keymap, type Extension } from '@uiw/react-codemirror'
@@ -49,17 +49,20 @@ function languageExtension(filename: string): Extension[] {
   }
 }
 
-/** Warm-void editor chrome — transparent so it inherits the surface bg; amber
- * caret + selection to match the app accent. AA-friendly in both themes. */
-const warmVoidTheme = EditorView.theme({
+/** Editor chrome — transparent so it inherits the surface bg; sky-blue caret +
+ * selection to match the app accent. AA-friendly in both themes. Added at
+ * `Prec.highest` (see below) so these chrome rules win over the prebuilt
+ * `theme="dark"` prop, whose own `.cm-cursor` rule would otherwise render the
+ * caret in CodeMirror's default blue (#528bff) instead of `--primary`. */
+const editorTheme = EditorView.theme({
   '&': { backgroundColor: 'transparent', fontSize: '13px' },
   '.cm-content': {
     fontFamily: 'var(--font-mono, ui-monospace, monospace)',
-    caretColor: 'var(--primary, #dd8e35)',
+    caretColor: 'var(--primary, #6fb1ea)',
   },
-  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--primary, #dd8e35)' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--primary, #6fb1ea)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
-    backgroundColor: 'color-mix(in oklch, var(--primary, #dd8e35) 22%, transparent)',
+    backgroundColor: 'color-mix(in oklch, var(--primary, #6fb1ea) 22%, transparent)',
   },
   '.cm-gutters': {
     backgroundColor: 'transparent',
@@ -81,7 +84,9 @@ export default function CodeEditor({
   const { resolvedTheme } = useTheme()
   const extensions = useMemo(
     () => [
-      warmVoidTheme,
+      // Prec.highest so our chrome (sky-blue caret/selection, transparent bg) wins
+      // over the prebuilt `theme="dark"`/`"light"` prop's own cursor + bg rules.
+      Prec.highest(editorTheme),
       EditorView.lineWrapping,
       Prec.high(
         keymap.of([

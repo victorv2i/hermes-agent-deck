@@ -348,8 +348,8 @@ export function CommandItem({
       }}
       className={cn(
         'flex min-h-11 min-w-0 touch-manipulation cursor-pointer select-none items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-foreground/90',
-        // The ACTIVE (keyboard-/pointer-highlighted) option is a sanctioned amber
-        // use: a faint amber-tinted bg + amber row icon.
+        // The ACTIVE (keyboard-/pointer-highlighted) option is a sanctioned accent
+        // use: a faint sky-blue-tinted bg + sky-blue row icon.
         'data-[active=true]:bg-primary/10 data-[active=true]:text-foreground',
         '[&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-foreground-tertiary data-[active=true]:[&_svg]:text-primary',
         'data-[disabled=true]:cursor-default data-[disabled=true]:text-muted-foreground data-[disabled=true]:opacity-75',

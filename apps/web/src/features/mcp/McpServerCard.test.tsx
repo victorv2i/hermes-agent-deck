@@ -7,7 +7,7 @@ import { McpServerCard, type McpServerCardProps } from './McpServerCard'
  * McpServerCard is the HONESTY-critical unit of the MCP surface. These tests pin
  * the no-fake-states rules:
  *  - the ENABLED badge is the CONFIG flag (semantic), never a fake "connected"
- *    dot — and it is NOT the amber action accent;
+ *    dot — and it is NOT the sky-blue action accent;
  *  - OAuth servers carry the "hermes mcp login" caveat (a clean probe ≠ auth);
  *  - toggle/remove/test are offered and emit through callbacks;
  *  - a Test result lists discovered tools (a one-shot probe, not a live link).
@@ -47,7 +47,7 @@ describe('McpServerCard — enabled is the config flag, NOT a connection', () =>
     setup()
     const badge = screen.getByTestId('mcp-enabled')
     expect(badge).toHaveTextContent(/enabled/i)
-    // Governance: the enabled flag is a success chip, NOT the amber `active`/`default`.
+    // Governance: the enabled flag is a success chip, NOT the sky-blue `active`/`default`.
     expect(badge.getAttribute('data-variant')).toBe('success')
     expect(badge.getAttribute('data-variant')).not.toBe('active')
     expect(badge.getAttribute('data-variant')).not.toBe('default')

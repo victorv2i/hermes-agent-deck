@@ -7,15 +7,15 @@
  * them separately (`total = input + output + cache_read + cache_write`, see
  * hermes `agent/insights.py`), confirming `input_tokens` EXCLUDES cache reads.
  *
- * So the honest cache-hit ratio — the fraction of prompt-side (input) tokens
- * that were served from cache rather than freshly processed — is:
+ * So the honest cache-hit ratio – the fraction of prompt-side (input) tokens
+ * that were served from cache rather than freshly processed – is:
  *
  *     cacheRead / (cacheRead + nonCachedInput)
  *
  * Output is `null` when there is no prompt-side usage at all (divide-by-zero):
  * a fresh window, or one with only output. A `null` ratio is the honest empty
- * state ("—"), distinct from a real 0% (cached usage exists, but none was a hit
- * — which here means cacheRead is 0 while input is non-zero → ratio 0).
+ * state ("–"), distinct from a real 0% (cached usage exists, but none was a hit
+ * – which here means cacheRead is 0 while input is non-zero → ratio 0).
  */
 
 export interface CacheHitInput {
@@ -40,7 +40,7 @@ export function cacheHitRatio({ cacheReadTokens, inputTokens }: CacheHitInput): 
 
 /** Format a ratio (0..1) as a whole-percent label, e.g. 0.842 → "84%". */
 export function formatCacheHitPct(ratio: number | null): string {
-  if (ratio === null || !Number.isFinite(ratio)) return '—'
+  if (ratio === null || !Number.isFinite(ratio)) return '–'
   const pct = Math.round(clamp01(ratio) * 100)
   return `${pct}%`
 }

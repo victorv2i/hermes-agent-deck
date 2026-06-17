@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import type { ReactElement } from 'react'
 import { SettingsPage } from './SettingsPage'
+import { setDensity } from './density'
 import type { SettingsField, SettingsPayload } from './types'
 
 /** Render the page on a throwaway QueryClient (retries off; the surface reads
@@ -364,6 +365,14 @@ describe('SettingsPage', () => {
   })
 
   describe('density control', () => {
+    // Compact is now the default read, so reset the shared density store to its
+    // default before each case (the module-level value persists across tests).
+    beforeEach(() => {
+      localStorage.clear()
+      setDensity('compact')
+      localStorage.clear()
+    })
+
     it('renders a Comfortable/Compact density toggle even before config loads', () => {
       stubFetch(() => new Promise(() => {})) // never resolves
       renderPage(<SettingsPage />)
@@ -372,41 +381,41 @@ describe('SettingsPage', () => {
       expect(screen.getByRole('radio', { name: /compact/i })).toBeInTheDocument()
     })
 
-    it('defaults to Comfortable (no data-density attribute on <html>)', () => {
+    it('defaults to Compact (data-density="compact" on <html>)', () => {
       stubFetch(() => new Promise(() => {}))
       renderPage(<SettingsPage />)
-      expect(screen.getByRole('radio', { name: /comfortable/i })).toHaveAttribute(
-        'aria-checked',
-        'true',
-      )
-      expect(document.documentElement.hasAttribute('data-density')).toBe(false)
-    })
-
-    it('flips to Compact: persists and stamps data-density on <html>', async () => {
-      const user = userEvent.setup()
-      stubFetch(() => new Promise(() => {}))
-      renderPage(<SettingsPage />)
-
-      await user.click(screen.getByRole('radio', { name: /compact/i }))
-
-      expect(document.documentElement.getAttribute('data-density')).toBe('compact')
-      expect(localStorage.getItem('agent-deck-density')).toBe('compact')
       expect(screen.getByRole('radio', { name: /compact/i })).toHaveAttribute(
         'aria-checked',
         'true',
       )
+      expect(document.documentElement.getAttribute('data-density')).toBe('compact')
     })
 
-    it('flips back to Comfortable: clears the attribute', async () => {
+    it('flips to Comfortable: persists and clears data-density on <html>', async () => {
       const user = userEvent.setup()
       stubFetch(() => new Promise(() => {}))
       renderPage(<SettingsPage />)
 
-      await user.click(screen.getByRole('radio', { name: /compact/i }))
       await user.click(screen.getByRole('radio', { name: /comfortable/i }))
 
       expect(document.documentElement.hasAttribute('data-density')).toBe(false)
       expect(localStorage.getItem('agent-deck-density')).toBe('comfortable')
+      expect(screen.getByRole('radio', { name: /comfortable/i })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+    })
+
+    it('flips back to Compact: stamps the attribute again', async () => {
+      const user = userEvent.setup()
+      stubFetch(() => new Promise(() => {}))
+      renderPage(<SettingsPage />)
+
+      await user.click(screen.getByRole('radio', { name: /comfortable/i }))
+      await user.click(screen.getByRole('radio', { name: /compact/i }))
+
+      expect(document.documentElement.getAttribute('data-density')).toBe('compact')
+      expect(localStorage.getItem('agent-deck-density')).toBe('compact')
     })
   })
 
@@ -533,18 +542,19 @@ describe('SettingsPage', () => {
       expect(screen.queryByText('Auto Tts')).not.toBeInTheDocument()
 
       // Instead, one "Configured on the X page →" link per dropped domain. Voice/
-      // Messaging/MCP folded into the tabbed Connections surface, so each link
-      // lands on the matching ?tab= (deep-links still resolve to the right place).
+      // Messaging/MCP folded into the GLOBAL Connections view inside the Studio,
+      // so each link lands on `/?view=connections&tab=…` (deep-links still resolve
+      // to the right sub-tab).
       expect(screen.getByRole('link', { name: /configured on the voice page/i })).toHaveAttribute(
         'href',
-        '/connections?tab=voice',
+        '/?view=connections&tab=voice',
       )
       expect(
         screen.getByRole('link', { name: /configured on the messaging page/i }),
-      ).toHaveAttribute('href', '/connections?tab=messaging')
+      ).toHaveAttribute('href', '/?view=connections&tab=messaging')
       expect(screen.getByRole('link', { name: /configured on the mcp page/i })).toHaveAttribute(
         'href',
-        '/connections?tab=mcp',
+        '/?view=connections&tab=mcp',
       )
     })
 
@@ -598,9 +608,9 @@ describe('SettingsPage', () => {
       stubFetch(async () => new Response(JSON.stringify(withMemory), { status: 200 }))
       renderPage(<SettingsPage />)
       await screen.findByText('General')
-      // The memory domain surfaces as a Profiles link (memory lives per-profile).
-      const memoryLink = screen.getByRole('link', { name: /configured on the agents page/i })
-      expect(memoryLink).toHaveAttribute('href', '/profiles')
+      // The memory domain surfaces as a Studio deep-link that opens the Memory tab.
+      const memoryLink = screen.getByRole('link', { name: /configured on the memory tab/i })
+      expect(memoryLink).toHaveAttribute('href', '/?section=memory')
       // It is titled "Memory" so the user knows what it owns.
       expect(screen.getByText('Memory')).toBeInTheDocument()
       // The raw memory row is gone from the dump.

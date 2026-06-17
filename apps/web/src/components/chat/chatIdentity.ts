@@ -6,7 +6,7 @@ import { resolveAvatar, type ProfileLike } from '@/features/profiles/avatarForPr
  * header, the empty-state greeting, and the per-group assistant avatar all show
  * the SAME face + name (the identity wedge: chat stops being an anonymous text
  * stream). Reuses the governed `resolveAvatar` primitive; the face is NEVER the
- * amber accent (see {@link '@/components/ui/avatar'}).
+ * sky-blue accent (see {@link '@/components/ui/avatar'}).
  */
 export interface ChatAgentIdentity {
   /** The agent's raw profile name (`default` for the built-in agent). */

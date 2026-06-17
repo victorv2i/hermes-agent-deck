@@ -69,7 +69,7 @@ const COLLAPSE_THRESHOLD = 6
  * section header (Lucide icon + readable title), hairline-divided rows where the
  * label + description live on the left and the value breathes on the right
  * (wraps / chips instead of truncating). Empty values read as a muted "Not set",
- * never a bare em-dash. Amber is reserved for the secret affordance per the
+ * never a bare em-dash. The action accent is reserved for the secret affordance per the
  * accent-governance rules. Loading uses skeletons, never spinners.
  */
 export function SettingsPage() {
@@ -210,7 +210,7 @@ export function SettingsPage() {
 
 /**
  * The settings filter — a scoped search input (no shared Input primitive in this
- * surface dir) styled to the warm-void tokens with the governed amber focus ring.
+ * surface dir) styled to the warm-void tokens with the governed sky-blue focus ring.
  * Filters across field key/label/description and the section name.
  */
 function SettingsSearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -240,8 +240,8 @@ function SettingsSearch({ value, onChange }: { value: string; onChange: (v: stri
  * System is a visible rail row again; Logs stays off the rail, so this card (and
  * ⌘K) is how you reach it. Two calm links out (System restarts the gateway +
  * updates Hermes; Logs is the raw output): navigation, not config, so no
- * "Read-only" marker. Neutral glyph tile (decoration is never the amber accent);
- * amber stays on the focus rings.
+ * "Read-only" marker. Neutral glyph tile (decoration is never the sky-blue accent);
+ * the accent stays on the focus rings.
  */
 function MaintenanceLink() {
   return (
@@ -340,21 +340,21 @@ const DEDICATED_LINKS: Record<
     icon: Mic,
     title: 'Voice',
     description: 'Text-to-speech, speech-to-text, and the gateway auto-speak toggle.',
-    to: '/connections?tab=voice',
+    to: '/?view=connections&tab=voice',
     linkLabel: 'Configured on the Voice page',
   },
   messaging: {
     icon: MessageSquare,
     title: 'Messaging',
     description: 'Telegram, Discord, and Slack bot tokens and pairing.',
-    to: '/connections?tab=messaging',
+    to: '/?view=connections&tab=messaging',
     linkLabel: 'Configured on the Messaging page',
   },
   mcp: {
     icon: Plug,
     title: 'Connections (MCP)',
     description: 'Connected tools and data sources your agent can reach (Model Context Protocol).',
-    to: '/connections?tab=mcp',
+    to: '/?view=connections&tab=mcp',
     linkLabel: 'Configured on the MCP page',
   },
   memory: {
@@ -362,8 +362,8 @@ const DEDICATED_LINKS: Record<
     title: 'Memory',
     description:
       'How your agent remembers things between conversations: provider and limits, set per profile.',
-    to: '/profiles',
-    linkLabel: 'Configured on the Agents page',
+    to: '/?section=memory',
+    linkLabel: 'Configured on the Memory tab',
   },
 }
 
@@ -522,7 +522,7 @@ function FieldValue({
       {field.isSecret && (
         <Badge
           variant="outline"
-          // The "secret" marker is a sanctioned amber use (accent governance §2).
+          // The "secret" marker is a sanctioned accent use (accent governance §2).
           className="self-start border-primary/30 text-primary"
           title="This value is a credential and is masked server-side."
         >

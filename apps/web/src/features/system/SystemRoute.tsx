@@ -1,4 +1,4 @@
-import { ServerCog } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
 import type { HermesUpdateChannel } from '@agent-deck/protocol'
 import { PageHeader } from '@/components/ui/page-header'
 import { ErrorState } from '@/components/ui/state'
@@ -142,9 +142,9 @@ export function SystemRoute() {
 
   if (query.status === 'pending') {
     return (
-      <div className="mx-auto flex w-full max-w-[860px] flex-col px-6 py-8">
+      <div className="mx-auto flex w-full max-w-[920px] flex-col px-6 py-8">
         <PageHeader
-          icon={ServerCog}
+          icon={ShieldCheck}
           title="System"
           subtitle="Keep your agent's home tended: restart your agent, update Hermes, and check its health."
         />
@@ -162,10 +162,10 @@ export function SystemRoute() {
 
   if (query.status === 'error') {
     return (
-      <div className="mx-auto flex w-full max-w-[860px] flex-col px-6 py-8">
-        <PageHeader icon={ServerCog} title="System" />
+      <div className="mx-auto flex w-full max-w-[920px] flex-col px-6 py-8">
+        <PageHeader icon={ShieldCheck} title="System" />
         <ErrorState
-          icon={ServerCog}
+          icon={ShieldCheck}
           title="Couldn't load system status"
           description="The maintenance checks couldn't reach Hermes. This doesn't affect chatting."
           onRetry={() => query.refetch()}

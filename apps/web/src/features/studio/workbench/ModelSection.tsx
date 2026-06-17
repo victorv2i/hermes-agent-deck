@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
  *
  * Presentational: the options/loading/error + the `onSet` write arrive as props,
  * so the route owns the scoped query/mutation and this stays hermetically
- * testable. The chosen model is the single amber-accented "on" state (per the
+ * testable. The chosen model is the single sky-blue-accented "on" state (per the
  * design spine); everything else is neutral. The config takes effect on the
  * profile's NEXT session, so an honest restart line rides the header (never a
  * fake instant activation).
@@ -123,7 +123,7 @@ export function ModelSection({
                           'inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1 font-mono text-[12px] transition-colors',
                           'focus-visible:ad-focus disabled:cursor-default',
                           isActive
-                            ? 'bg-primary/12 text-primary'
+                            ? 'bg-primary/12 text-primary-hover'
                             : 'bg-surface-1 text-muted-foreground hover:text-foreground',
                         )}
                       >

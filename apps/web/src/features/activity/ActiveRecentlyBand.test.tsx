@@ -57,7 +57,7 @@ describe('ActiveRecentlyBand', () => {
     expect(within(band).getByText(/active recently/i)).toBeInTheDocument()
     expect(within(band).queryByText(/\blive\b/i)).not.toBeInTheDocument()
 
-    // One dot per platform, each carrying its governed state (not amber).
+    // One dot per platform, each carrying its governed state (not the action accent).
     const tg = screen.getByTestId('platform-telegram')
     expect(within(tg).getByText('telegram')).toBeInTheDocument()
     expect(tg.getAttribute('data-state')).toBe('connected')
@@ -100,7 +100,7 @@ describe('ActiveRecentlyBand', () => {
 
     // Each non-connected state carries a distinguishing marker (a SHAPE, not just
     // a hue) that is also labelled for assistive tech — so a colorblind / at-a-
-    // glance operator can't conflate the warning hue with the live amber accent.
+    // glance operator can't conflate the warning hue with the live sky-blue accent.
     for (const [name, label] of [
       ['cron', /degraded/i],
       ['cli', /down/i],

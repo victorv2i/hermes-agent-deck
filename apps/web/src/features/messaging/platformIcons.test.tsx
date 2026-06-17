@@ -13,10 +13,10 @@ import {
  * from the CC0-licensed `simple-icons` package (telegram/discord/whatsapp/signal),
  * with a clean lettermark fallback for a platform absent from simple-icons (Slack).
  * The spine: brand logos are identity, rendered in their OWN brand colors, NEVER
- * wired to the amber `--primary` accent. These tests pin:
+ * wired to the sky-blue `--primary` accent. These tests pin:
  *  - each real platform resolves to a labelled brand SVG;
  *  - brand marks carry a hard-coded brand-color hex (true identity, not a token,
- *    not the amber accent);
+ *    not the sky-blue accent);
  *  - email/SMTP + unknown ids fall back to a neutral glyph (no garbled guess).
  */
 
@@ -40,7 +40,7 @@ describe('platformIcon — local-SVG brand marks (identity, brand colors)', () =
     const markup = container.innerHTML
     // A hard-coded brand-color hex is present — true brand identity.
     expect(markup).toMatch(/fill="#[0-9A-Fa-f]{6}"/)
-    // The spine: a brand logo is NEVER wired to the amber action accent.
+    // The spine: a brand logo is NEVER wired to the sky-blue action accent.
     expect(markup).not.toContain('--primary')
     expect(markup).not.toContain('text-primary')
     expect(markup).not.toContain('bg-primary')

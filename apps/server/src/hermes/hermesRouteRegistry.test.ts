@@ -116,6 +116,10 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   { method: 'POST', path: '/api/audio/speak', site: 'voice/voiceRoutes.ts (speak)' },
   // ElevenLabs voice picker - proxies GET /api/audio/elevenlabs/voices (web_server.py:1215).
   { method: 'GET', path: '/api/audio/elevenlabs/voices', site: 'voice/voiceRoutes.ts (el-voices)' },
+  // Composer DICTATION - proxies POST /api/audio/transcribe (web_server.py:1130):
+  // the browser records the user speaking, the BFF forwards the clip, hermes returns
+  // the transcript. The durable any-browser voice-input path.
+  { method: 'POST', path: '/api/audio/transcribe', site: 'voice/voiceRoutes.ts (transcribe)' },
 
   // MCP Server Manager (mcp/mcpRoutes.ts) - an agent-deck-OWN surface: the LIST +
   // add/toggle/remove writes touch the `~/.hermes/config.yaml` `mcp_servers` slice
@@ -220,9 +224,17 @@ const BFF_CALLED_ROUTES: readonly BffCall[] = [
   // route SHAPES not previously called by the BFF: the per-profile model set and
   // the soul GET/PUT (the former fs-backed soul route never hit the dashboard).
   // All three are members of the frozen registry (web_server.py:9080/9035/9046).
-  { method: 'PUT', path: '/api/profiles/{name}/model', site: 'profiles/studioRoute.ts (model set)' },
+  {
+    method: 'PUT',
+    path: '/api/profiles/{name}/model',
+    site: 'profiles/studioRoute.ts (model set)',
+  },
   { method: 'GET', path: '/api/profiles/{name}/soul', site: 'profiles/studioRoute.ts (soul read)' },
-  { method: 'PUT', path: '/api/profiles/{name}/soul', site: 'profiles/studioRoute.ts (soul write)' },
+  {
+    method: 'PUT',
+    path: '/api/profiles/{name}/soul',
+    site: 'profiles/studioRoute.ts (soul write)',
+  },
 
   // kanban plugin (kanban/kanbanClient.ts) - all real, mounted /api/plugins/kanban
   { method: 'GET', path: '/api/plugins/kanban/board', site: 'kanban/kanbanClient.ts:314' },

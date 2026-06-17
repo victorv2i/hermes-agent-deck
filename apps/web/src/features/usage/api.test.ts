@@ -43,7 +43,7 @@ describe('fetchUsage', () => {
     )
 
     // The shared apiFetch surfaces the BFF's error detail as the message and the
-    // status on the typed error — a single error shape across every surface.
+    // status on the typed error – a single error shape across every surface.
     await expect(fetchUsage(7)).rejects.toMatchObject({
       status: 502,
       message: 'dashboard usage unavailable',

@@ -1,10 +1,13 @@
 import { SquareTerminal } from 'lucide-react'
-import { ClaudeCode, Codex } from '@lobehub/icons'
+// Deep-import only the Mono variant (see providerBrandIcons.tsx): the barrel pulls
+// a CSS-in-JS runtime in for the unused .Avatar/.Text variants.
+import ClaudeCode from '@lobehub/icons/es/ClaudeCode/components/Mono'
+import Codex from '@lobehub/icons/es/Codex/components/Mono'
 import type { CliId } from './useTerminalClis'
 
 /**
  * BRAND MARKS for the terminal launcher's CLIs. These identify the tools
- * (nominative use) — they are IDENTITY, never the amber action accent. Each mark
+ * (nominative use) — they are IDENTITY, never the sky-blue action accent. Each mark
  * renders at its natural brand identity (real mark or neutral glyph), and is NEVER
  * wired to `--primary`.
  *
@@ -52,7 +55,7 @@ export function HermesBrandIcon({ title, className }: CliBrandIconProps) {
  * Claude Code — Anthropic. The ACCURATE ClaudeCode mark from @lobehub/icons,
  * rendered in the Mono variant (currentColor for neutral theming) or Color for
  * richer contexts. Uses Anthropic's terracotta brand color (#D97757) for the
- * Color variant — identity, not the amber accent.
+ * Color variant — identity, not the sky-blue accent.
  */
 export function ClaudeBrandIcon({ title, className }: CliBrandIconProps) {
   return (

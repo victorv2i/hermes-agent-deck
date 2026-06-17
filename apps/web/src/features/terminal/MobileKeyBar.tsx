@@ -103,7 +103,7 @@ export function MobileKeyBar({
         title="Hold Ctrl for the next key"
         onPointerDown={(e) => e.preventDefault()}
         onClick={onCtrlToggle}
-        className={`flex h-9 min-w-11 shrink-0 items-center justify-center rounded-md px-2 font-mono text-xs transition-colors duration-100 focus-visible:ad-focus ${
+        className={`flex h-11 min-w-11 shrink-0 items-center justify-center rounded-md px-2 font-mono text-xs transition-colors duration-100 focus-visible:ad-focus ${
           ctrlArmed
             ? 'bg-primary/15 text-primary'
             : 'text-foreground-tertiary hover:bg-muted hover:text-foreground'
@@ -130,7 +130,7 @@ export function MobileKeyBar({
         title="Paste from the clipboard"
         onPointerDown={(e) => e.preventDefault()}
         onClick={() => void paste()}
-        className="flex h-9 min-w-11 shrink-0 items-center justify-center rounded-md px-2 text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+        className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-md px-2 text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:ad-focus"
       >
         <ClipboardPaste className="size-4" />
       </button>
@@ -227,7 +227,7 @@ function Key({
       onPointerLeave={repeat ? abortRepeat : undefined}
       onPointerCancel={repeat ? abortRepeat : undefined}
       onClick={onClick}
-      className="flex h-9 min-w-11 shrink-0 items-center justify-center rounded-md px-2 font-mono text-xs text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:ad-focus"
+      className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-md px-2 font-mono text-xs text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:ad-focus"
     >
       {children ?? label}
     </button>

@@ -39,7 +39,7 @@ export function TerminalStatusIndicator({ status }: { status: TerminalStatus }) 
 function StatusDot({ status }: { status: TerminalStatus }) {
   // Semantic status dots (color = meaning): live = success teal-green, error =
   // destructive, ended/disconnected = quiet tertiary. "Connecting" is a transient
-  // state, so it pulses in `info` — amber stays reserved for primary/active only.
+  // state, so it pulses in `info` — the action accent stays reserved for primary/active only.
   const color =
     status === 'connected'
       ? 'bg-success'

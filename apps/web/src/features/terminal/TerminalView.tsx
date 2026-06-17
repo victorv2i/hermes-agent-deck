@@ -33,6 +33,11 @@ export interface TerminalEngine {
   readonly rows: number
   /** Fit the viewport to the container; returns the new geometry. */
   fit(): { cols: number; rows: number }
+  /**
+   * Re-apply the xterm theme live when the active app theme changes. Optional so
+   * injected test fakes need not implement it.
+   */
+  setTheme?(theme: ReturnType<typeof buildTerminalTheme>): void
 }
 
 export interface TerminalEngineFactory {
@@ -87,6 +92,9 @@ async function defaultEngineFactory(
     fit: () => {
       fit.fit()
       return { cols: term.cols, rows: term.rows }
+    },
+    setTheme: (t) => {
+      term.options.theme = t
     },
   }
 }
@@ -207,6 +215,8 @@ export function TerminalView({
   }, [])
   // Send-to-shell handle for the touch key bar (set once the socket exists).
   const inputRef = useRef<((data: string) => void) | null>(null)
+  // Holds the live engine so the theme-tracking effect can re-skin it in place.
+  const engineRef = useRef<TerminalEngine | null>(null)
 
   // The one input path (typed keys AND key-bar taps): applies the armed sticky
   // Ctrl to a single printable character, then disarms it either way.
@@ -313,6 +323,7 @@ export function TerminalView({
         return
       }
       engine = created
+      engineRef.current = created
       engine.open(host)
       // Keystrokes / paste → wire (through the sticky-Ctrl transform).
       engine.onData((data) => term.input(applyCtrl(data)))
@@ -383,9 +394,27 @@ export function TerminalView({
       resizeObserver?.disconnect()
       term.dispose()
       engine?.dispose()
+      engineRef.current = null
     }
     // Mount once; the injected props are stable for a given surface instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Re-skin the live terminal when the app theme flips. The mount effect builds
+  // the engine ONCE, so without this the viewport stays in the theme it was
+  // created with (a dark terminal island in a light UI). We watch <html>'s theme
+  // attributes (the toggle sets `data-theme` + the `.dark` class; a palette swap
+  // sets `data-palette`) rather than the React theme context, so the re-skin is
+  // decoupled from any provider (no test needs to wrap one) and tracks exactly
+  // what buildTerminalTheme() reads — the resolved CSS custom properties.
+  useEffect(() => {
+    if (typeof MutationObserver === 'undefined') return
+    const html = document.documentElement
+    const observer = new MutationObserver(() => {
+      engineRef.current?.setTheme?.(buildTerminalTheme())
+    })
+    observer.observe(html, { attributes: true, attributeFilter: ['data-theme', 'class', 'data-palette'] })
+    return () => observer.disconnect()
   }, [])
 
   const overlay =

@@ -27,7 +27,7 @@ import { runCliOp } from '@/features/cli-op/api'
  *  - Minimum touch target: 44×44px enforced via `min-h-[44px]`.
  *
  * DESIGN:
- *  - Primary action button uses `--primary` accent (the per-palette color, NOT amber).
+ *  - Primary action button uses `--primary` accent (the per-palette color, governed not decorative).
  *  - Radius ≤ 14px (uses the rounded-lg token = 8px).
  *  - Motion ≤ 300ms, no bounce.
  *  - No second accent. No glassmorphism.

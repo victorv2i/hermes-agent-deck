@@ -16,7 +16,7 @@ function day(over: Partial<UsageDailyPoint> & { day: string }): UsageDailyPoint 
   }
 }
 
-describe('UsageTrend — accent fidelity', () => {
+describe('UsageTrend – accent fidelity', () => {
   // --primary is the reserved ACTION accent; a decorative magnitude series must
   // never spend it. The output token series uses --chart-3 (decorative
   // magnitude), input stays --chart-2.

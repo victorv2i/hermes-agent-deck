@@ -13,9 +13,9 @@ import { NewProjectForm } from './NewProjectForm'
  * rail to its sessions; "All sessions" clears the project filter. A quiet
  * "+ New project" opens a popover with the name + curated-palette color form.
  *
- * Color = the categorical project hue (a `var(--cat-…)` dot), never amber — that
+ * Color = the categorical project hue (a `var(--cat-…)` dot), never the accent — that
  * is the project's own identity, not a selection signal. The SELECTED row reuses
- * the canonical amber active-row treatment (a faint amber tint + a 3px amber
+ * the canonical sky-blue active-row treatment (a faint sky-blue tint + a 3px sky-blue
  * leading accent bar + bold label), exactly matching the Sidebar nav and the
  * session rows, so "which row is active" reads identically everywhere.
  */

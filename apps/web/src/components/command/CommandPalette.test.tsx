@@ -357,7 +357,7 @@ describe('CommandPaletteView', () => {
     expect(within(activeRow).getByLabelText(/active agent/i)).toBeInTheDocument()
     expect(activeRow).toHaveAttribute('aria-current', 'true')
     // The avatar is an <img> webp (the CommandDialog portals to body), so the
-    // active-row [&_svg]:text-primary tint can never paint the face amber.
+    // active-row [&_svg]:text-primary tint can never paint the face sky-blue.
     expect(document.querySelector('img[src*="/avatars/"]')).not.toBeNull()
   })
 

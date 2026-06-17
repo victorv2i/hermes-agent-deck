@@ -5,7 +5,7 @@ import type { CliId } from './useTerminalClis'
  * {@link TerminalSession} per live pty (each session = its own socket = its own
  * shell on the server). The reducer owns:
  *   - open/close with an honest 12-terminal CAP,
- *   - a single ACTIVE session (the focused/visible one in tab view, the amber
+ *   - a single ACTIVE session (the focused/visible one in tab view, the sky-blue
  *     LIVE one in grid view),
  *   - rename + in-place restart (epoch bump → the view remounts a fresh shell),
  *   - the tab ⇄ grid VIEW MODE toggle.
@@ -297,7 +297,7 @@ export function openRecoveredSession(state: SessionsState, serverName: string): 
   const session: TerminalSession = {
     id: `term-${seq}-${randomToken()}`,
     cli: 'shell',
-    title: wire,
+    title: 'Recovered shell',
     epoch: 0,
     wire,
   }

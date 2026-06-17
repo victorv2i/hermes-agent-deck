@@ -34,6 +34,34 @@ import {
   isUnsupportedError,
 } from './connectionsApi'
 
+/**
+ * Pretty display names for the known credential providers, so a slug like
+ * "openai-codex" reads as "OpenAI Codex" instead of a mechanical "Openai-Codex".
+ * Unknown providers fall back to a title-cased version of the slug.
+ */
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: 'OpenAI',
+  'openai-codex': 'OpenAI Codex',
+  openrouter: 'OpenRouter',
+  anthropic: 'Anthropic',
+  'claude-max': 'Claude Max',
+  google: 'Google',
+  gemini: 'Gemini',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
+}
+
+/** A readable provider name: the known label, else the slug title-cased word-by-word. */
+function providerLabel(provider: string): string {
+  const known = PROVIDER_LABELS[provider.toLowerCase()]
+  if (known) return known
+  return provider
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 // ── AddCredentialModal ────────────────────────────────────────────────────────
 
 interface AddModalProps {
@@ -182,7 +210,7 @@ function ProviderSection({ provider, onRemove, removingKey }: ProviderSectionPro
   return (
     <div className="ad-surface ad-raised rounded-xl bg-card">
       <div className="border-b border-border px-4 py-2.5">
-        <h3 className="text-sm font-semibold capitalize">{provider.provider}</h3>
+        <h3 className="text-sm font-semibold">{providerLabel(provider.provider)}</h3>
       </div>
       <ul className="divide-y divide-border">
         {provider.entries.map((entry: PoolEntry) => {
@@ -347,7 +375,9 @@ export function CredentialsTab() {
         </DialogContent>
       </Dialog>
 
-      {unsupported ? null : providers.length === 0 && !isLoading ? (
+      {unsupported ? null : isLoading ? (
+        <CredentialsSkeleton />
+      ) : providers.length === 0 ? (
         <EmptyState
           icon={KeyRound}
           title="No credential pool entries"
@@ -365,6 +395,25 @@ export function CredentialsTab() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Initial-load placeholder using the same calm shimmer-card vocabulary the
+ *  other surfaces use (Jobs/Files), so a first load reads as "loading" not a
+ *  blank body. Decorative (aria-hidden rows) under a polite status label. */
+function CredentialsSkeleton() {
+  return (
+    <div role="status" aria-live="polite" data-testid="credentials-skeleton">
+      <span className="sr-only">Loading credentials</span>
+      <div className="flex flex-col gap-3" aria-hidden>
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div
+            key={i}
+            className="ad-surface ad-raised h-[104px] animate-pulse rounded-xl bg-surface-2/60 motion-reduce:animate-none"
+          />
+        ))}
+      </div>
     </div>
   )
 }

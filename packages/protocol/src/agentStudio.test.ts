@@ -3,6 +3,10 @@ import {
   StudioModelId,
   StudioMemoryConfig,
   StudioAgentConfig,
+  StudioAuxiliaryTaskConfig,
+  StudioAuxiliaryConfig,
+  StudioDelegationConfig,
+  STUDIO_AUXILIARY_TASKS,
   DisabledToolsets,
   StudioConfigSubset,
   StudioConfigWriteRequest,
@@ -108,6 +112,92 @@ describe('StudioAgentConfig DTO', () => {
   })
 })
 
+describe('StudioAuxiliaryTaskConfig DTO', () => {
+  it('parses the non-secret routing fields hermes reads for an auxiliary task', () => {
+    const parsed = StudioAuxiliaryTaskConfig.parse({
+      provider: 'openrouter',
+      model: 'google/gemini-3-flash-preview',
+      base_url: 'https://api.example.com/v1',
+      timeout: 45,
+    })
+    expect(parsed.provider).toBe('openrouter')
+    expect(parsed.model).toBe('google/gemini-3-flash-preview')
+    expect(parsed.base_url).toBe('https://api.example.com/v1')
+    expect(parsed.timeout).toBe(45)
+  })
+
+  it('STRIPS api_key and extra_body (secrets never surface through this DTO)', () => {
+    const parsed = StudioAuxiliaryTaskConfig.parse({
+      provider: 'openai',
+      api_key: 'sk-aux-secret',
+      extra_body: { tags: ['x'] },
+    })
+    expect(parsed.provider).toBe('openai')
+    expect(parsed).not.toHaveProperty('api_key')
+    expect(parsed).not.toHaveProperty('extra_body')
+    expect(JSON.stringify(parsed)).not.toContain('sk-aux-secret')
+  })
+
+  it('tolerates an empty task block (the config may omit every key)', () => {
+    expect(StudioAuxiliaryTaskConfig.parse({})).toEqual({})
+  })
+
+  it('rejects a negative timeout', () => {
+    expect(() => StudioAuxiliaryTaskConfig.parse({ timeout: -1 })).toThrow()
+  })
+})
+
+describe('StudioAuxiliaryConfig DTO', () => {
+  it('parses the surfaced auxiliary tasks (vision / web_extract / approval / compression)', () => {
+    expect(STUDIO_AUXILIARY_TASKS).toEqual(['vision', 'web_extract', 'approval', 'compression'])
+    const parsed = StudioAuxiliaryConfig.parse({
+      vision: { provider: 'openrouter' },
+      compression: { model: 'big-context-model' },
+    })
+    expect(parsed.vision?.provider).toBe('openrouter')
+    expect(parsed.compression?.model).toBe('big-context-model')
+  })
+
+  it('strips an api_key nested under any task', () => {
+    const parsed = StudioAuxiliaryConfig.parse({
+      vision: { provider: 'openai', api_key: 'sk-vision-secret' },
+    })
+    expect(parsed.vision?.provider).toBe('openai')
+    expect(JSON.stringify(parsed)).not.toContain('sk-vision-secret')
+  })
+
+  it('drops an unknown task key (not one the Studio surfaces)', () => {
+    const parsed = StudioAuxiliaryConfig.parse({ curator: { model: 'x' } })
+    expect(parsed).not.toHaveProperty('curator')
+  })
+})
+
+describe('StudioDelegationConfig DTO', () => {
+  it('parses the non-secret subagent routing fields hermes reads', () => {
+    const parsed = StudioDelegationConfig.parse({
+      max_iterations: 45,
+      model: 'gpt-5.5-mini',
+      provider: 'openai-codex',
+      base_url: 'https://api.example.com/v1',
+    })
+    expect(parsed.max_iterations).toBe(45)
+    expect(parsed.model).toBe('gpt-5.5-mini')
+    expect(parsed.provider).toBe('openai-codex')
+    expect(parsed.base_url).toBe('https://api.example.com/v1')
+  })
+
+  it('STRIPS delegation.api_key (it belongs in .env, never this surface)', () => {
+    const parsed = StudioDelegationConfig.parse({ model: 'x', api_key: 'sk-deleg-secret' })
+    expect(parsed.model).toBe('x')
+    expect(parsed).not.toHaveProperty('api_key')
+    expect(JSON.stringify(parsed)).not.toContain('sk-deleg-secret')
+  })
+
+  it('rejects a non-integer max_iterations', () => {
+    expect(() => StudioDelegationConfig.parse({ max_iterations: 1.5 })).toThrow()
+  })
+})
+
 describe('StudioConfigSubset DTO (read view)', () => {
   it('parses the per-profile subset the Studio reads from the REAL effective config', () => {
     // This is the real GET /api/config shape: model is a top-level string,
@@ -132,22 +222,35 @@ describe('StudioConfigSubset DTO (read view)', () => {
     expect(parsed.memory?.provider).toBe('holographic_plus')
   })
 
-  it('whitelists exactly the Studio subset (drops unrelated config keys incl. secrets)', () => {
+  it('whitelists exactly the Studio subset (drops unrelated config keys + nested secrets)', () => {
     const parsed = StudioConfigSubset.parse({
       model: 'gpt-5.5',
       toolsets: [],
-      // the effective config carries dozens of keys the Studio does not touch,
-      // including secret-bearing ones the whitelist must DROP:
-      delegation: { enabled: true },
-      auxiliary: { vision: { api_key: 'sk-should-never-surface' } },
+      // auxiliary + delegation ARE surfaced (their NON-SECRET routing fields), but
+      // an api_key nested under either is stripped on parse so no secret leaks.
+      delegation: { model: 'gpt-5.5-mini', api_key: 'sk-deleg-never-surface' },
+      auxiliary: { vision: { provider: 'openrouter', api_key: 'sk-aux-never-surface' } },
+      // genuinely unrelated keys the whitelist must DROP wholesale:
       gateway: { platforms: ['telegram'] },
       _internal: 'x',
     })
-    expect(Object.keys(parsed).sort()).toEqual(['model', 'toolsets'].sort())
-    expect(parsed).not.toHaveProperty('delegation')
-    expect(parsed).not.toHaveProperty('auxiliary')
+    expect(Object.keys(parsed).sort()).toEqual(
+      ['model', 'toolsets', 'auxiliary', 'delegation'].sort(),
+    )
     expect(parsed).not.toHaveProperty('gateway')
-    expect(JSON.stringify(parsed)).not.toContain('sk-should-never-surface')
+    // The non-secret routing fields survive; the nested api_keys are stripped.
+    expect(parsed.auxiliary?.vision?.provider).toBe('openrouter')
+    expect(parsed.delegation?.model).toBe('gpt-5.5-mini')
+    expect(JSON.stringify(parsed)).not.toContain('sk-aux-never-surface')
+    expect(JSON.stringify(parsed)).not.toContain('sk-deleg-never-surface')
+    expect(JSON.stringify(parsed)).not.toContain('api_key')
+  })
+
+  it('parses model_context_length (top-level override hermes surfaces; 0 = auto)', () => {
+    expect(StudioConfigSubset.parse({ model_context_length: 200000 }).model_context_length).toBe(
+      200000,
+    )
+    expect(StudioConfigSubset.parse({ model_context_length: 0 }).model_context_length).toBe(0)
   })
 
   it('tolerates an entirely empty subset (a freshly-created profile)', () => {

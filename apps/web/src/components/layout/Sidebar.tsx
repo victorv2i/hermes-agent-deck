@@ -2,21 +2,17 @@ import { NavLink, useNavigate, useParams } from 'react-router-dom'
 import { SquarePen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import {
-  navByGroup,
-  pinnedNavItems,
-  pinnedTopNavItems,
-  CHAT_PATH,
-  type NavItem,
-} from '@/app/navigation'
+import { flatNavItems, pinnedNavItems, CHAT_PATH, type NavItem } from '@/app/navigation'
 import { SessionList } from '@/features/sessions/SessionList'
 import { Wordmark } from './Wordmark'
 import { AgentChip } from './AgentChip'
 
 /**
  * Left rail: wordmark, agent presence, a prominent "New chat" action, and the
- * surface NAV — grouped under FRIENDLY section headers (driven entirely by the
- * app/navigation.tsx registry) with Settings PINNED to the bottom. The rail is
+ * surface NAV — ONE flat, well-ordered list (no section headings), driven
+ * entirely by the app/navigation.tsx registry, with Usage + Settings PINNED to
+ * the bottom. The list leads with the three primary destinations (Agent Studio ·
+ * Chat · Terminal), then the rest (Files · Tasks · Board · System). The rail is
  * NAV-ONLY now: the embedded session list moved out (recents live on Home, the
  * History surface, and ⌘K), so the rail stays quiet and uncluttered.
  *
@@ -31,11 +27,11 @@ export function Sidebar({
   onNewChat?: () => void
   showSessions?: boolean
 }) {
-  // Home + Chat are pinned-TOP standalone items; the rest are grouped below.
-  // History folded into Chat (its session pane on desktop + the "Past chats"
-  // button on mobile), so the rail no longer lists a History link.
-  const pinnedTop = pinnedTopNavItems()
-  const groups = navByGroup()
+  // The rail is a single flat list (Studio · Chat · Terminal lead, then Files ·
+  // Tasks · Board · System), with Usage + Settings pinned at the bottom. History
+  // folded into Chat (its session pane on desktop + the "Past chats" button on
+  // mobile), so the rail never lists a History link.
+  const items = flatNavItems()
   const pinned = pinnedNavItems()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
@@ -55,9 +51,13 @@ export function Sidebar({
         variant="outline"
         size="lg"
         onClick={onNewChat}
-        // "New chat" is the rail's KEY action → the sanctioned faint-amber action
-        // affordance (amber border + tint + amber glyph), not a muted neutral row.
-        className="h-9 w-full justify-start gap-2 border-primary/25 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary max-sm:h-11"
+        // "New chat" is the rail's KEY ACTION → a border-only sky-blue affordance
+        // (sky-blue border + glyph, transparent fill) that fills on hover. It stays
+        // distinct from the ACTIVE route row, which owns the filled `bg-primary/10`
+        // wash + left accent bar, so only one row reads as "selected" at a time.
+        // The dark: overrides neutralize the outline variant's own dark fill
+        // (`dark:bg-input/30`) so it reads border-only in BOTH themes.
+        className="h-9 w-full justify-start gap-2 border-primary/30 bg-transparent text-primary hover:bg-primary/10 hover:text-primary dark:border-primary/30 dark:bg-transparent dark:hover:bg-primary/10 max-sm:h-11"
       >
         <SquarePen className="size-4 text-primary" />
         New chat
@@ -67,27 +67,14 @@ export function Sidebar({
         aria-label="Main navigation"
         className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto"
       >
-        {/* Pinned-TOP surfaces (Home) — standalone items ABOVE the grouped nav,
-            not under any section header (Home is the front door, not a group
-            member). Mirror of the pinned-bottom Settings slot. */}
-        {pinnedTop.length > 0 && (
-          <div className="flex flex-col gap-0.5">
-            {pinnedTop.map((item) => (
-              <RailLink key={item.key} item={item} />
-            ))}
-          </div>
-        )}
-
-        {groups.map(({ group, label, items }) => (
-          <div key={group} className="flex flex-col gap-0.5">
-            <div className="mb-0.5 px-2.5 pt-0.5">
-              <span className="ad-section-label">{label}</span>
-            </div>
-            {items.map((item) => (
-              <RailLink key={item.key} item={item} />
-            ))}
-          </div>
-        ))}
+        {/* The flat surface list — ONE well-ordered column, no section headings.
+            Studio · Chat · Terminal lead (pinned-top), then Files · Tasks · Board
+            · System; Usage + Settings are anchored at the bottom (below). */}
+        <div className="flex flex-col gap-0.5">
+          {items.map((item) => (
+            <RailLink key={item.key} item={item} />
+          ))}
+        </div>
 
         {/* In the mobile slide-over (`showSessions`), Settings lives inside the
             same scroll container as the rest of the rail. A separate pinned
@@ -132,7 +119,7 @@ export function Sidebar({
   )
 }
 
-/** A single labeled surface nav row (active = amber accent bar + faint amber bg + amber icon). */
+/** A single labeled surface nav row (active = sky-blue accent bar + faint sky-blue bg + sky-blue icon). */
 function RailLink({ item }: { item: NavItem }) {
   const Icon = item.icon
   return (
@@ -141,12 +128,12 @@ function RailLink({ item }: { item: NavItem }) {
       end={item.path === '/'}
       className={({ isActive }: { isActive: boolean }) =>
         cn(
-          // ACTIVE is a sanctioned amber use: the left amber accent BAR (::before)
-          // over a FAINT amber-tinted bg (`bg-primary/10`); hover stays a quiet
+          // ACTIVE is a sanctioned accent use: the left sky-blue accent BAR (::before)
+          // over a FAINT sky-blue-tinted bg (`bg-primary/10`); hover stays a quiet
           // neutral wash (hover is not active). The bar is a 3px inset pseudo so
           // it never shifts the row's content.
           // Rows are a tight ~36px on desktop, relaxing to a 44px touch target on
-          // mobile (max-sm:min-h-11) — Claude-tight without losing thumb reach.
+          // mobile (max-sm:min-h-11), compact without losing thumb reach.
           'relative flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors',
           'min-h-9 max-sm:min-h-11 touch-manipulation',
           'text-muted-foreground hover:bg-muted hover:text-foreground',

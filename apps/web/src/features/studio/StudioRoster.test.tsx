@@ -42,6 +42,7 @@ describe('StudioRoster', () => {
         onSelect={vi.fn()}
         onNewAgent={vi.fn()}
         onCloneSelected={vi.fn()}
+        onImport={vi.fn()}
       />,
     )
     const mercury = screen.getByTestId('studio-roster-card-mercury')
@@ -57,6 +58,7 @@ describe('StudioRoster', () => {
         onSelect={vi.fn()}
         onNewAgent={vi.fn()}
         onCloneSelected={vi.fn()}
+        onImport={vi.fn()}
       />,
     )
     expect(within(screen.getByTestId('studio-roster-card-mercury')).getByText('Active')).toBeInTheDocument()
@@ -71,6 +73,7 @@ describe('StudioRoster', () => {
         onSelect={vi.fn()}
         onNewAgent={vi.fn()}
         onCloneSelected={vi.fn()}
+        onImport={vi.fn()}
       />,
     )
     expect(screen.getByTestId('studio-roster-card-mercury')).toHaveAttribute('aria-current', 'true')
@@ -86,15 +89,17 @@ describe('StudioRoster', () => {
         onSelect={onSelect}
         onNewAgent={vi.fn()}
         onCloneSelected={vi.fn()}
+        onImport={vi.fn()}
       />,
     )
     await userEvent.click(screen.getByTestId('studio-roster-card-default'))
     expect(onSelect).toHaveBeenCalledWith('default')
   })
 
-  it('offers New agent and Clone actions', async () => {
+  it('offers New agent, Clone, and Import actions', async () => {
     const onNewAgent = vi.fn()
     const onCloneSelected = vi.fn()
+    const onImport = vi.fn()
     render(
       <StudioRoster
         profiles={ROSTER}
@@ -102,15 +107,19 @@ describe('StudioRoster', () => {
         onSelect={vi.fn()}
         onNewAgent={onNewAgent}
         onCloneSelected={onCloneSelected}
+        onImport={onImport}
       />,
     )
     await userEvent.click(screen.getByRole('button', { name: /new agent/i }))
     expect(onNewAgent).toHaveBeenCalled()
     await userEvent.click(screen.getByRole('button', { name: /clone/i }))
     expect(onCloneSelected).toHaveBeenCalledWith('mercury')
+    await userEvent.click(screen.getByRole('button', { name: /^import$/i }))
+    expect(onImport).toHaveBeenCalled()
   })
 
-  it('renders an empty state with a New agent action when there are no agents', () => {
+  it('renders an empty state with New agent + Import actions when there are no agents', () => {
+    const onImport = vi.fn()
     render(
       <StudioRoster
         profiles={[]}
@@ -118,8 +127,11 @@ describe('StudioRoster', () => {
         onSelect={vi.fn()}
         onNewAgent={vi.fn()}
         onCloneSelected={vi.fn()}
+        onImport={onImport}
       />,
     )
     expect(screen.getByText(/no agents yet/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /new agent/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^import$/i })).toBeInTheDocument()
   })
 })

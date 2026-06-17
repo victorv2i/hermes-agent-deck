@@ -4,7 +4,7 @@
  * This is the design language's allowed data-grouping exception (like chart
  * accents): a small set of calm, distinct hues used ONLY to tell projects apart
  * at a glance (a colored dot + a faint row tint). It is deliberately NOT the
- * governed amber action accent — the first swatch even skips amber so a project
+ * governed sky-blue action accent — the first swatch even skips the accent hue so a project
  * dot can never be mistaken for the "active"/primary-action marker.
  *
  * Each entry is an opaque token `id` (what the server stores verbatim in the
@@ -57,7 +57,7 @@ export function resolveProjectColor(token: string | undefined): ProjectColor {
 /**
  * The CSS color reference for a stored color token — `var(--cat-…)`. Used as an
  * inline style value (`backgroundColor` / `color`) so the swatch tracks the
- * active theme. Categorical, never the amber `--primary`.
+ * active theme. Categorical, never the sky-blue `--primary`.
  */
 export function projectColorVar(token: string | undefined): string {
   return `var(${resolveProjectColor(token).cssVar})`

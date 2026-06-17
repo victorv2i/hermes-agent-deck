@@ -14,7 +14,7 @@ describe('RemoteModeBanner', () => {
   it('uses the destructive semantic color, not the amber accent', () => {
     render(<RemoteModeBanner />)
     const banner = screen.getByTestId('remote-mode-banner')
-    // The caution reads via the destructive semantic; amber (primary) is never
+    // The caution reads via the destructive semantic; the sky-blue (primary) accent is never
     // used for a security warning.
     expect(banner.className).toMatch(/text-destructive/)
     expect(banner.className).not.toMatch(/primary|amber/)

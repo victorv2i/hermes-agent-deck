@@ -317,25 +317,25 @@ describe.skipIf(!hostHasTmux || !hostHasPty)('tmux-backed terminal (real shell)'
 
   it('attaches to a FOREIGN session, and close only DETACHES it (never kills)', async () => {
     // The "user's own" session, created outside the deck.
-    await run('tmux', [...SOCKET, 'new-session', '-d', '-s', 'victors_own'])
+    await run('tmux', [...SOCKET, 'new-session', '-d', '-s', 'my_session'])
     const url = await boot()
     const c = connect(url)
     await waitFor(c, 'connect')
-    c.emit('terminal.start', { attach: 'victors_own' })
+    c.emit('terminal.start', { attach: 'my_session' })
     const r = await waitFor<{ persistent?: boolean; resumed?: boolean }>(c, 'terminal.ready')
     expect(r.persistent).toBe(true)
     // A foreign attach always joins a pre-existing shell: honestly a resume
     // (which also drives the scrollback backfill on the client).
     expect(r.resumed).toBe(true)
-    await awaitAttached('victors_own')
+    await awaitAttached('my_session')
     c.emit('terminal.input', 'echo FOREIGN_ok\r')
     await waitForOutput(c, 'FOREIGN_ok')
     // Close = detach for a foreign session; the user's session survives.
     c.emit('terminal.close')
     await new Promise((r2) => setTimeout(r2, 300))
-    await expect(hasTmuxSession('victors_own', SOCKET)).resolves.toBe(true)
+    await expect(hasTmuxSession('my_session', SOCKET)).resolves.toBe(true)
     // And the deck really was attached to THE user's session (shared state).
-    const pane = await capturePane('victors_own', 200, SOCKET)
+    const pane = await capturePane('my_session', 200, SOCKET)
     expect(pane).toContain('FOREIGN_ok')
   }, 20000)
 

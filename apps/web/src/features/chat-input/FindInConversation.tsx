@@ -14,7 +14,7 @@
  *
  * a11y: a `role="search"` region with a labelled input and an `aria-live`
  * status so the match count is announced as it changes. Token-driven, all
- * themes; amber is reserved for the active control affordance only.
+ * themes; the sky-blue accent is reserved for the active control affordance only.
  * Reduced-motion is respected (no transition work that ignores the media query).
  * LOCAL-ONLY.
  */

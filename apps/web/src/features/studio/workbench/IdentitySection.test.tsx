@@ -62,4 +62,31 @@ describe('IdentitySection', () => {
     renderSection({ ...PROFILE, name: 'default', isDefault: true, displayName: null })
     expect(screen.queryByRole('button', { name: /rename/i })).not.toBeInTheDocument()
   })
+
+  it('offers delete for a non-default agent', () => {
+    renderSection()
+    expect(screen.getByRole('button', { name: /delete agent/i })).toBeInTheDocument()
+  })
+
+  it('hides delete for the reserved default agent', () => {
+    renderSection({ ...PROFILE, name: 'default', isDefault: true, displayName: null })
+    expect(screen.queryByRole('button', { name: /delete agent/i })).not.toBeInTheDocument()
+  })
+
+  it('disables delete while this agent is active (switch away first)', () => {
+    renderSection({ ...PROFILE, isActive: true })
+    expect(screen.getByRole('button', { name: /delete agent/i })).toBeDisabled()
+  })
+
+  it('offers an Export action for a non-default agent', () => {
+    renderSection()
+    expect(screen.getByTestId('studio-export-agent')).toBeInTheDocument()
+  })
+
+  it('also offers Export for the reserved default agent (hermes excludes credentials)', () => {
+    // The default agent has no Delete, but IS exportable (the archive omits creds).
+    renderSection({ ...PROFILE, name: 'default', isDefault: true, displayName: null })
+    expect(screen.getByTestId('studio-export-agent')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /delete agent/i })).not.toBeInTheDocument()
+  })
 })

@@ -52,11 +52,15 @@ function s(over: Partial<SessionSummary> & { id: string }): SessionSummary {
 }
 
 describe('isWebOriginated', () => {
-  it('treats web + ui sources as web-originated (agent-deck home)', () => {
+  it('treats web + ui + dashboard sources as web-originated (agent-deck home)', () => {
     expect(isWebOriginated(s({ id: 'a', source: 'web' }))).toBe(true)
     expect(isWebOriginated(s({ id: 'b', source: 'ui' }))).toBe(true)
+    // A real Hermes install tags a chat opened through this deck as `dashboard`
+    // (the deck drives the gateway's dashboard), so that's agent-deck-originated.
+    expect(isWebOriginated(s({ id: 'd', source: 'dashboard' }))).toBe(true)
     // Case-insensitive + whitespace-tolerant (mirrors sourceMeta).
     expect(isWebOriginated(s({ id: 'c', source: ' WEB ' }))).toBe(true)
+    expect(isWebOriginated(s({ id: 'e', source: 'Dashboard' }))).toBe(true)
   })
 
   it('treats every other channel as external (cli/telegram/discord/cron/api/…)', () => {

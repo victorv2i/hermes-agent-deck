@@ -11,7 +11,7 @@ export interface SwitchProps {
 }
 
 /**
- * Switch — the one on/off toggle (`role="switch"` + `aria-checked`). Amber when
+ * Switch — the one on/off toggle (`role="switch"` + `aria-checked`). Sky-blue when
  * ON is a SANCTIONED active-state use of the accent (not decoration). Extracted
  * from the hand-rolled copies in VoiceToggle / ComposerPrefs so the toggle reads
  * identically everywhere: a 44px touch target on mobile (WCAG 2.5.5) relaxing to

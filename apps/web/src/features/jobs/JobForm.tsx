@@ -1,6 +1,6 @@
 /**
  * JobForm — the create / edit form for a cron job. A calm card with three fields
- * (name, schedule, prompt) + a couple of schedule hints, governed-amber primary
+ * (name, schedule, prompt) + a couple of schedule hints, governed sky-blue primary
  * submit, an inline error row. Pure props in / callbacks out: the route owns the
  * mutation. When `job` is provided it edits (PUT), otherwise it creates (POST).
  *

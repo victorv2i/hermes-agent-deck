@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
  * intended list is sent (Hermes replaces the key), never a fake instant state.
  *
  * Presentational: config/loading/error + the `onToggle` config-write arrive as
- * props (the route runs the scoped GET/PUT). The "on" switch is the single amber
+ * props (the route runs the scoped GET/PUT). The "on" switch is the single sky-blue
  * accent. Config applies on the agent's NEXT session, so a restart note rides the
  * header.
  */
@@ -93,7 +93,7 @@ export function ToolsSection({
   )
 }
 
-/** An accessible amber-accented enable/disable switch. Amber = the live "on" state. */
+/** An accessible sky-blue-accented enable/disable switch. Sky-blue = the live "on" state. */
 function ToggleSwitch({
   name,
   enabled,

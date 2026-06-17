@@ -348,14 +348,18 @@ describe('GET /api/agent-deck/studio/config', () => {
       url: '/api/agent-deck/studio/config?profile=coder',
     })
     expect(res.statusCode).toBe(200)
-    // The top-level api_key and the whole auxiliary.* block live in the raw config
-    // but are NOT in the Studio subset whitelist; they must never reach the browser.
+    // The top-level api_key is NOT in the Studio subset whitelist; it must never
+    // reach the browser. The auxiliary block IS surfaced now (its non-secret
+    // routing fields), but the per-task api_key under it is STRIPPED on parse, so
+    // no secret value — and no `api_key` key at all — crosses the wire.
     expect(res.body).not.toContain('sk-should-never-surface-1234')
     expect(res.body).not.toContain('sk-aux-secret-9999')
     expect(res.body).not.toContain('api_key')
-    expect(res.body).not.toContain('auxiliary')
     // agent.* keys outside the subset (e.g. max_turns) are dropped too.
     expect(res.body).not.toContain('max_turns')
+    // The non-secret auxiliary routing IS surfaced (the user can route side models).
+    const body = res.json() as { config: { auxiliary?: { vision?: { provider?: string } } } }
+    expect(body.config.auxiliary?.vision?.provider).toBe('openai-codex')
   })
 
   it('rejects a syntactically invalid profile name with 400 (no dashboard call)', async () => {
@@ -452,6 +456,49 @@ describe('PUT /api/agent-deck/studio/config', () => {
     expect(JSON.stringify(mock.recorded.configPutBody)).not.toContain('api_key')
     // And the secret never echoes back to the browser either.
     expect(res.body).not.toContain('sk-injected-secret')
+  })
+
+  it('forwards an auxiliary/delegation routing patch but STRIPS any nested api_key', async () => {
+    mock = await startMock()
+    app = await buildApp(mock)
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/agent-deck/studio/config',
+      payload: {
+        profile: 'coder',
+        config: {
+          // non-secret routing the user is allowed to set...
+          auxiliary: { vision: { provider: 'openrouter', model: 'g', api_key: 'sk-aux-injected' } },
+          delegation: { model: 'mini', api_key: 'sk-deleg-injected' },
+        },
+      },
+    })
+    expect(res.statusCode).toBe(200)
+    // ...reaches hermes with only the non-secret fields; both api_keys are dropped.
+    expect(mock.recorded.configPutBody?.config).toEqual({
+      auxiliary: { vision: { provider: 'openrouter', model: 'g' } },
+      delegation: { model: 'mini' },
+    })
+    expect(JSON.stringify(mock.recorded.configPutBody)).not.toContain('sk-aux-injected')
+    expect(JSON.stringify(mock.recorded.configPutBody)).not.toContain('sk-deleg-injected')
+    expect(JSON.stringify(mock.recorded.configPutBody)).not.toContain('api_key')
+  })
+
+  it('forwards a model_context_length write (the top-level override hermes honors)', async () => {
+    mock = await startMock()
+    app = await buildApp(mock)
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/api/agent-deck/studio/config',
+      // The Studio sends the current model id alongside the override so hermes'
+      // denormalize attaches it to the model dict (0 = clear back to auto).
+      payload: { profile: 'coder', config: { model: 'gpt-5.5', model_context_length: 200000 } },
+    })
+    expect(res.statusCode).toBe(200)
+    expect(mock.recorded.configPutBody?.config).toEqual({
+      model: 'gpt-5.5',
+      model_context_length: 200000,
+    })
   })
 
   it('rejects an invalid profile name with 400 (no dashboard call)', async () => {

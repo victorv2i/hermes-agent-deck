@@ -63,6 +63,69 @@ describe('router · Studio fold redirects', () => {
 })
 
 /**
+ * Connections fold redirects: Connections folded INTO the Agent Studio (Home) as
+ * a GLOBAL view, so `/connections` → `/?view=connections`, and the older
+ * `/voice` · `/messaging` · `/mcp` paths → `/?view=connections&tab=…` (the
+ * Studio's Connections view on the matching sub-tab). These exercise the REAL
+ * `<Navigate>` redirect elements from the exported `routes` config.
+ */
+describe('router · Connections fold redirects', () => {
+  function connectionsRedirectRoutes(): RouteObject[] {
+    const paths = ['connections', 'voice', 'messaging', 'mcp']
+    return [
+      {
+        path: '/',
+        element: <Outlet />,
+        children: [
+          { index: true, element: <div data-testid="studio-home">studio</div> },
+          ...paths.map((p) => {
+            const real = realChild(p)
+            if (!real) throw new Error(`router.tsx is missing the '${p}' redirect route`)
+            return { path: p, element: real.element }
+          }),
+        ],
+      },
+    ]
+  }
+
+  it('redirects /connections → /?view=connections (the Studio Connections view)', () => {
+    const router = createMemoryRouter(connectionsRedirectRoutes(), {
+      initialEntries: ['/connections'],
+    })
+    render(<RouterProvider router={router} />)
+    expect(router.state.location.pathname).toBe('/')
+    expect(router.state.location.search).toBe('?view=connections')
+  })
+
+  // The Advanced sub-tabs (pairing/webhooks/credentials) have NO path alias of
+  // their own, so `/connections?tab=<id>` is their only deep-link entry. The
+  // redirect must FORWARD that tab rather than dropping it (which silently landed
+  // every such link on the default Voice tab).
+  for (const tab of ['pairing', 'webhooks', 'credentials']) {
+    it(`forwards /connections?tab=${tab} → /?view=connections&tab=${tab}`, () => {
+      const router = createMemoryRouter(connectionsRedirectRoutes(), {
+        initialEntries: [`/connections?tab=${tab}`],
+      })
+      render(<RouterProvider router={router} />)
+      expect(router.state.location.pathname).toBe('/')
+      expect(router.state.location.search).toBe(`?view=connections&tab=${tab}`)
+    })
+  }
+
+  for (const tab of ['voice', 'messaging', 'mcp']) {
+    it(`redirects /${tab} → /?view=connections&tab=${tab} (the matching sub-tab)`, () => {
+      const router = createMemoryRouter(connectionsRedirectRoutes(), {
+        initialEntries: [`/${tab}`],
+      })
+      render(<RouterProvider router={router} />)
+      expect(router.state.location.pathname).toBe('/')
+      // URLSearchParams ordering is stable: view first, then tab.
+      expect(router.state.location.search).toBe(`?view=connections&tab=${tab}`)
+    })
+  }
+})
+
+/**
  * Terminal + Workspaces UNIFIED: `/terminal`, `/workspaces`, and `/workspaces/:id`
  * all resolve to the SAME surface element (an ALIAS, not a redirect - the URL is
  * the source of truth for which workspace is active, so the :id deep link keeps

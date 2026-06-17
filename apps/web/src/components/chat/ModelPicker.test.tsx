@@ -122,6 +122,33 @@ describe('ModelPicker', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+  it('strips the redundant vendor prefix from a qualified-id label (the brand mark carries the vendor)', async () => {
+    const user = userEvent.setup()
+    // The real aggregator case: the label IS the provider-qualified id, so without
+    // stripping the rows read "anthropic/...", clip, and become indistinguishable.
+    const aggregated: ModelEntry[] = [
+      {
+        id: 'anthropic/claude-opus-4.8',
+        qualifiedId: 'nous/anthropic/claude-opus-4.8',
+        label: 'anthropic/claude-opus-4.8',
+        provider: 'nous',
+        active: true,
+        usable: true,
+        source: 'config',
+      },
+    ]
+    render(
+      <ModelPicker models={aggregated} value="nous/anthropic/claude-opus-4.8" onSelect={() => {}} />,
+    )
+    const trigger = screen.getByTestId('model-picker-trigger')
+    expect(trigger).toHaveTextContent('claude-opus-4.8')
+    expect(trigger).not.toHaveTextContent('anthropic/')
+    await user.click(trigger)
+    const option = screen.getByRole('option', { name: /claude-opus-4\.8/ })
+    expect(option).toHaveTextContent('claude-opus-4.8')
+    expect(option).not.toHaveTextContent('anthropic/')
+  })
+
   it('falls back to the short id when a model has no label, and renders nothing with no models', () => {
     const { rerender } = render(
       <ModelPicker

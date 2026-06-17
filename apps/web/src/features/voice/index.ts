@@ -5,7 +5,18 @@ export {
   type UseSpeechRecognitionOptions,
   type SpeechRecognitionResultPayload,
 } from './useSpeechRecognition'
-export { useDictation, type UseDictation } from './useDictation'
+export { useDictation, type UseDictation, type DictationMode } from './useDictation'
+export {
+  useServerDictation,
+  type UseServerDictation,
+  type UseServerDictationOptions,
+} from './useServerDictation'
+export {
+  mediaRecorderSupported,
+  pickAudioMimeType,
+  blobToDataUrl,
+  PREFERRED_AUDIO_MIME_TYPES,
+} from './mediaCapture'
 export {
   useSpeechSynthesis,
   type UseSpeechSynthesis,

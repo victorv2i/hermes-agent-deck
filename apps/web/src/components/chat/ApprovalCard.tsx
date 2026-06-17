@@ -5,7 +5,7 @@ import type { PendingApproval } from '@/state/chatStore'
 import { Button } from '@/components/ui/button'
 
 /**
- * Inline approval prompt (not a modal). Amber-accented, unmissable yet calm.
+ * Inline approval prompt (not a modal). Sky-blue-accented, unmissable yet calm.
  * Shows the command + description and the gateway-offered choices, mapping each
  * button to the right ApprovalChoice. The parent wires `onRespond` to the
  * chat socket's `respondApproval`.
@@ -142,7 +142,7 @@ export function ApprovalCard({
         {allow.map((choice, i) => (
           <Button
             key={choice}
-            // The last allow choice (rendered rightmost) is the primary amber
+            // The last allow choice (rendered rightmost) is the primary sky-blue
             // action. Focus, however, lands on the LEAST-permissive allow choice
             // ("once", first) so a stray Enter never silently grants "always".
             ref={i === 0 ? focusRef : undefined}

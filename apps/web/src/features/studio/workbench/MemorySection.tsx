@@ -295,7 +295,7 @@ function WriteApprovalField({
               className={cn(
                 'inline-flex min-h-9 items-center rounded-[7px] px-3 py-1 text-13 font-medium transition-colors',
                 'focus-visible:ad-focus disabled:opacity-60',
-                selected ? 'bg-primary/12 text-primary' : 'text-muted-foreground hover:text-foreground',
+                selected ? 'bg-primary/12 text-primary-hover' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {opt.label}

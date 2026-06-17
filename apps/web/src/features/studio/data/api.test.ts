@@ -47,8 +47,11 @@ describe('fetchStudioConfig', () => {
         toolsets: ['hermes-cli'],
         agent: { disabled_toolsets: '["tts"]' },
         memory: { memory_enabled: true, memory_char_limit: 4000, write_approval: false },
-        // an out-of-subset key the parse must DROP
-        delegation: { enabled: true },
+        // delegation IS in the subset now (its non-secret routing fields); an
+        // api_key nested under it must still be STRIPPED on parse.
+        delegation: { model: 'mini', api_key: 'sk-deleg-secret' },
+        // an out-of-subset key the parse must DROP wholesale
+        gateway: { platforms: ['telegram'] },
       },
     })
     const res = await fetchStudioConfig('coder')
@@ -59,7 +62,10 @@ describe('fetchStudioConfig', () => {
     expect(res.agent?.disabled_toolsets).toEqual(['tts'])
     expect(res.memory?.memory_enabled).toBe(true)
     expect(res.memory?.write_approval).toBe(false)
-    expect((res as Record<string, unknown>).delegation).toBeUndefined()
+    // delegation surfaces its non-secret field; the api_key is dropped; gateway gone.
+    expect(res.delegation?.model).toBe('mini')
+    expect(JSON.stringify(res)).not.toContain('sk-deleg-secret')
+    expect((res as Record<string, unknown>).gateway).toBeUndefined()
   })
 
   it('tolerates a bare (unwrapped) subset body for forward/back compatibility', async () => {

@@ -11,7 +11,7 @@ import { toast } from '@/lib/toast'
  * perform or observe.
  *
  * The verbatim command renders as `code`; the single ghost button copies the
- * EXACT string to the clipboard. No amber action accent (copy is a quiet
+ * EXACT string to the clipboard. No sky-blue action accent (copy is a quiet
  * affordance, not the rung's primary action — Continue/Re-check own that).
  */
 export function CopyCommandCard({

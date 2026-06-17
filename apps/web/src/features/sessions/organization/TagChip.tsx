@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 
 /**
  * A small neutral `#tag` chip shown on a session row. Tags are intentionally
- * NEUTRAL (no categorical color) — color is reserved for projects + the amber
+ * NEUTRAL (no categorical color) — color is reserved for projects + the sky-blue
  * action accent, so tags stay quiet metadata. Clicking filters the rail by that
  * tag; the active chip reads as pressed. Rendered as a real labelled button for
  * a11y (the parent row click is separate — the chip stops propagation).

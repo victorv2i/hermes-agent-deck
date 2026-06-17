@@ -6,7 +6,7 @@
  * count badge), failure toasts the real reason. Send stays disabled until the
  * body is non-empty. ⌘/Ctrl+Enter submits (the app's composer convention).
  *
- * Amber is governed: Send is the ONE sanctioned accent (a primary action).
+ * The action accent is governed: Send is the ONE sanctioned accent (a primary action).
  */
 import { useId, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'

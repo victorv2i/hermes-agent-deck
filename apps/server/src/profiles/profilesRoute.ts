@@ -359,6 +359,60 @@ export async function profilesRoutes(
     },
   )
 
+  // ── Delete (guarded `hermes profile delete <name> --yes`) ──
+  // DELETE /api/agent-deck/profiles/:name -> { ok }
+  // The :name is canonicalized + PROFILE_ID_RE-validated BEFORE any exec, so a
+  // hostile name never reaches the CLI. `default` is refused (the built-in agent),
+  // and so is the ACTIVE agent — hermes binds it to the running gateway, so deleting
+  // it underneath a live agent is a footgun; the user switches away first (honest
+  // 409). The exec is argv (NEVER a shell) with `--yes` so the CLI's confirmation
+  // prompt can't block the request. Other failures surface as a generic 502 (we
+  // never echo raw stderr, which may carry a path).
+  app.delete<{ Params: { name: string } }>(
+    '/api/agent-deck/profiles/:name',
+    async (req, reply) => {
+      const canonical = canonicalizeProfileName(req.params.name)
+      if (!isProfileId(canonical)) {
+        return reply
+          .code(403)
+          .send({ error: 'forbidden', message: 'name must be a valid profile id' })
+      }
+      if (canonical === 'default') {
+        return reply
+          .code(400)
+          .send({ error: 'bad_request', message: 'the default agent cannot be deleted' })
+      }
+      // Refuse to delete the ACTIVE agent (the gateway is bound to it). Best-effort:
+      // if the roster can't be read, the guarded CLI stays the backstop.
+      try {
+        if (readProfiles(hermesHome).active === canonical) {
+          return reply.code(409).send({
+            error: 'conflict',
+            message: 'Switch to another agent before deleting this one.',
+          })
+        }
+      } catch {
+        // fall through to the guarded CLI
+      }
+      try {
+        const result = await runHermes(['profile', 'delete', canonical, '--yes'], {
+          hermesBin,
+          execFile: opts.execFile,
+        })
+        if (!result.ok) {
+          return reply
+            .code(502)
+            .send({ error: 'delete_failed', message: 'Hermes could not delete the profile.' })
+        }
+      } catch {
+        return reply
+          .code(502)
+          .send({ error: 'delete_failed', message: 'Hermes could not delete the profile.' })
+      }
+      return reply.send({ ok: true })
+    },
+  )
+
   // ── Switch (atomic active_profile flip — NEVER touches the gateway) ──
   // POST /api/agent-deck/profiles/switch  body { name } -> { active }
   app.post<{ Body: unknown }>('/api/agent-deck/profiles/switch', async (req, reply) => {

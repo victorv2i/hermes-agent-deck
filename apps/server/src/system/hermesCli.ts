@@ -18,7 +18,7 @@
  * PARSERS: each reads UNTRUSTED stdout, WHITELISTS the recognized substrings, and
  * FAILS CLOSED to the conservative value on anything else (gateway → `unknown`,
  * update → `up-to-date`) — never guessing a gateway is up or an update exists.
- * Verified against live hermes v0.15.1 output (`hermes gateway status`,
+ * Verified against live hermes v0.16.0 output (`hermes gateway status`,
  * `hermes update --check`, `hermes version`).
  */
 import { execFile as nodeExecFile } from 'node:child_process'
@@ -192,7 +192,7 @@ export function parseUpdateCheck(stdout: string): HermesUpdateStatus {
 }
 
 /**
- * Parse the installed version from `hermes version` (`Hermes Agent v0.15.1 ...`).
+ * Parse the installed version from `hermes version` (`Hermes Agent v0.16.0 ...`).
  * Returns the bare semver, or null when no version line is present (never guesses).
  */
 export function parseVersion(stdout: string): string | null {

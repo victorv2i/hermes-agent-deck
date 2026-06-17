@@ -50,7 +50,7 @@ describe('TerminalSessionsResponse', () => {
           persistent: true,
         },
         {
-          name: 'victors_own',
+          name: 'my_session',
           deckOwned: false,
           attachedCount: 2,
           createdEpoch: 1764000000,

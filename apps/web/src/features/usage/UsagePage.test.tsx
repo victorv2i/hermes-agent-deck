@@ -90,7 +90,7 @@ describe('ModelBreakdown', () => {
   it('shows share-of-TOTAL percentages per model (sum ≤ 100, top model < 100 when multiple models)', () => {
     // INFO-ACC-1: percentages are share of the GRAND TOTAL for the period, not
     // share-of-peak. Share-of-peak forced the widest bar to 100% and could make
-    // the sum exceed 100% — an impossible info-accuracy lie.
+    // the sum exceed 100% – an impossible info-accuracy lie.
     render(<ModelBreakdown byModel={SUMMARY.byModel} />)
     // With share-of-total, no single model should show 100% when multiple exist.
     // claude-opus: 19500/25500 ≈ 76%; claude-sonnet: 6000/25500 ≈ 24%
@@ -120,7 +120,7 @@ describe('UsageTrend', () => {
 
   it('exposes each bar as a focusable button with an accessible per-day label', () => {
     render(<UsageTrend daily={SUMMARY.daily} />)
-    // Bars are reachable by keyboard/touch — real buttons, not aria-hidden.
+    // Bars are reachable by keyboard/touch – real buttons, not aria-hidden.
     const bars = screen.getAllByRole('button')
     expect(bars).toHaveLength(SUMMARY.daily.length)
     for (const bar of bars) {
@@ -320,7 +320,7 @@ describe('UsagePage', () => {
     )
     expect(screen.getByText(/no usage yet/i)).toBeInTheDocument()
     // ONE warm action that leads somewhere useful (start a chat). It is a BUTTON
-    // that router-navigates (no <a href="/"> hard reload) — the caller owns the
+    // that router-navigates (no <a href="/"> hard reload) – the caller owns the
     // navigate, matching Home/History.
     const start = screen.getByRole('button', { name: /start a chat/i })
     expect(start).toBeInTheDocument()
@@ -353,7 +353,7 @@ describe('UsagePage', () => {
     expect(onRetry).toHaveBeenCalled()
   })
 
-  it('renders a calm human sentence on error — never the raw internal plumbing string', () => {
+  it('renders a calm human sentence on error – never the raw internal plumbing string', () => {
     render(
       <UsagePage
         period={30}
@@ -397,7 +397,7 @@ describe('UsagePage', () => {
   it('shows a real actual_cost even with no estimate (never "No billed cost" while money was billed)', () => {
     // A metered provider can report a real actual_cost with no rate-card
     // estimate. That is billed money: the tile must not read "No billed cost" or
-    // leave a bare "—" while a positive actual sits in the same window.
+    // leave a bare "–" while a positive actual sits in the same window.
     const actualOnly: UsageSummary = {
       ...SUMMARY,
       totals: { ...SUMMARY.totals, estimatedCost: 0, actualCost: 4.2 },

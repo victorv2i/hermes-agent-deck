@@ -530,6 +530,10 @@ export function WebhooksTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Initial load: a calm skeleton (matching the other surfaces) instead of
+          a blank body until the first read settles. */}
+      {!unsupported && isLoading && <WebhooksSkeleton />}
+
       {!unsupported && !enabled && !isLoading && (
         <div className="ad-surface mb-4 flex items-start gap-3 rounded-xl bg-card px-4 py-3 text-sm">
           <Webhook className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
@@ -566,6 +570,25 @@ export function WebhooksTab() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Initial-load placeholder using the same calm shimmer-card vocabulary the
+ *  other surfaces use (Jobs/Files), so a first load reads as "loading" not a
+ *  blank body. Decorative (aria-hidden rows) under a polite status label. */
+function WebhooksSkeleton() {
+  return (
+    <div role="status" aria-live="polite" data-testid="webhooks-skeleton">
+      <span className="sr-only">Loading webhooks</span>
+      <div className="flex flex-col gap-2" aria-hidden>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="ad-surface ad-raised h-[92px] animate-pulse rounded-xl bg-surface-2/60 motion-reduce:animate-none"
+          />
+        ))}
+      </div>
     </div>
   )
 }

@@ -11,7 +11,7 @@
  * the board body fills the rest with the columns flowing across the full width.
  *
  * Motion: a brief fade/zoom that is fully suppressed under reduced-motion
- * (`motion-safe:` only). Amber stays governed — the collapse control is a muted
+ * (`motion-safe:` only). The action accent stays governed — the collapse control is a muted
  * ghost, not an accent fill.
  */
 import { Dialog as DialogPrimitive } from 'radix-ui'

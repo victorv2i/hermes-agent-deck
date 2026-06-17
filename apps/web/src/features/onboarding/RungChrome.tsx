@@ -18,22 +18,22 @@ const RUNG_META: Record<Rung, { step: string; title: string; lede: string }> = {
   identity: {
     step: 'Identity',
     title: 'Give your agent a face',
-    lede: 'This is your existing “default” agent: give it a face and an optional nickname for the app. Its model, memory, and personality stay exactly as they are. Everything saves locally.',
+    lede: 'This is your existing "default" agent: give it a face and an optional nickname for the app. Its model, memory, and personality stay exactly as they are. Everything saves locally.',
   },
   chat: {
     step: 'First chat',
     title: 'Say hello',
-    lede: 'Send the first message. When your agent replies, you’re set up.',
+    lede: "Send the first message. When your agent replies, you're set up.",
   },
 }
 
 /**
- * RungChrome — the shared full-screen scaffold every rung renders inside: a
+ * RungChrome - the shared full-screen scaffold every rung renders inside: a
  * centered card with a quiet step indicator, the rung's title + lede, the rung
  * body, and a footer with Back, the rung's primary action (passed as
  * `primary`), and the always-present quiet skip fast-path. The skip is a
- * LINK-styled button (never the amber action accent) so the rung's real action
- * stays the single amber affordance.
+ * LINK-styled button (never the sky-blue action accent) so the rung's real action
+ * stays the single sky-blue affordance.
  */
 export function RungChrome({
   rung,
@@ -44,7 +44,7 @@ export function RungChrome({
 }: {
   rung: Rung
   children: ReactNode
-  /** The rung's primary action node (e.g. the amber Continue button). */
+  /** The rung's primary action node (e.g. the sky-blue Continue button). */
   primary: ReactNode
   /** Go to the previous rung; omitted/undefined on the first rung. */
   onBack?: () => void
@@ -56,9 +56,9 @@ export function RungChrome({
 
   return (
     <div className="flex min-h-dvh w-full flex-col items-center justify-start overflow-y-auto px-4 py-6 sm:justify-center sm:px-5 sm:py-10">
-      <div className="ad-surface w-full max-w-lg min-w-0 rounded-xl bg-card p-6 text-card-foreground sm:p-8">
-        {/* Quiet step indicator — dots, the current one on the identity ring
-            (border-strong), NEVER the amber action accent. */}
+      <div className="ad-enter ad-surface w-full max-w-lg min-w-0 rounded-xl bg-card p-6 text-card-foreground sm:p-8">
+        {/* Quiet step indicator - dots, the current one on the identity ring
+            (border-strong), NEVER the sky-blue action accent. */}
         <ol className="mb-6 flex items-center gap-2" aria-label="Setup progress">
           {RUNGS.map((r, i) => {
             const done = i < index
@@ -117,7 +117,7 @@ export function RungChrome({
                 Back
               </Button>
             )}
-            {/* The honest fast-path — a quiet link, never the amber action. ≥40px hit
+            {/* The honest fast-path - a quiet link, never the sky-blue action. >=40px hit
                 area while staying a quiet link visually. */}
             <Button
               type="button"

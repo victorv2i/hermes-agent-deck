@@ -29,7 +29,7 @@ import { hasBrandMark, platformIcon } from './platformIcons'
  * token field(s), and the shared "Restart to apply".
  *
  * Honesty (the spine): the status dot reflects the gateway's REAL per-platform
- * `connection` (+ gateway liveness) mapped to a SEMANTIC tone — never the amber
+ * `connection` (+ gateway liveness) mapped to a SEMANTIC tone — never the sky-blue
  * `--primary` action accent, never a fake "connected". The brand LOGO is identity
  * (its own brand color), also never the accent. The credential field is shape-only
  * — a password input that previews a redacted value when set and NEVER echoes the
@@ -206,7 +206,7 @@ export function PlatformTile({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Status — gateway truth → a governed SEMANTIC tone (never the amber accent)  */
+/* Status — gateway truth → a governed SEMANTIC tone (never the sky-blue accent) */
 /* -------------------------------------------------------------------------- */
 
 interface ResolvedStatus {
@@ -224,7 +224,7 @@ function resolveStatus(connection: MessagingConnection, gatewayRunning: boolean)
   }
   switch (connection) {
     case 'connected':
-      // Connected is a SEMANTIC-success status, NOT the amber action accent.
+      // Connected is a SEMANTIC-success status, NOT the sky-blue action accent.
       return { tone: 'ok', label: 'Connected', pulse: false }
     case 'error':
       return { tone: 'error', label: 'Error', pulse: false }

@@ -4,12 +4,12 @@
  *
  * Before this, each surface hand-rolled its own tile (circle vs rounded-square,
  * size-10 vs size-11) and — worse — Usage/ErrorBoundary/NotFound shipped raw
- * amber `bg-primary` retry buttons, violating accent governance (amber = primary
+ * sky-blue `bg-primary` retry buttons, violating accent governance (the action accent = primary
  * action / live state ONLY, never a recovery affordance buried in an error card).
  *
- * These converge on a single look: a `size-11 rounded-xl` amber-free tile + a
+ * These converge on a single look: a `size-11 rounded-xl` accent-free tile + a
  * Lucide LINE icon + title + optional description + an action. The retry action
- * is a `<Button variant="outline">` so it never reaches for amber.
+ * is a `<Button variant="outline">` so it never reaches for the action accent.
  */
 import { useId, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
@@ -93,7 +93,7 @@ export interface ErrorStateProps {
   className?: string
 }
 
-/** "Couldn't load X" — destructive-toned tile + an outline retry (never amber). */
+/** "Couldn't load X" — destructive-toned tile + an outline retry (never the action accent). */
 export function ErrorState({
   icon,
   title,

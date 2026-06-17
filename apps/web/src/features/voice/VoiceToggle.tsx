@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch'
 
 /**
  * VoiceToggle — an honest, accessible on/off switch (the shared `role="switch"`
- * + `aria-checked` pattern). Amber when ON is a SANCTIONED active-state use of the
+ * + `aria-checked` pattern). Sky-blue when ON is a SANCTIONED active-state use of the
  * accent (not decoration). Presentational: value in / change out, so the page
  * owns the real config mutation.
  */

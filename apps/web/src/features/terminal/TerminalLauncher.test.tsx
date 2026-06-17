@@ -129,7 +129,7 @@ describe('TerminalLauncher', () => {
           onAttach={onAttach}
           tmux={{
             tmuxAvailable: true,
-            sessions: [session('victors_own', false, 1), session('scratch', false)],
+            sessions: [session('my_session', false, 1), session('scratch', false)],
           }}
         />,
       )

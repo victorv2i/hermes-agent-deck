@@ -1,18 +1,22 @@
-import { Boxes, SquarePen, SunMoon, Trash2, type LucideIcon } from 'lucide-react'
+import { Boxes, SquarePen, SunMoon, Trash2, BarChart3, type LucideIcon } from 'lucide-react'
 
 /**
- * The composer's client-side slash-command registry. The gateway exposes NO
- * command set to the web app (verified in the build plan: the dashboard API has
- * no command registry and the run transport only knows run/resume/abort/
- * approval), so a leading `/` can only ever drive *UI* actions — never agent
- * commands. These commands are deliberately UI-scoped and mirror the ⌘K palette
- * + the global shortcut map, so the three surfaces agree.
+ * The composer's client-side slash-command registry. Every command drives a
+ * *UI* action the deck runs locally (switch model, new chat, clear, theme, open
+ * Usage), mirroring the ⌘K palette + the global shortcut map so the surfaces
+ * agree.
  *
- * Each command names a UI action the Composer dispatches; an action is only
+ * There is deliberately NO agent-passthrough command (e.g. `/compact`): the
+ * hermes `/v1/runs` gateway does not interpret slash text — compaction + steer
+ * live only in the interactive TUI client — so sending `/compact` as a message
+ * would just deliver text the agent does not act on. Offering it would be
+ * theater, so the menu carries only actions the deck genuinely performs.
+ *
+ * Each command names an action the Composer dispatches; a command is only
  * OFFERED when its handler is wired (e.g. `/clear` hides if the host passes no
  * `onClearChat`), so the menu never shows an inert row.
  */
-export type SlashActionId = 'model' | 'new' | 'clear' | 'theme'
+export type SlashActionId = 'model' | 'new' | 'clear' | 'theme' | 'usage'
 
 export interface SlashCommand {
   /** The action id the Composer dispatches. */
@@ -62,6 +66,14 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     hint: 'Switch between dark and light',
     icon: SunMoon,
     keywords: ['theme', 'dark', 'light', 'appearance'],
+  },
+  {
+    id: 'usage',
+    command: '/usage',
+    label: 'View usage',
+    hint: 'Open the usage and cost view',
+    icon: BarChart3,
+    keywords: ['usage', 'cost', 'tokens', 'spend', 'budget'],
   },
 ]
 

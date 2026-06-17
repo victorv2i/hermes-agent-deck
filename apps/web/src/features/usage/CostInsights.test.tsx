@@ -97,8 +97,8 @@ describe('CostInsights', () => {
 })
 
 // The only billing signal stock hermes exposes is the estimated/actual cost
-// pair (by_model carries NO billing_provider). This best-effort classifier —
-// never ground truth — reads the pair into one of three modes so the UI can
+// pair (by_model carries NO billing_provider). This best-effort classifier –
+// never ground truth – reads the pair into one of three modes so the UI can
 // present cost honestly per how the account is actually billed.
 describe('billingMode (best-effort, three branches)', () => {
   it('reads est>0 & actual~=0 as a subscription (priced model, not billed per call)', () => {
@@ -120,7 +120,7 @@ describe('billingMode (best-effort, three branches)', () => {
 
   // The live bug: a busy ChatGPT/Codex subscription reports a $0 cost pair, so
   // cost-only inference wrongly reads it as `local`. The active provider is the
-  // authoritative signal — token usage on a subscription seat is `subscription`.
+  // authoritative signal – token usage on a subscription seat is `subscription`.
   it('reads a subscription provider with $0 cost but real tokens as subscription', () => {
     expect(
       billingMode(
@@ -150,7 +150,7 @@ describe('billingMode (best-effort, three branches)', () => {
   })
 })
 
-describe('CostInsights — billing-mode-aware presentation', () => {
+describe('CostInsights – billing-mode-aware presentation', () => {
   it('shows a plan token-usage card (not "No spend recorded") on a subscription window', () => {
     render(
       <CostInsights

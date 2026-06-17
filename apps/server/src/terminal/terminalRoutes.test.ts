@@ -131,7 +131,7 @@ describe('terminalRoutes GET /sessions', () => {
         deckOwned: true,
       },
       {
-        name: 'victors_own',
+        name: 'my_session',
         createdEpoch: 1764000000,
         lastActivityEpoch: 1764999999,
         attachedCount: 0,
@@ -160,7 +160,7 @@ describe('terminalRoutes GET /sessions', () => {
         persistent: true,
       },
       {
-        name: 'victors_own',
+        name: 'my_session',
         deckOwned: false,
         attachedCount: 0,
         createdEpoch: 1764000000,

@@ -25,7 +25,7 @@ describe('RadioCardGroup', () => {
     expect(selected).toHaveAttribute('aria-checked', 'true')
     expect(selected.className).toContain('border-[var(--border-strong)]')
     expect(selected.className).not.toContain('border-primary')
-    // the selection marker must not light up the amber action accent
+    // the selection marker must not light up the sky-blue action accent
     expect(selected.querySelector('.text-primary')).toBeNull()
   })
 

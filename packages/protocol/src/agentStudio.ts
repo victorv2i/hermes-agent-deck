@@ -112,24 +112,121 @@ export const StudioAgentConfig = z.object({
 })
 export type StudioAgentConfig = z.infer<typeof StudioAgentConfig>
 
+/* -------------------------------------------------------------------------- */
+/* Auxiliary routing: the per-task side-model overrides (auxiliary.<task>.*)  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The NON-SECRET routing fields the Studio reads/writes for one auxiliary task
+ * (the side models hermes uses for vision, web extraction, the approval judge,
+ * and context compression). Installed hermes (cli.py DEFAULT_CONFIG `auxiliary:`
+ * + agent/auxiliary_client.py `_get_auxiliary_task_config`) reads
+ * `auxiliary.<task>.{provider, model, base_url, api_key, timeout, extra_body}`.
+ *
+ * SECURITY: this schema declares ONLY the non-secret fields. It deliberately
+ * OMITS `api_key` (a routing key for a custom endpoint belongs in `.env` like
+ * every other provider key, authored via the Env section) and `extra_body` (a
+ * raw passthrough blob that could smuggle a key). Because zod `.object()` STRIPS
+ * undeclared keys on parse, an `api_key` carried in the raw config is dropped
+ * here and can never surface to the browser or be smuggled back into a write.
+ *
+ * Every field is optional: the effective merged config may omit a task or any of
+ * its keys, and a PUT patch sends only the keys the user changed.
+ *  - `provider` "auto" (the default) means hermes auto-detects the backend.
+ *  - `base_url` is a direct OpenAI-compatible endpoint; its KEY lives in `.env`
+ *    (e.g. OPENAI_API_KEY), not here.
+ *  - `timeout` is the per-task request timeout in seconds.
+ */
+export const StudioAuxiliaryTaskConfig = z.object({
+  provider: z.string().optional(),
+  model: z.string().optional(),
+  base_url: z.string().optional(),
+  timeout: z.number().nonnegative().optional(),
+})
+export type StudioAuxiliaryTaskConfig = z.infer<typeof StudioAuxiliaryTaskConfig>
+
+/**
+ * The auxiliary tasks the Studio surfaces. These are the built-in side-task
+ * slots verified in installed hermes (the three env-bridged tasks vision /
+ * web_extract / approval in cli.py, plus compression read directly from
+ * config.yaml by run_agent.py / conversation_compression.py). Other tasks
+ * referenced in the codebase (curator, goal_judge, session_search, …) also read
+ * `auxiliary.<task>.*` but are deeper-internal; the Studio surfaces the four the
+ * user is most likely to want to route, and reads/writes each through the same
+ * `auxiliary.<task>.*` config the gateway already honors.
+ */
+export const STUDIO_AUXILIARY_TASKS = ['vision', 'web_extract', 'approval', 'compression'] as const
+export type StudioAuxiliaryTask = (typeof STUDIO_AUXILIARY_TASKS)[number]
+
+/**
+ * The `auxiliary.*` block the Studio reads/writes — one {@link
+ * StudioAuxiliaryTaskConfig} per surfaced task. Every task optional (the config
+ * may omit it). Because each task value is a `StudioAuxiliaryTaskConfig`, parse()
+ * strips any `api_key` / `extra_body` nested under a task, so no secret in the
+ * raw `auxiliary` block can reach the browser through this subset.
+ */
+export const StudioAuxiliaryConfig = z.object({
+  vision: StudioAuxiliaryTaskConfig.optional(),
+  web_extract: StudioAuxiliaryTaskConfig.optional(),
+  approval: StudioAuxiliaryTaskConfig.optional(),
+  compression: StudioAuxiliaryTaskConfig.optional(),
+})
+export type StudioAuxiliaryConfig = z.infer<typeof StudioAuxiliaryConfig>
+
+/**
+ * The `delegation.*` block the Studio reads/writes — the subagent (child-agent)
+ * model routing hermes uses when a task is delegated. Installed hermes (cli.py
+ * DEFAULT_CONFIG `delegation:`) reads `delegation.{max_iterations, model,
+ * provider, base_url, api_key}`. As with auxiliary, this schema declares ONLY
+ * the non-secret routing fields and OMITS `api_key` (it belongs in `.env`), so a
+ * key in the raw config is stripped on parse.
+ *  - `max_iterations` caps the tool-calling turns per child agent.
+ *  - `model` / `provider` empty means inherit the parent agent's model/provider.
+ *  - `base_url` is a direct OpenAI-compatible endpoint for subagents (key in `.env`).
+ */
+export const StudioDelegationConfig = z.object({
+  max_iterations: z.number().int().nonnegative().optional(),
+  model: z.string().optional(),
+  provider: z.string().optional(),
+  base_url: z.string().optional(),
+})
+export type StudioDelegationConfig = z.infer<typeof StudioDelegationConfig>
+
 /**
  * The per-profile config SUBSET the Studio reads from GET /api/config?profile=.
- * The effective merged config carries dozens of keys (delegation, auxiliary,
- * gateway, …) the Studio does not author; parse() drops every key not declared
- * here, so this is the exact whitelist the Studio surface sees.
+ * The effective merged config carries dozens of keys the Studio does not author;
+ * parse() drops every key not declared here, so this is the exact whitelist the
+ * Studio surface sees.
  *
  * - `toolsets`:  the top-level ENABLED toolset list.
  * - `agent.disabled_toolsets`: the blocklist applied on top.
  * - `model`:     the top-level model id string (read; write via the model-set route).
+ * - `model_context_length`: the top-level context-length override hermes surfaces
+ *   (`_normalize_config_for_web`); 0 means auto-detect. The Studio reads + writes
+ *   it (a write of 0 clears the override back to auto).
  * - `memory`:    the `memory.*` block.
+ * - `auxiliary`: the per-task side-model routing ({@link StudioAuxiliaryConfig}),
+ *   non-secret fields only (api_key/extra_body stripped on parse).
+ * - `delegation`: the subagent model routing ({@link StudioDelegationConfig}),
+ *   non-secret fields only.
+ *
+ * SECURITY: `auxiliary`/`delegation` were previously dropped wholesale because
+ * they can carry an `api_key`. They are now surfaced through the secret-free
+ * {@link StudioAuxiliaryConfig}/{@link StudioDelegationConfig} projections, whose
+ * `.object()` parse STRIPS any `api_key`/`extra_body`, so no secret in the raw
+ * config can reach the browser. Routing KEYS for these endpoints live in `.env`
+ * (authored via the Env section), never in this config surface.
  *
  * All keys optional: a freshly-created profile may surface an empty subset.
  */
 export const StudioConfigSubset = z.object({
   model: StudioModelId.optional(),
+  model_context_length: z.number().int().nonnegative().optional(),
   toolsets: z.array(z.string()).optional(),
   agent: StudioAgentConfig.optional(),
   memory: StudioMemoryConfig.optional(),
+  auxiliary: StudioAuxiliaryConfig.optional(),
+  delegation: StudioDelegationConfig.optional(),
 })
 export type StudioConfigSubset = z.infer<typeof StudioConfigSubset>
 

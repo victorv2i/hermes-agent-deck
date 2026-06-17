@@ -11,7 +11,7 @@ const model = (over: Partial<UsageModelBreakdown> = {}): UsageModelBreakdown => 
   ...over,
 })
 
-describe('groupByProvider — per-provider rollup of the per-model rows', () => {
+describe('groupByProvider – per-provider rollup of the per-model rows', () => {
   it('groups models by their billingProvider, summing tokens, cost, and sessions', () => {
     const byModel: UsageModelBreakdown[] = [
       model({

@@ -82,7 +82,7 @@ describe('LiveBurnRate', () => {
     const pill = screen.getByTestId('burn-rate-pill')
     expect(pill).toHaveTextContent('$4.32')
     expect(pill).toHaveTextContent('today')
-    // Calm at rest — not in the warned state.
+    // Calm at rest – not in the warned state.
     expect(pill).not.toHaveAttribute('data-warned')
   })
 

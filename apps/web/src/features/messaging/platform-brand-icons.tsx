@@ -5,7 +5,7 @@ import { siDiscord, siSignal, siTelegram, siWhatsapp } from 'simple-icons'
 /**
  * BRAND MARKS for the Messaging hub — component-only module (so React Fast Refresh
  * stays happy). The design spine: brand/provider LOGOS are IDENTITY, never the
- * amber `--primary` accent — each mark renders the platform's ACCURATE official
+ * sky-blue `--primary` accent — each mark renders the platform's ACCURATE official
  * glyph in ITS OWN brand color (a hard-coded hex, NOT a theme token, so it stays
  * the real brand color on every theme). These marks identify the tools (nominative
  * use), consistent with the repo's trademark notice.
@@ -33,7 +33,7 @@ interface SimpleIcon {
 
 /**
  * Render an accurate `simple-icons` glyph as a single-color brand mark. Brand
- * identity: filled in the icon's own `hex` (NOT a theme token, NEVER the amber
+ * identity: filled in the icon's own `hex` (NOT a theme token, NEVER the sky-blue
  * accent). `role="img"` + `aria-label` give it an accessible name (nominative use).
  */
 function BrandGlyph({

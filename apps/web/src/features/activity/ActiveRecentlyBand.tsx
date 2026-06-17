@@ -14,9 +14,9 @@ import { useStatus } from './useStatus'
  * min", never "live".
  *
  * Color governance (design-language §2): the per-platform dots use the GOVERNED
- * SEMANTIC palette (success teal-green / warning / error / muted), NEVER amber —
- * amber is reserved for the live/active local run. The config-update hint uses
- * `info`. Because the warning hue is adjacent to the reserved amber, the
+ * SEMANTIC palette (success teal-green / warning / error / muted), NEVER the action accent —
+ * the action accent is reserved for the live/active local run. The config-update hint uses
+ * `info`. Because the warning hue is adjacent to the reserved action accent, the
  * non-connected states are ALSO marked with a distinguishing icon (not
  * color-only) so an at-a-glance/colorblind operator can't conflate a degraded
  * source with the live accent.
@@ -107,10 +107,10 @@ export function ActiveRecentlyBand({ enabled = true }: { enabled?: boolean }) {
 
 /**
  * Per-platform state → the shared {@link StatusDot}. All GOVERNED SEMANTIC tokens
- * (NEVER amber): `connected` is the calm round success dot (no marker, no label);
+ * (NEVER the action accent): `connected` is the calm round success dot (no marker, no label);
  * the non-connected states are NOT color-only — each carries a distinguishing
  * SHAPE (triangle / x-circle), because the `--warning` hue sits next to the
- * reserved live amber and a round warning dot could be mistaken for the live
+ * reserved live accent and a round warning dot could be mistaken for the live
  * accent at a glance or by a colorblind operator (a11y finding #4). `unknown`
  * (unprobed) stays `idle`-muted but is given the band's help-circle shape so it
  * is also non-color-only and announced. Each non-connected marker is labelled for

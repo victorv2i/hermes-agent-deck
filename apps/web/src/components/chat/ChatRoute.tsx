@@ -172,7 +172,15 @@ export function ChatRoute() {
     const active = modelList.find((m) => m.active)
     if (active) return active.qualifiedId
     const id = models.data?.activeModelId
-    return id && activeProviderId ? `${activeProviderId}/${id}` : (id ?? null)
+    if (!id) return null
+    // Resolve the gateway's bare active id to an actual list entry's qualifiedId so
+    // the picker can highlight it (a composed `provider/id` string may not match the
+    // list's qualifiedId format, leaving the active model un-checked). Prefer the
+    // active provider when the bare id collides across providers.
+    const match =
+      modelList.find((m) => m.id === id && m.provider === activeProviderId) ??
+      modelList.find((m) => m.id === id)
+    return match?.qualifiedId ?? (activeProviderId ? `${activeProviderId}/${id}` : id)
   }, [modelList, models.data?.activeModelId, activeProviderId])
   // Honest attach gating: stock `/api/model/info` reports the ACTIVE model's
   // vision capability. Only offer image attachments when the agent can actually
@@ -463,6 +471,9 @@ export function ChatRoute() {
         onNewChat={newChat}
         onClearChat={clearChat}
         onToggleTheme={toggleTheme}
+        // `/usage` opens the Usage view (same surface the ⌘K palette + the rail
+        // reach). The deck navigates locally; no agent run.
+        onOpenUsage={() => navigate('/usage')}
       />
       {/* The expensive-model guard's confirm: the held run resolves through the
           handlers above, so the user's decision (not a silent default) settles

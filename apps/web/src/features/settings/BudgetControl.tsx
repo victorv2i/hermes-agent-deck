@@ -4,12 +4,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useBudget } from '@/features/budget/budgetStore'
 
 /**
- * BudgetControl — the "Cost" preferences group on the Settings surface.
+ * BudgetControl – the "Cost" preferences group on the Settings surface.
  *
  * Lets a user set OPTIONAL soft spend caps in plain language ("Alert me if I
  * spend more than $__/day or $__/month"). Both are unset by default. When a cap
  * is crossed, the app raises a calm, once-per-breach warning toast and the
- * header burn-rate pill turns amber — it does NOT stop the agent.
+ * header burn-rate pill turns amber – it does NOT stop the agent.
  *
  * The control is deliberately honest about that limit (an explicit note), so the
  * feature never over-promises a kill switch agent-deck cannot deliver: it watches
@@ -54,7 +54,7 @@ export function BudgetControl() {
           />
         </div>
 
-        {/* HONEST framing — this warns, it does not stop the agent. */}
+        {/* HONEST framing – this warns, it does not stop the agent. */}
         <p className="flex items-start gap-2 rounded-[8px] bg-surface-1 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
           <Info className="mt-px size-3.5 shrink-0 text-foreground-tertiary" aria-hidden />
           <span>
@@ -93,7 +93,7 @@ function CapField({ id, label, unit, value, onChange }: CapFieldProps) {
           inputMode="decimal"
           min={0}
           step="any"
-          placeholder="—"
+          placeholder="–"
           // An empty field reads as "unset"; the store normalizes 0/blank to null.
           value={value ?? ''}
           onChange={(e) => {

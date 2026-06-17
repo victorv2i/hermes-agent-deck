@@ -8,6 +8,31 @@
  */
 
 /**
+ * The Studio's top-level VIEWS — the page-level switch above the roster. `agents`
+ * is the default (the roster + per-agent workbench); `connections` embeds the
+ * GLOBAL Connections surface (voice / messaging / MCP / pairing / webhooks /
+ * credentials), which applies to ALL agents, so it's a Studio-level view rather
+ * than a per-agent workbench tab. Addressed by `?view=` so a deep link / the old
+ * `/connections` redirect lands on the right view.
+ */
+export const STUDIO_VIEWS = ['agents', 'connections'] as const
+
+export type StudioView = (typeof STUDIO_VIEWS)[number]
+
+/** The view shown when none is requested (or the request is invalid). */
+export const DEFAULT_STUDIO_VIEW: StudioView = 'agents'
+
+/** Narrow an arbitrary value to a known {@link StudioView}. */
+export function isStudioView(value: unknown): value is StudioView {
+  return typeof value === 'string' && (STUDIO_VIEWS as readonly string[]).includes(value)
+}
+
+/** Resolve a requested view to a valid one, falling back to the default. */
+export function resolveStudioView(requested: unknown): StudioView {
+  return isStudioView(requested) ? requested : DEFAULT_STUDIO_VIEW
+}
+
+/**
  * The workbench sections, in the spec's order. A closed set so the UI renders a
  * known tab list and a deep-link section param is validated against it.
  */

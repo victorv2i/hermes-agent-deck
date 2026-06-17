@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils'
  * A real ARIA `radiogroup`: arrow keys move (native radio roving focus), Space/
  * Enter selects, and each face is a labeled `<Avatar>` ("Face 3 of 3"). The
  * SELECTED tile gets the IDENTITY ring `var(--border-strong)` — NEVER `--ring`
- * (byte-identical to the amber action accent) — so picking a face never lights
- * up the action color. Amber lives only on the dialog's Confirm button.
+ * (byte-identical to the sky-blue action accent) — so picking a face never lights
+ * up the action color. The sky-blue accent lives only on the dialog's Confirm button.
  */
 export function AvatarPicker({
   value,
@@ -45,7 +45,7 @@ export function AvatarPicker({
             />
             <span
               className={cn(
-                'block rounded-full p-0.5 transition-[box-shadow,background-color]',
+                'block rounded-md p-0.5 transition-[box-shadow,background-color]',
                 // IDENTITY ring on the chosen face — border-strong, never --ring.
                 selected
                   ? 'ring-2 ring-[var(--border-strong)] ring-offset-2 ring-offset-popover'

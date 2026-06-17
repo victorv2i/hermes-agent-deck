@@ -315,12 +315,33 @@ describe('Composer', () => {
       expect(props.onSend).toHaveBeenCalledWith('/note to self')
     })
 
-    it('does not render a menu at all when no slash handlers are wired', async () => {
+    it('offers no command menu on a bare composer (only onSend wired) — every command needs its handler', async () => {
       const user = userEvent.setup()
-      // Plain composer (the existing default) — typing "/" shows no command menu.
+      // Every slash command is a local UI action gated on its own host handler,
+      // so a plain composer with none wired shows no menu (no inert rows).
       render(<Composer onSend={vi.fn()} onStop={vi.fn()} />)
       await user.type(screen.getByLabelText('Message your agent'), '/')
       expect(screen.queryByRole('listbox', { name: /commands/i })).not.toBeInTheDocument()
+    })
+
+    // --- /usage (a local UI action that opens the Usage view) ---
+    it('opens the Usage view via /usage (a local UI action, no agent run)', async () => {
+      const user = userEvent.setup()
+      const props = renderWithSlash({ onOpenUsage: vi.fn() })
+      const input = screen.getByLabelText('Message your agent')
+      await user.type(input, '/usage')
+      await user.keyboard('{Enter}')
+      expect(props.onOpenUsage).toHaveBeenCalledTimes(1)
+      // It does NOT send a message to the agent; /usage is purely navigation.
+      expect(props.onSend).not.toHaveBeenCalled()
+      expect(input).toHaveValue('')
+    })
+
+    it('hides /usage when no onOpenUsage handler is wired (no inert row)', async () => {
+      const user = userEvent.setup()
+      renderWithSlash() // renderWithSlash does not wire onOpenUsage
+      await user.type(screen.getByLabelText('Message your agent'), '/usage')
+      expect(screen.queryByRole('option', { name: /View usage/i })).not.toBeInTheDocument()
     })
   })
 
@@ -493,6 +514,88 @@ describe('Composer', () => {
       expect(mic).toHaveAttribute('aria-pressed', 'true')
       await user.click(mic)
       expect(mic).toHaveAttribute('aria-pressed', 'false')
+    })
+  })
+
+  // --- (b) Voice DICTATION via SERVER-STT (Web Speech absent) ------------------
+  // When the browser has no Web Speech API (Firefox, many Chromium-on-Linux),
+  // dictation falls back to recording the mic + posting to the BFF. The mic stays
+  // ENABLED (the bug this fixes: it used to be a dead, "unsupported" button).
+  describe('voice input (server-STT fallback)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      vi.restoreAllMocks()
+    })
+
+    /** A controllable MediaRecorder so the test can finish a recording on stop. */
+    class MockMediaRecorder {
+      static isTypeSupported = () => true
+      static last: MockMediaRecorder | undefined
+      state: 'inactive' | 'recording' = 'inactive'
+      mimeType = 'audio/webm'
+      ondataavailable: ((e: { data: Blob }) => void) | null = null
+      onstop: (() => void) | null = null
+      start = () => {
+        this.state = 'recording'
+      }
+      stop = () => {
+        this.state = 'inactive'
+        this.ondataavailable?.({ data: new Blob(['bytes'], { type: this.mimeType }) })
+        this.onstop?.()
+      }
+      constructor() {
+        MockMediaRecorder.last = this
+      }
+    }
+
+    function installServerCapture() {
+      vi.stubGlobal('isSecureContext', true)
+      const stream = { getTracks: () => [{ stop: vi.fn() }] } as unknown as MediaStream
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        mediaDevices: { getUserMedia: vi.fn().mockResolvedValue(stream) },
+      })
+      vi.stubGlobal('MediaRecorder', MockMediaRecorder)
+      // NO Web Speech API installed → useDictation chooses the server path.
+    }
+
+    it('shows the mic ENABLED (server mode) when Web Speech is absent but capture exists', () => {
+      installServerCapture()
+      render(<Composer onSend={vi.fn()} onStop={() => {}} />)
+      const mic = screen.getByTestId('composer-mic')
+      expect(mic).toBeEnabled()
+      expect(mic).toHaveAttribute('aria-label', 'Start voice input')
+    })
+
+    it('records, transcribes via the BFF, and inserts the transcript', async () => {
+      const voiceApi = await import('@/features/voice/api')
+      vi.spyOn(voiceApi, 'transcribeAudio').mockResolvedValue({ transcript: 'hands free text' })
+      installServerCapture()
+      const user = userEvent.setup()
+      render(<Composer onSend={vi.fn()} onStop={() => {}} />)
+      const input = screen.getByLabelText('Message your agent')
+      const mic = screen.getByTestId('composer-mic')
+
+      await user.click(mic) // grant + start capture
+      await waitFor(() => expect(mic).toHaveAttribute('aria-pressed', 'true'))
+      await user.click(mic) // stop → recorder.onstop → transcribe → insert
+      await waitFor(() => expect(input).toHaveValue('hands free text'))
+    })
+
+    it('toasts honestly when transcription fails', async () => {
+      vi.spyOn(await import('@/features/voice/api'), 'transcribeAudio').mockRejectedValue(
+        new Error('502'),
+      )
+      installServerCapture()
+      const user = userEvent.setup()
+      render(<Composer onSend={vi.fn()} onStop={() => {}} />)
+      const mic = screen.getByTestId('composer-mic')
+      await user.click(mic)
+      await waitFor(() => expect(mic).toHaveAttribute('aria-pressed', 'true'))
+      await user.click(mic)
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/transcribe/i)),
+      )
     })
   })
 
@@ -1035,7 +1138,7 @@ describe('Composer', () => {
       for (const testid of ['composer-attach', 'composer-mic']) {
         const btn = screen.getByTestId(testid)
         expect(btn.className).toContain('focus-visible:ring-[var(--border-strong)]')
-        // The action accent (amber) is reserved for Send — not these.
+        // The action accent (sky-blue) is reserved for Send — not these.
         expect(btn.className).not.toContain('ring-ring')
       }
     })

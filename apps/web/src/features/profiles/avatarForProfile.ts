@@ -5,7 +5,7 @@ import { BUILTIN_AVATAR_IDS, type AvatarId } from '@agent-deck/protocol'
  * zero with NO write, and the SAME agent shows the SAME face on every surface
  * (chip, switcher, header, picker, ⌘K, Home hero).
  *
- * Identity color only — the avatar art is NEVER the amber `--primary` action
+ * Identity color only — the avatar art is NEVER the sky-blue `--primary` action
  * accent (design spine).
  */
 

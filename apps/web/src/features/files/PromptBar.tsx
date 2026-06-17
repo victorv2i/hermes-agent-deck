@@ -2,7 +2,7 @@
  * PromptBar — a calm inline text-prompt strip used for "new file / new folder /
  * rename" without pulling in a modal/dialog dependency. Submits on Enter, cancels
  * on Escape, autofocuses, and surfaces a busy + error state. Design-language:
- * hairline-bordered surface row, amber-focused input, generous targets.
+ * hairline-bordered surface row, sky-blue-focused input, generous targets.
  */
 import { useEffect, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'

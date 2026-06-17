@@ -88,8 +88,8 @@ export function HistoryRoute() {
             variant="outline"
             size="sm"
             onClick={() => navigate(CHAT_PATH)}
-            // "New chat" is the page's KEY action → the sanctioned faint-amber
-            // action affordance (amber border + tint + amber glyph).
+            // "New chat" is the page's KEY action → the sanctioned faint sky-blue
+            // action affordance (sky-blue border + tint + sky-blue glyph).
             className="relative gap-2 border-primary/25 bg-primary/10 text-primary before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] hover:bg-primary/15 hover:text-primary"
           >
             <SquarePen className="size-4 text-primary" aria-hidden />

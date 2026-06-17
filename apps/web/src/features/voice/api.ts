@@ -5,8 +5,10 @@ import {
   AudioNoteList,
   UpdateVoiceConfigResponse,
   SetVoiceKeyResponse,
+  TranscribeAudioResponse,
   type UpdateVoiceConfigRequest,
   type SetVoiceKeyRequest,
+  type TranscribeAudioRequest,
 } from '@agent-deck/protocol'
 
 /**
@@ -48,6 +50,21 @@ export async function updateVoiceConfig(
 /** Store/replace a provider key (allowlisted to known voice key vars server-side). */
 export async function setVoiceKey(request: SetVoiceKeyRequest): Promise<SetVoiceKeyResponse> {
   return SetVoiceKeyResponse.parse(await apiPost<unknown>(`${BASE}/key`, request))
+}
+
+/**
+ * Composer DICTATION: POST a recorded clip (base64 data URL) to the BFF, which
+ * proxies stock hermes `POST /api/audio/transcribe`, and return the transcript.
+ * Used as the durable any-browser voice-input path (when the Web Speech API is
+ * absent). The recognized text fills the composer for the user to review + send.
+ */
+export async function transcribeAudio(
+  request: TranscribeAudioRequest,
+  signal?: AbortSignal,
+): Promise<TranscribeAudioResponse> {
+  return TranscribeAudioResponse.parse(
+    await apiPost<unknown>(`${BASE}/transcribe`, request, { signal }),
+  )
 }
 
 /** List the real cached voice notes (newest first). */

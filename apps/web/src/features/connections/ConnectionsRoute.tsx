@@ -126,7 +126,7 @@ export function ConnectionsRoute() {
           channels never read as peers of the admin plumbing. The cluster labels +
           separator are decorative (aria-hidden / presentation): one flat tablist
           remains, ids and order unchanged. The active tab carries the sanctioned
-          faint-amber active treatment (amber tint + amber label); inactive tabs
+          faint sky-blue active treatment (sky-blue tint + sky-blue label); inactive tabs
           stay quiet/neutral. This wrapper owns the page's SINGLE top zone (pt-4);
           the child surfaces start flush below it (their own wrappers add no top
           padding), so the top rhythm reads once, not doubled. */}

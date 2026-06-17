@@ -5,28 +5,28 @@ import { useDensity, type Density } from './density'
 
 /**
  * DensityControl — the one editable preference on the otherwise read-only
- * Settings surface. A power user with a long session rail can switch from the
- * spacious brand default (Comfortable) to a tighter layout (Compact) that fits
- * more rows and prose per screen. The choice persists (localStorage) and applies
- * app-wide via a `data-density` attribute on <html> (see ./density.ts).
+ * Settings surface. Compact is the default (a dense, pro-desktop read that fits
+ * more rows and prose per screen); a user who prefers more breathing room can
+ * switch to Comfortable. The choice persists (localStorage) and applies app-wide
+ * via a `data-density` attribute on <html> (see ./density.ts).
  *
  * Rendered as an accessible two-option radiogroup (roving selection, governed
- * amber for the active option per the accent rules), it lives above the config
+ * sky-blue for the active option per the accent rules), it lives above the config
  * list so it's reachable regardless of the config load state.
  */
 
 const OPTIONS = [
   {
-    value: 'comfortable' as Density,
-    label: 'Comfortable',
-    hint: 'Spacious (the default)',
-    icon: Rows3,
-  },
-  {
     value: 'compact' as Density,
     label: 'Compact',
-    hint: 'Tighter, more per screen',
+    hint: 'Dense (the default)',
     icon: AlignJustify,
+  },
+  {
+    value: 'comfortable' as Density,
+    label: 'Comfortable',
+    hint: 'More breathing room',
+    icon: Rows3,
   },
 ]
 

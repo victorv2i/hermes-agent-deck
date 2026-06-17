@@ -36,6 +36,8 @@ import {
   setStudioEnv,
   createStudioProfile,
   switchActiveProfile,
+  exportAgent,
+  importAgent,
   type SoulFile,
   type StudioSkill,
   type CreateStudioProfileInput,
@@ -251,6 +253,34 @@ export function useSwitchActiveProfile() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (name: string) => switchActiveProfile(name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: studioKeys.profiles() })
+    },
+  })
+}
+
+/* -------------------------------------------------------------------------- */
+/* Profile export / import                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Export an agent as a `.tar.gz` (a browser download). No cache to touch — the
+ * BFF streams hermes' credential-free archive straight to the browser.
+ */
+export function useExportStudioProfile() {
+  return useMutation<void, Error, string>({
+    mutationFn: (name: string) => exportAgent(name),
+  })
+}
+
+/**
+ * Import an agent from a `.tar.gz`; invalidates the roster so the new card
+ * appears. The bytes ride as base64 to the BFF, which shells out to hermes.
+ */
+export function useImportStudioProfile() {
+  const qc = useQueryClient()
+  return useMutation<{ name: string }, Error, { name: string; archiveBase64: string }>({
+    mutationFn: ({ name, archiveBase64 }) => importAgent(name, archiveBase64),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: studioKeys.profiles() })
     },

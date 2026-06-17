@@ -14,18 +14,18 @@ describe('CacheHitTile', () => {
     expect(screen.getByText(/800 cached/i)).toBeInTheDocument()
   })
 
-  it('shows the honest "—" empty state when there is no prompt-side usage', () => {
+  it('shows the honest "–" empty state when there is no prompt-side usage', () => {
     render(<CacheHitTile cacheReadTokens={0} inputTokens={0} />)
-    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByText('–')).toBeInTheDocument()
     // No misleading "0%" in the empty case.
     expect(screen.queryByText('0%')).not.toBeInTheDocument()
     expect(screen.getByText(/no cached usage yet/i)).toBeInTheDocument()
   })
 
-  it('shows a real 0% (not "—") when input exists but nothing was a hit', () => {
+  it('shows a real 0% (not "–") when input exists but nothing was a hit', () => {
     render(<CacheHitTile cacheReadTokens={0} inputTokens={5000} />)
     expect(screen.getByText('0%')).toBeInTheDocument()
-    expect(screen.queryByText('—')).not.toBeInTheDocument()
+    expect(screen.queryByText('–')).not.toBeInTheDocument()
   })
 
   it('exposes a keyboard-reachable info affordance explaining the formula', () => {

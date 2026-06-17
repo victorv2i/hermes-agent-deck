@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
  * the warm-void tokens: hairline border, layered surface, the governed
  * focus-visible ring (`--ring`, reserved for focus only). `aria-invalid` paints
  * the destructive ring so live validation reads without a second accent. The
- * amber `--primary` is NEVER used here — text entry is not an action accent.
+ * sky-blue `--primary` is NEVER used here — text entry is not an action accent.
  */
 export type InputProps = React.ComponentProps<'input'>
 

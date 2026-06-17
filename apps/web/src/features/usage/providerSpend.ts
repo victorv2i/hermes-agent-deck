@@ -1,5 +1,5 @@
 /**
- * Per-PROVIDER rollup of the per-model usage rows — the companion to the
+ * Per-PROVIDER rollup of the per-model usage rows – the companion to the
  * per-model breakdown. The BFF already attributes each model's spend to the
  * provider Hermes recorded it under (`billingProvider`, joined from
  * `/api/analytics/models`); this groups those rows by that attribution so the
@@ -9,10 +9,10 @@
  * OAuth provider (e.g. `openai-codex`) reports a $0 cost pair even when busy, so
  * each row carries `isSubscription` and the UI shows "Included in subscription"
  * rather than a misleading "$0". Rows with NO recorded attribution fold into a
- * single `''` bucket flagged `isUnattributed` — never invented, never dropped.
+ * single `''` bucket flagged `isUnattributed` – never invented, never dropped.
  *
  * Shares are share-of-TOTAL tokens (same rule as ModelBreakdown), so the bar
- * widths/percentages add up to ≤100% — never share-of-peak (which can exceed
+ * widths/percentages add up to ≤100% – never share-of-peak (which can exceed
  * 100%).
  */
 import type { UsageModelBreakdown } from './types'

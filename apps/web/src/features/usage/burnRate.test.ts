@@ -65,7 +65,7 @@ describe('monthToDateSpend', () => {
   it('sums only days in the same UTC calendar month', () => {
     const now = new Date('2026-05-31T10:00:00Z')
     const daily = [
-      day({ day: '2026-04-30', estimatedCost: 100 }), // prior month — excluded
+      day({ day: '2026-04-30', estimatedCost: 100 }), // prior month – excluded
       day({ day: '2026-05-01', estimatedCost: 5 }),
       day({ day: '2026-05-15', actualCost: 7 }),
       day({ day: '2026-05-31', estimatedCost: 4 }),

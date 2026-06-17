@@ -31,7 +31,7 @@ import type { AuxiliaryTask, ModelEntry, ModelsResponse, ProviderConnectResult }
  * a status discriminated union so loading / error / empty / success are all
  * exercisable in tests. The route wrapper (ModelsRoute) feeds it from `useModels`.
  *
- * Design language: warm-void teal surfaces, single amber accent for the active
+ * Design language: warm-void teal surfaces, single sky-blue accent for the active
  * model (left bar + tinted row + Active badge), lifted hairline borders, vendor
  * grouping so the list reads as a considered roster — not a dropdown rendered as
  * a page. Calm skeletons (never spinners), generous radius.
@@ -391,7 +391,7 @@ function NoMatches({ query, onClear }: { query: string; onClear: () => void }) {
 
 /**
  * One provider section: the vendor's REAL brand mark (identity — neutral, never
- * the amber accent) + its label, with the vendor's models listed beneath, so the
+ * the sky-blue accent) + its label, with the vendor's models listed beneath, so the
  * roster reads by provider at a glance. An unknown vendor falls back to a neutral
  * monogram mark + the raw slug (titlecased), never a garbled logo.
  */
@@ -436,7 +436,7 @@ function ProviderSection({
  * `/api/providers/oauth` probe failed), so per-model `usable` flags failed OPEN
  * — every model is shown as usable rather than disabling everything off a
  * transient error. We say so plainly instead of presenting unverified usability
- * as truth. A SEMANTIC info indicator (not the amber action accent), dismissible
+ * as truth. A SEMANTIC info indicator (not the sky-blue action accent), dismissible
  * by the user. Reduced-motion safe (no animation); keyboard + SR reachable.
  */
 function ProviderStatusBanner() {
@@ -470,7 +470,7 @@ function ProviderStatusBanner() {
 
 /**
  * Serving provider · context window · active-model capabilities · model count,
- * as quiet metadata. No amber decoration. Capabilities + the effective context
+ * as quiet metadata. No accent decoration. Capabilities + the effective context
  * window come from stock's `/api/model/info`; a chip is shown only when its
  * capability is true. The context window is humanized ("200K").
  */
@@ -557,7 +557,7 @@ function ModelRow({
       data-testid={`model-row-${model.id}`}
       data-active={model.active ? 'true' : 'false'}
       className={cn(
-        // active rows carry a 3px left amber accent bar via ::before
+        // active rows carry a 3px left sky-blue accent bar via ::before
         'relative flex items-center justify-between gap-3 overflow-hidden rounded-md px-4 py-3 transition-colors',
         model.active
           ? "bg-primary/[0.07] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-primary before:content-['']"
@@ -605,7 +605,7 @@ function ModelRow({
 /**
  * The Models page's primary action on a non-active row: switch the active model
  * (the previously-missing affordance). A USABLE model gets a real "Set as active"
- * button (the single amber action accent); a NON-usable model is honestly
+ * button (the single sky-blue action accent); a NON-usable model is honestly
  * DISABLED with a "Connect <provider>" label — never a switch that can only fail.
  */
 function SetActiveButton({

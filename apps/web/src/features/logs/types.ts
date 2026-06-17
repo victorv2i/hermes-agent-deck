@@ -22,7 +22,7 @@ export const MAX_RENDERED_LINES = 500
 
 /**
  * Map a parsed level to its governed Tailwind text color. Semantic tokens ONLY
- * (color = status), never the amber action accent: error/critical →
+ * (color = status), never the sky-blue action accent: error/critical →
  * destructive, warn → warning, info → info-muted, debug/unknown → quiet.
  */
 export function levelTextClass(level: LogLevel): string {

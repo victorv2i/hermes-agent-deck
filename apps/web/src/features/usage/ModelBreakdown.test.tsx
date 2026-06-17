@@ -20,8 +20,8 @@ const TWO_MODELS: UsageModelBreakdown[] = [
   },
 ]
 
-describe('ModelBreakdown — share-of-total honesty (INFO-ACC-1)', () => {
-  it('shows share-of-TOTAL — each % adds up to ≤100% (never >100 as with share-of-peak)', () => {
+describe('ModelBreakdown – share-of-total honesty (INFO-ACC-1)', () => {
+  it('shows share-of-TOTAL – each % adds up to ≤100% (never >100 as with share-of-peak)', () => {
     render(<ModelBreakdown byModel={TWO_MODELS} />)
     // total tokens: opus=1_000_000, sonnet=500_000, grand total=1_500_000
     // opus share = 1_000_000 / 1_500_000 = 66.7% → rounds to 67
@@ -32,7 +32,7 @@ describe('ModelBreakdown — share-of-total honesty (INFO-ACC-1)', () => {
     const sum = pcts.reduce((a, b) => a + b, 0)
     expect(sum).toBeLessThanOrEqual(100)
 
-    // The widest bar (opus) is NOT forced to 100% — it shows real share.
+    // The widest bar (opus) is NOT forced to 100% – it shows real share.
     expect(pcts[0]).toBe(67)
     expect(pcts[1]).toBe(33)
   })
@@ -59,7 +59,7 @@ describe('ModelBreakdown — share-of-total honesty (INFO-ACC-1)', () => {
 
   it('renders a provider logo beside each model name row', () => {
     render(<ModelBreakdown byModel={TWO_MODELS} />)
-    // Each row should have an svg (provider brand icon) — could be a real mark or monogram
+    // Each row should have an svg (provider brand icon) – could be a real mark or monogram
     const rows = screen.getAllByTestId('model-share-pct')
     // We just need at least one model row with a brand icon present in the list
     expect(rows.length).toBeGreaterThan(0)

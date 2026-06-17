@@ -1,21 +1,25 @@
 /**
- * Density — a power-user spacing control (Comfortable / Compact).
+ * Density — a spacing control (Compact / Comfortable).
  *
- * Spacious-by-default is the brand (design-language §1: "mostly whitespace"); a
- * driver with 50+ sessions wants more rows per screen. This is opt-in and lives
- * in Settings (T-E1 / P6).
+ * COMPACT is now the default — a dense, pro-desktop read (tighter rows, cards,
+ * headers, prose) that fits more per screen. A user who prefers the airier,
+ * spacious feel can switch to Comfortable in Settings (T-E1 / P6). The choice
+ * persists and the Comfortable option is fully reversible — it simply removes
+ * the compact attribute, restoring the airy baseline tokens untouched.
  *
  * It is deliberately self-contained — no React provider, no edit to the app
  * shell. The chosen density is persisted to localStorage and reflected as a
- * `data-density="compact"` attribute on <html> (the comfortable default carries
- * NO attribute, so the resting DOM is clean and the existing tokens are the
- * baseline). A matching scoped CSS block (`./density.css`, imported here so it
- * ships wherever this module is used) reacts to that attribute via stable
+ * `data-density="compact"` attribute on <html> (Comfortable carries NO
+ * attribute, so the airy baseline rests clean and the existing tokens apply).
+ * A matching scoped CSS block (`./density.css`, imported here so it ships
+ * wherever this module is used) reacts to that attribute via stable
  * design-system selectors only — it never broadly rewrites the token sheet.
  *
- * The attribute is also set before paint by a tiny inline guard in index.html
- * (mirroring the theme-flash guard) so there is no comfortable→compact flash on
- * load. This module is the single source of truth at runtime.
+ * Because COMPACT is the default, the attribute is stamped UNLESS the user has
+ * explicitly stored 'comfortable'. The pre-paint inline guard in index.html
+ * mirrors this (stamps compact unless the stored value is 'comfortable') so
+ * there is no flash on load. This module is the single source of truth at
+ * runtime.
  */
 import { useSyncExternalStore } from 'react'
 import './density.css'
@@ -24,7 +28,8 @@ export type Density = 'comfortable' | 'compact'
 
 export const DENSITY_STORAGE_KEY = 'agent-deck-density'
 
-const DEFAULT_DENSITY: Density = 'comfortable'
+/** Compact is the default read; Comfortable is the opt-in airier mode. */
+const DEFAULT_DENSITY: Density = 'compact'
 
 function isDensity(value: unknown): value is Density {
   return value === 'comfortable' || value === 'compact'
@@ -38,9 +43,9 @@ export function readStoredDensity(): Density | null {
 }
 
 /**
- * Reflect a density on <html>. Compact stamps `data-density="compact"`;
- * comfortable (the baseline) removes the attribute so the DOM rests clean and
- * the default tokens apply untouched.
+ * Reflect a density on <html>. Compact (the default) stamps
+ * `data-density="compact"`; comfortable removes the attribute so the airier
+ * baseline tokens apply untouched.
  */
 export function applyDensity(density: Density): void {
   if (typeof document === 'undefined') return

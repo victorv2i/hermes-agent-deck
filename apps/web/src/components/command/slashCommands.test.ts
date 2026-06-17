@@ -46,8 +46,24 @@ describe('filterSlashCommands', () => {
     expect(filterSlashCommands('zzzzz')).toHaveLength(0)
   })
 
-  it('exposes the four expected UI commands', () => {
-    expect(SLASH_COMMANDS.map((c) => c.id).sort()).toEqual(['clear', 'model', 'new', 'theme'])
+  it('exposes the expected command set (all local UI actions, no agent passthrough)', () => {
+    expect(SLASH_COMMANDS.map((c) => c.id).sort()).toEqual(['clear', 'model', 'new', 'theme', 'usage'])
+  })
+
+  it('does NOT offer a compaction command — the gateway does not act on slash text', () => {
+    // `/compact` + `/compress` are interactive-TUI-only; sending them through the
+    // run path would deliver text the agent never acts on (theater), so the menu
+    // omits them entirely rather than fake the capability.
+    const ids = SLASH_COMMANDS.map((c) => c.id)
+    expect(ids).not.toContain('compact')
+    expect(ids).not.toContain('compress')
+    expect(filterSlashCommands('compact')).toHaveLength(0)
+    expect(filterSlashCommands('compress')).toHaveLength(0)
+  })
+
+  it('finds /usage by name and by cost-related keywords', () => {
+    expect(filterSlashCommands('usage').map((c) => c.id)).toContain('usage')
+    expect(filterSlashCommands('cost').map((c) => c.id)).toContain('usage')
   })
 
   it('no longer offers the retired Run-panel command', () => {
