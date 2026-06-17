@@ -21,6 +21,8 @@ import {
   type ViewMode,
 } from './terminalSessions'
 import { PaneGrid, type GridPane } from './PaneGrid'
+import { PaneAwarenessChip } from './PaneAwarenessChip'
+import { isAwareCli } from './usePaneState'
 import type { DetectedCli } from './useTerminalClis'
 import type { CliId } from './useTerminalClis'
 import type { TerminalViewProps } from './TerminalView'
@@ -200,6 +202,9 @@ export function ScratchPaneController({
       onActiveStatusChange={onActiveStatusChange}
       onActiveClearReady={onActiveClearReady}
       onActiveRestartReady={onActiveRestartReady}
+      renderPaneAside={(pane) =>
+        isAwareCli(pane.cli) ? <PaneAwarenessChip cli={pane.cli} cwd={pane.cwd} /> : null
+      }
     />
   )
 }

@@ -2,10 +2,11 @@ import { ArrowUpCircle, HelpCircle, Loader2, Users, WifiOff } from 'lucide-react
 import type { AgentDeckPlatform, PlatformState } from '@agent-deck/protocol'
 import { StatusDot, type StatusTone } from '@/components/ui/StatusDot'
 import { useStatus } from './useStatus'
+import { ActivePanesRow } from './ActivePanesRow'
 
 /**
  * The "Active recently" band — a cross-source fleet view on the Home dashboard.
- * Agent Deck's chat surface only sees the LOCAL web run, but a hermes operator
+ * Agentdeck's chat surface only sees the LOCAL web run, but a hermes operator
  * also drives the same agent from telegram / cron / cli. The dashboard's
  * `/api/status` knows WHICH sources are connected and HOW MANY sessions are
  * active — but it CANNOT enumerate individual cross-source runs, so this band is
@@ -58,12 +59,14 @@ export function ActiveRecentlyBand({ enabled = true }: { enabled?: boolean }) {
   // activity right now" — render the same calm, honest down state.
   if (isError || !data || !data.gatewayRunning) {
     return (
-      <div
-        className="flex items-center gap-2 px-1 py-1 text-[12px] text-foreground-tertiary"
-        data-testid="active-recently-gateway-down"
-      >
-        <WifiOff className="size-3.5 text-muted-foreground" aria-hidden />
-        Your agent isn’t running; cross-source activity is unavailable.
+      <div className="space-y-2" data-testid="active-recently-gateway-down">
+        <div className="flex items-center gap-2 px-1 py-1 text-[12px] text-foreground-tertiary">
+          <WifiOff className="size-3.5 text-muted-foreground" aria-hidden />
+          Your agent isn’t running; cross-source activity is unavailable.
+        </div>
+        {/* Terminal panes don't need the Hermes gateway, so still surface any
+            agent panes working in saved workspaces. */}
+        <ActivePanesRow enabled={enabled} />
       </div>
     )
   }
@@ -101,6 +104,11 @@ export function ActiveRecentlyBand({ enabled = true }: { enabled?: boolean }) {
           <ArrowUpCircle className="size-3.5" aria-hidden />A newer config version is available.
         </div>
       )}
+
+      {/* Terminal section: agent panes (Claude Code / Codex) working in saved
+          workspaces, read from each CLI's own transcript. Renders nothing when
+          there's no real pane activity. */}
+      <ActivePanesRow enabled={enabled} />
     </div>
   )
 }

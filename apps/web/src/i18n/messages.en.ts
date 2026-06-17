@@ -46,6 +46,7 @@ export const en = {
   'navigation.item.sessions.label': 'Sessions',
   'navigation.item.files.label': 'Files',
   'navigation.item.kanban.label': 'Board',
+  'navigation.item.runtimes.label': 'Runtimes',
   'navigation.item.jobs.label': 'Tasks',
   'navigation.item.terminal.label': 'Terminal',
   'navigation.item.connections.label': 'Connections',
@@ -85,7 +86,7 @@ export const en = {
 
   // ── App chrome: keyboard shortcuts overlay ────────────────────────────────
   'shortcutsOverlay.title': 'Keyboard shortcuts',
-  'shortcutsOverlay.description': 'Move around Agent Deck without leaving the keyboard.',
+  'shortcutsOverlay.description': 'Move around Agentdeck without leaving the keyboard.',
   'shortcutsOverlay.shortcut.commandPalette': 'Command palette',
   'shortcutsOverlay.shortcut.togglePreviewPanel': 'Toggle the Preview panel',
   'shortcutsOverlay.shortcut.toggleSessionsPane': 'Toggle the sessions pane',
@@ -104,14 +105,14 @@ export const en = {
     "Your in-browser preferences and your agent's configuration. A few safe config fields can be edited here; the rest stays read-only with a pointer to where to change it. Secrets are masked and never leave the server.",
   'settings.group.preferences.title': 'Your preferences',
   'settings.group.preferences.description':
-    "Saved in this browser. They change how Agent Deck looks and behaves for you; they don't touch the agent's configuration.",
+    "Saved in this browser. They change how Agentdeck looks and behaves for you; they don't touch the agent's configuration.",
   'settings.group.agentConfig.title': 'Agent config',
   'settings.group.agentConfig.description':
     "Your agent's configuration, grouped by section. A few safe fields can be edited inline; the rest is read-only.",
 
   // ── Locale switcher (the i18n control itself) ─────────────────────────────
   'settings.locale.title': 'Language',
-  'settings.locale.description': 'The language Agent Deck is shown in. Saved in this browser.',
+  'settings.locale.description': 'The language Agentdeck is shown in. Saved in this browser.',
   'settings.locale.comingSoon': 'More languages coming. Contributions welcome.',
 
   // ── Language display names (one per supported locale) ─────────────────────

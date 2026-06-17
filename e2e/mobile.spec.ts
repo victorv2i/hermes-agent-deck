@@ -177,11 +177,12 @@ test('mobile: tapping a nav item in the slide-over navigates to that surface', a
   const rail = page.locator('nav[aria-label="Sidebar"]').first()
   await expect(rail).toHaveAttribute('data-mobile-open', 'true')
 
-  // Tap the Agents nav link.
-  await rail.getByRole('link', { name: /Agents/i }).click()
+  // Tap a real rail nav link (Agents folded into Home, so use Files — a stable
+  // top-level surface) and assert it navigates there.
+  await rail.getByRole('link', { name: /^Files$/i }).click()
 
-  // The slide-over closes and the Agents page renders.
-  await expect(page.getByRole('heading', { name: /Agents/i })).toBeVisible()
+  // The slide-over navigates to the Files surface (assert by URL, robust to copy).
+  await expect(page).toHaveURL(/\/files$/)
 
   expect(errors).toEqual([])
 })

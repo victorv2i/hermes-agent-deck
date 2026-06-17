@@ -16,8 +16,14 @@
  * {@link ./terminalNamespace}, not a REST route.
  */
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify'
-import type { TerminalSessionsResponse } from '@agent-deck/protocol'
+import {
+  CliIdSchema,
+  type CliId,
+  type PaneRuntimeState,
+  type TerminalSessionsResponse,
+} from '@agent-deck/protocol'
 import { terminalAvailability, type NodePtyLike } from './ptyBridge'
+import { readPaneState as defaultReadPaneState } from './paneAwareness'
 import { detectClis as defaultDetectClis, type DetectedCli } from './cliDetector'
 import {
   tmuxAvailable as defaultTmuxAvailable,
@@ -52,6 +58,12 @@ export interface TerminalRoutesOptions extends FastifyPluginOptions {
   tmuxAvailable?: () => Promise<boolean>
   /** Lister for the tmux server's sessions. Injectable for tests. */
   listTmuxSessions?: () => Promise<TmuxSessionInfo[]>
+  /**
+   * Reader for a pane's live runtime state (run state / active file / last tool),
+   * read from the CLI's own session transcript on disk. Injectable for tests;
+   * defaults to the real {@link readPaneState}.
+   */
+  readPaneState?: (cli: CliId, cwd: string | undefined) => PaneRuntimeState
 }
 
 /** Probe payload the UI consumes (snake_case `cwd_available` per the wire shape). */
@@ -122,6 +134,26 @@ export async function terminalRoutes(
     }))
     return { tmuxAvailable: true, sessions }
   })
+
+  // Pane awareness: what the agent CLI running in a pane is doing right now, read
+  // from the CLI's OWN session transcript (Claude Code today). Polled by the pane
+  // header. A bad cli is a 400; any unreadable/unknown pane is the honest
+  // `unknown` snapshot (never a fabricated activity).
+  const readState = options.readPaneState ?? defaultReadPaneState
+  app.get<{ Querystring: { cli?: string; cwd?: string } }>(
+    '/pane-state',
+    async (req, reply): Promise<PaneRuntimeState | undefined> => {
+      const cli = CliIdSchema.safeParse(req.query.cli)
+      if (!cli.success) {
+        return reply
+          .code(400)
+          .send({ error: 'bad_request', message: 'cli must be one of hermes|claude|codex|shell' })
+      }
+      const cwd =
+        typeof req.query.cwd === 'string' && req.query.cwd.length > 0 ? req.query.cwd : undefined
+      return readState(cli.data, cwd)
+    },
+  )
 }
 
 export default terminalRoutes

@@ -594,27 +594,38 @@ function DoctorSections({ sections }: { sections: HermesDoctorReport['sections']
 function AgentDeckUpdateCard({ agentDeck }: { agentDeck: AgentDeckUpdateState }) {
   const noChannel = agentDeck.status === 'no-channel'
   const version = formatVersion(agentDeck.currentVersion)
+  // Honest per-state copy. `no-channel` = no git remote (a pure local build);
+  // otherwise a remote IS configured, so name the real (manual) update path
+  // accurately instead of mislabeling it a "local build". One-click self-update
+  // stays gated OFF in v1 either way (a self pull+rebuild+restart can clobber
+  // uncommitted local work and risks a live service), so the action is always a
+  // disabled, never-fake-succeeds state with the honest reason shown.
+  const statusText = noChannel
+    ? 'No update channel configured (local build)'
+    : 'Tracked from a git remote'
+  const description = noChannel
+    ? "This app. Self-update isn't available without an update remote; pull and rebuild from the repo to update."
+    : 'This app. Update by pulling and rebuilding from the repo, then restarting the service. One-click self-update is not enabled yet.'
+  const disabledReason = noChannel
+    ? 'No update remote configured (local build)'
+    : 'Update from the repo, then restart the service'
   return (
     <DockCard
       icon={Package}
-      title="Agent Deck"
-      regionLabel="Agent Deck"
+      title="Agentdeck"
+      regionLabel="Agentdeck"
       status={
         <span className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">
-            {noChannel ? 'No update channel configured (local build)' : 'Local build'}
-          </span>
+          <span className="text-muted-foreground">{statusText}</span>
           {version ? (
             <span className="font-mono text-xs text-foreground-tertiary">{version}</span>
           ) : null}
         </span>
       }
-      description="This app. Self-update isn't available on a local build; pull and rebuild from the repo to update."
+      description={description}
       action={
-        // The git flow stays gated OFF in v1, so the action is always disabled —
-        // an honest, never-fake-succeeds state, with the reason shown above.
-        <Button disabled title="No update channel configured (local build)">
-          Update Agent Deck
+        <Button disabled title={disabledReason}>
+          Update Agentdeck
         </Button>
       }
     />

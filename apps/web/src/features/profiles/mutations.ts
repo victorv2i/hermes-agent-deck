@@ -10,9 +10,12 @@
  *   POST /api/agent-deck/profiles/switch   { name }          -> { active }
  *   PUT  /api/agent-deck/profiles/:name/avatar { avatar }    -> { ok }
  *
- * Honest switch: writing `active_profile` does NOT by itself restart the gateway.
- * The mutation result carries the restart-required line; callers surface that
- * and can offer the browser restart route, never a fake success.
+ * Honest switch: with one gateway per profile on its own port, switching is an
+ * endpoint swap the deck applies on the next run — INSTANT, no restart. The switch
+ * response says which case applies (`instant`): when the target agent has its own
+ * reachable gateway it is live immediately; otherwise (one shared gateway) the new
+ * agent applies after a gateway restart. Callers surface the matching honest state,
+ * never a fake success.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AvatarId, SoulPresetId } from '@agent-deck/protocol'
@@ -23,11 +26,20 @@ import { profileKeys } from './useProfiles'
  * The verbatim honest restart line shown after a switch (no fake "switched").
  * Explains the WHY for a non-technical reader: Hermes runs ONE agent at a time, so
  * the new active agent only takes over after a gateway restart. This is a real
- * Hermes constraint (a single active profile + one gateway), not an Agent Deck
+ * Hermes constraint (a single active profile + one gateway), not an Agentdeck
  * limitation — and never implies two agents can run at once.
  */
 export function switchAppliedLine(name: string): string {
   return `Switched to ${name}. Hermes runs one agent at a time, so restart to make ${name} the active agent.`
+}
+
+/**
+ * The verbatim INSTANT-switch line: the target agent has its own running gateway,
+ * so the deck already routes to it — it is active now, no restart. Shown instead
+ * of the restart card when the switch response reports `instant: true`.
+ */
+export function switchInstantLine(name: string): string {
+  return `${name} is the active agent now. Your next message goes to it.`
 }
 
 /**
@@ -59,8 +71,15 @@ export function createProfile(input: CreateProfileInput): Promise<CreatedProfile
   return apiPost<CreatedProfile>('/profiles', input)
 }
 
-export function switchProfile(name: string): Promise<{ active: string }> {
-  return apiPost<{ active: string }>('/profiles/switch', { name })
+export interface SwitchResult {
+  active: string
+  /** True when the target agent has its own reachable gateway, so the switch is
+   * live immediately (an endpoint swap); false when it applies after a restart. */
+  instant: boolean
+}
+
+export function switchProfile(name: string): Promise<SwitchResult> {
+  return apiPost<SwitchResult>('/profiles/switch', { name })
 }
 
 /**

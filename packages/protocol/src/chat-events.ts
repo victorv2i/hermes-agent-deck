@@ -153,6 +153,35 @@ export const ChatServerEvent = z.discriminatedUnion('event', [
 export type ChatServerEvent = z.infer<typeof ChatServerEvent>
 
 // ---------------------------------------------------------------------------
+// Cross-device approval broadcasts (namespace-wide, NOT per-run cursored frames).
+//
+// A run's approval normally reaches only the sockets SUBSCRIBED to that run
+// (the device that started/resumed it). To let ANY connected device learn that
+// an agent is waiting — instantly, not on a slow poll — the BFF also broadcasts
+// these two events to the WHOLE `/chat-run` namespace when a run's approval gate
+// opens and closes. They carry only what a notification + deep link need.
+// ---------------------------------------------------------------------------
+
+/** Socket.IO event name broadcast when any run raises an approval. */
+export const APPROVAL_PENDING_EVENT = 'approval.pending'
+/** Socket.IO event name broadcast when a run's approval gate resolves or the run
+ * ends (so a cross-device "needs approval" badge clears). */
+export const APPROVAL_CLEARED_EVENT = 'approval.cleared'
+
+export const ApprovalPendingBroadcast = z.object({
+  run_id: z.string(),
+  session_id: z.string().optional(),
+  command: z.string().optional(),
+  description: z.string().optional(),
+})
+export type ApprovalPendingBroadcast = z.infer<typeof ApprovalPendingBroadcast>
+
+export const ApprovalClearedBroadcast = z.object({
+  run_id: z.string(),
+})
+export type ApprovalClearedBroadcast = z.infer<typeof ApprovalClearedBroadcast>
+
+// ---------------------------------------------------------------------------
 // Client → BFF commands (the durable `/chat-run` Socket.IO surface).
 // ---------------------------------------------------------------------------
 

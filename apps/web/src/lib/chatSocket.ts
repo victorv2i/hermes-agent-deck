@@ -24,6 +24,10 @@ import {
   ResumeCommand,
   AbortCommand,
   ApprovalRespondCommand,
+  ApprovalPendingBroadcast,
+  ApprovalClearedBroadcast,
+  APPROVAL_PENDING_EVENT,
+  APPROVAL_CLEARED_EVENT,
 } from '@agent-deck/protocol'
 import { socketAuth } from './authToken'
 
@@ -179,6 +183,16 @@ export interface ChatSocketCallbacks {
    * recovers. Use this to surface a visible error to the user.
    */
   onConnectionError?: (error: ConnectionError) => void
+  /**
+   * Optional: a NAMESPACE-wide approval broadcast — ANY run (not just the one
+   * this socket tails) opened an approval gate. Cross-device push: a device that
+   * never started/resumed the run still learns instantly that an agent is
+   * waiting. Outside the per-run cursored stream entirely.
+   */
+  onApprovalPending?: (info: ApprovalPendingBroadcast) => void
+  /** Optional: the matching close — a broadcast run's gate resolved or its run
+   * ended (so a cross-device "needs approval" badge can clear). */
+  onApprovalCleared?: (info: ApprovalClearedBroadcast) => void
 }
 
 /**
@@ -316,6 +330,8 @@ export class ChatSocket {
   dispose(): void {
     this.disposed = true
     for (const name of SERVER_EVENT_NAMES) this.socket.off(name)
+    this.socket.off(APPROVAL_PENDING_EVENT)
+    this.socket.off(APPROVAL_CLEARED_EVENT)
     this.socket.off('connect')
     this.socket.off('disconnect')
     this.socket.off('command.error')
@@ -374,6 +390,18 @@ export class ChatSocket {
     for (const name of SERVER_EVENT_NAMES) {
       this.socket.on(name, (...args: unknown[]) => this.handleFrame(args[0]))
     }
+
+    // Namespace-wide approval broadcasts (cross-device push) — validated, then
+    // forwarded raw. They are NOT cursored run frames, so they bypass handleFrame
+    // and never touch the resume anchor or active-run tracking.
+    this.socket.on(APPROVAL_PENDING_EVENT, (...args: unknown[]) => {
+      const parsed = ApprovalPendingBroadcast.safeParse(args[0])
+      if (parsed.success) this.callbacks.onApprovalPending?.(parsed.data)
+    })
+    this.socket.on(APPROVAL_CLEARED_EVENT, (...args: unknown[]) => {
+      const parsed = ApprovalClearedBroadcast.safeParse(args[0])
+      if (parsed.success) this.callbacks.onApprovalCleared?.(parsed.data)
+    })
   }
 
   /** A terminal disconnect: report offline AND raise a recoverable-only-by-

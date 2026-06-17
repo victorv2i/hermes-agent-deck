@@ -99,7 +99,7 @@ export function FirstChatRung({
       {offline ? (
         <div className="grid gap-3">
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Your agent is not running yet. Agent Deck can request a gateway restart for you.
+            Your agent is not running yet. Agentdeck can request a gateway restart for you.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button
@@ -195,8 +195,8 @@ export function FirstChatRung({
 function BookmarkHint({ deckUrl }: { deckUrl: string }) {
   return (
     <p className="text-xs leading-relaxed text-foreground-tertiary">
-      Bookmark <code className="font-mono text-foreground">{deckUrl}</code>. Reopen it while Agent
-      Deck is running; on a phone, bookmark your Tailscale HTTPS URL instead.
+      Bookmark <code className="font-mono text-foreground">{deckUrl}</code>. Reopen it while
+      Agentdeck is running; on a phone, bookmark your Tailscale HTTPS URL instead.
     </p>
   )
 }

@@ -16,7 +16,13 @@ import {
   isGatedApiPath,
   type AuthConfig,
 } from './auth/auth'
-import { GatewayClient, type GatewayClientLike } from './hermes/gatewayClient'
+import { type GatewayClientLike } from './hermes/gatewayClient'
+import {
+  GatewayRouter,
+  resolveActiveGatewayEndpoint,
+  resolveGatewayEndpointForProfile,
+  parseGatewayPortOverrides,
+} from './hermes/gatewayRouter'
 import { DashboardClient } from './hermes/dashboardClient'
 import { StatusClient } from './hermes/statusClient'
 import { registerStatusRoutes } from './hermes/statusRoute'
@@ -59,12 +65,13 @@ import { registerCuratorRoute } from './system/curatorRoute'
 import { registerMemoryProviderRoute } from './profiles/memoryProviderRoute'
 import { registerStudioRoutes } from './profiles/studioRoute'
 import { registerProviderValidateRoute } from './settings/providerValidateRoute'
+import { registerRuntimesRoute } from './runtimes/runtimesRoute'
 
 const HEALTH_PROBE_TIMEOUT_MS = 1_500
 
 /**
  * The agent-deck version, read from this package's package.json — the single
- * source of truth for the `/health` and System "Agent Deck" version (was a
+ * source of truth for the `/health` and System "Agentdeck" version (was a
  * hardcoded "0.1.0" literal in two places, which would silently lie after a
  * version bump). `createRequire` loads the JSON in ESM without import attributes
  * and resolves the same path under tsx (src) and tsc-emit (dist).
@@ -352,7 +359,14 @@ export async function buildApp(
   })
 
   app.get('/api/agent-deck/health', async (): Promise<HealthResponse> => {
-    const hermes = await probeHermesGateway(config.hermesGatewayUrl)
+    // Probe the ACTIVE profile's gateway, not a fixed startup URL — so after a
+    // profile switch (an endpoint swap, no restart) health reflects the gateway
+    // chat is actually routing to.
+    const endpoint = resolveActiveGatewayEndpoint({
+      hermesHome: config.hermesHome,
+      fallbackUrl: config.hermesGatewayUrl,
+    })
+    const hermes = await probeHermesGateway(endpoint)
     return {
       status: hermes.reachable ? 'ok' : 'degraded',
       hermes,
@@ -405,6 +419,17 @@ export async function buildApp(
         return null
       }
     },
+    // Instant-switch assessment: does the target agent have its OWN reachable
+    // gateway on a distinct port? Then a switch is an endpoint swap (no restart).
+    resolveGatewayEndpoint: (profile) =>
+      resolveGatewayEndpointForProfile(profile, {
+        env: process.env,
+        hermesHome: config.hermesHome,
+        fallbackUrl: config.hermesGatewayUrl,
+        portOverrides: parseGatewayPortOverrides(process.env.AGENT_DECK_GATEWAY_PORTS),
+      }),
+    defaultGatewayEndpoint: config.hermesGatewayUrl,
+    probeGateway: async (endpoint) => (await probeHermesGateway(endpoint)).reachable,
   })
   // Profile export/import: guarded `hermes profile export|import` (argv, no shell),
   // streaming the .tar.gz for download and accepting a base64 upload to import.
@@ -441,7 +466,7 @@ export async function buildApp(
   // three frontend tabs + tests all shipped, but this registration was missing, so
   // the Pairing/Webhooks/Credentials tabs 404'd for every user — now wired.
   await app.register(registerConnectionsRoutes, { dashboard })
-  // Agent Deck's OWN project/tag metadata store (server-side JSON under
+  // Agentdeck's OWN project/tag metadata store (server-side JSON under
   // <HERMES_HOME>/agent-deck/organization.json) — not a dashboard proxy; it
   // syncs across the user's devices that drive this one bind over Tailscale.
   await app.register(registerOrganizationRoutes, {
@@ -516,6 +541,11 @@ export async function buildApp(
   // Provider validate: live-probe a credential before saving
   // (POST /api/providers/validate, web_server.py:1974). Fails open on network error.
   await registerProviderValidateRoute(app, { dashboard })
+
+  // Unified runtimes: one history across Hermes (wraps the dashboard sessions) +
+  // the READ-ONLY Claude Code / Codex adapters (their on-disk transcripts). Powers
+  // the cross-runtime session history + its source filter.
+  await registerRuntimesRoute(app, { dashboard })
 
   // Surfaces that declare relative paths register under the BFF prefix. One
   // FilesService is shared so the terminal cwd gate consults the SAME derived
@@ -634,15 +664,32 @@ async function registerWebClient(app: FastifyInstance, root: string): Promise<vo
 export function attachChat(
   app: FastifyInstance,
   config: ServerConfig = loadConfig(),
-  /** Inject a gateway client (e.g. the in-process mock for hermetic e2e).
-   * Defaults to a real {@link GatewayClient} bound to the configured gateway. */
-  gateway: GatewayClientLike = new GatewayClient({
-    hermesGatewayUrl: config.hermesGatewayUrl,
-    hermesApiKey: config.hermesApiKey,
-  }),
+  /** Inject a single gateway client (e.g. the in-process mock for hermetic e2e):
+   * when provided it is PINNED for every run, bypassing per-profile routing.
+   * Omitted (production) → a {@link GatewayRouter} routes each run to the active
+   * profile's gateway, so switching agents is an endpoint swap with no restart. */
+  gateway?: GatewayClientLike,
   /** Auth posture for the bind; defaults to {@link resolveAuth} over the host. */
   auth: AuthConfig = resolveAuth(config.host),
 ): SocketIOServer {
+  // No injected client → route per active profile. An injected client (mock)
+  // pins to itself so the hermetic harnesses keep their single scripted gateway.
+  let resolveGateway: () => GatewayClientLike
+  let defaultGateway: GatewayClientLike
+  if (gateway) {
+    const injected = gateway
+    resolveGateway = () => injected
+    defaultGateway = injected
+  } else {
+    const router = new GatewayRouter({
+      hermesHome: config.hermesHome,
+      fallbackUrl: config.hermesGatewayUrl,
+      fallbackApiKey: config.hermesApiKey,
+    })
+    resolveGateway = () => router.resolveActive().client
+    defaultGateway = resolveGateway()
+  }
+
   const io = new SocketIOServer(app.server, {
     cors: {
       origin: (origin, cb) => cb(null, isAllowedOrigin(origin, config.host, config.trustedHosts)),
@@ -660,6 +707,6 @@ export function attachChat(
     // a frame exceeds this (defence-in-depth; the HTTP gate is the primary guard).
     maxHttpBufferSize: DEFAULT_SOCKET_BUFFER_SIZE,
   })
-  registerChatRunHandlers(io, { gateway, auth })
+  registerChatRunHandlers(io, { gateway: defaultGateway, resolveGateway, auth })
   return io
 }

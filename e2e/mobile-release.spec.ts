@@ -260,11 +260,12 @@ test('mobile-release: no horizontal scroll on the main surfaces', async ({ page 
   await expectNoHorizontalScroll(page)
 
   // Secondary surface, reached the way a phone user does — via the slide-over.
+  // (Agents folded into Home, so navigate to Files — a stable top-level surface.)
   await page.getByRole('button', { name: /open navigation/i }).click()
   const rail = page.locator('nav[aria-label="Sidebar"]').first()
   await expect(rail).toHaveAttribute('data-mobile-open', 'true')
-  await rail.getByRole('link', { name: /Agents/i }).click()
-  await expect(page.getByRole('heading', { name: /Agents/i })).toBeVisible()
+  await rail.getByRole('link', { name: /^Files$/i }).click()
+  await expect(page).toHaveURL(/\/files$/)
   await expectNoHorizontalScroll(page)
 
   expect(errors).toEqual([])

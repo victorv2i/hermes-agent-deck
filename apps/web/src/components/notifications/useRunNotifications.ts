@@ -20,6 +20,7 @@
 import { useEffect } from 'react'
 import type { AvatarId } from '@agent-deck/protocol'
 import { useChatStore } from '@/state/useChatStore'
+import { useApprovalInbox } from '@/state/useApprovalInbox'
 import { CHAT_PATH } from '@/app/navigation'
 import { toast as defaultToast } from '@/lib/toast'
 import {
@@ -193,8 +194,28 @@ export function useRunNotifications(options: UseRunNotificationsOptions = {}): v
       prevApprovalId = approvalId
     })
 
+    // CROSS-DEVICE approval push: the inbox holds approvals raised by runs this
+    // device is NOT tailing (started elsewhere, or a cron/telegram run). They are
+    // never on this screen, so — unlike the local path above — they are NOT gated
+    // by `isViewingChat`: a fresh inbox entry always notifies (subject only to the
+    // operator's on/off toggle). Fire once per run id.
+    let knownInboxRuns = new Set(Object.keys(useApprovalInbox.getState().pending))
+    const unsubscribeInbox = useApprovalInbox.subscribe((state) => {
+      const current = state.pending
+      const nextKnown = new Set(Object.keys(current))
+      if (isEnabled()) {
+        for (const runId of nextKnown) {
+          if (knownInboxRuns.has(runId)) continue
+          const entry = current[runId]
+          emit(buildRunNotice('approval', { ...agentNotice(), detail: entry?.command }))
+        }
+      }
+      knownInboxRuns = nextKnown
+    })
+
     return () => {
       unsubscribe()
+      unsubscribeInbox()
       window.removeEventListener('focus', restoreTitle)
       document.removeEventListener('visibilitychange', onVisible)
       // Leave the title restored on teardown so we never strand a badge.

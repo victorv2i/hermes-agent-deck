@@ -57,6 +57,29 @@ describe('SwitchAgentButton (honest switch)', () => {
     expect(screen.getByText(/your agent reports/i)).toHaveTextContent(/running/i)
   })
 
+  it('shows an instant "active now" confirmation (no restart) when the agent has its own gateway', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () => ({ active: 'atlas', instant: true }),
+        }) as Response,
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderIt(<SwitchAgentButton name="atlas" />)
+    await user.click(screen.getByRole('button', { name: /switch to this agent/i }))
+
+    await waitFor(() =>
+      expect(screen.getByText(/atlas is the active agent now/i)).toBeInTheDocument(),
+    )
+    // Instant means NO restart affordance and NO restart-required copy.
+    expect(screen.queryByRole('button', { name: /restart your agent/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/one agent at a time/i)).not.toBeInTheDocument()
+  })
+
   it('offers the restart command only as a fallback when browser restart fails', async () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)

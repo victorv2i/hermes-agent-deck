@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import { ArrowLeftRight } from 'lucide-react'
+import { ArrowLeftRight, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { toast } from '@/lib/toast'
 import { GatewayRestartCard } from './GatewayRestartCard'
-import { useSwitchProfile, switchAppliedLine, SWITCH_RESTART_NOTE } from './mutations'
+import {
+  useSwitchProfile,
+  switchAppliedLine,
+  switchInstantLine,
+  SWITCH_RESTART_NOTE,
+} from './mutations'
 
 /**
  * SwitchAgentButton — the ONE honest switch affordance (Agents hub list + detail).
@@ -29,12 +35,12 @@ export function SwitchAgentButton({
   onApplied?: () => void
 }) {
   const switchProfile = useSwitchProfile()
-  const [applied, setApplied] = useState(false)
+  const [applied, setApplied] = useState<{ instant: boolean } | null>(null)
 
   async function handleSwitch() {
     try {
-      await switchProfile.mutateAsync(name)
-      setApplied(true)
+      const result = await switchProfile.mutateAsync(name)
+      setApplied({ instant: result.instant })
       onApplied?.()
     } catch (err) {
       toast.error('Couldn’t set the active agent', {
@@ -44,6 +50,20 @@ export function SwitchAgentButton({
   }
 
   if (applied) {
+    // Instant: the agent has its own reachable gateway, so it is live now — a calm
+    // confirmation, NOT the restart card.
+    if (applied.instant) {
+      return (
+        <p
+          className={cn('flex items-center gap-2 text-sm text-foreground-secondary', className)}
+          role="status"
+        >
+          <Check className="size-4 shrink-0 text-primary" aria-hidden />
+          {switchInstantLine(name)}
+        </p>
+      )
+    }
+    // Single shared gateway: honest restart-required state.
     return (
       <GatewayRestartCard
         message={switchAppliedLine(name)}

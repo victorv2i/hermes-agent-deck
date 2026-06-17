@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useChatStore } from '@/state/useChatStore'
+import { useApprovalInbox } from '@/state/useApprovalInbox'
 import { initialChatState, type PendingApproval } from '@/state/chatStore'
 import { setNotificationsEnabled } from './notificationPref'
 import { useRunNotifications } from './useRunNotifications'
@@ -53,10 +54,12 @@ describe('useRunNotifications', () => {
     viewingChat = true
     setNotificationsEnabled(true)
     useChatStore.setState({ ...initialChatState })
+    useApprovalInbox.getState().reset()
   })
   afterEach(() => {
     setNotificationsEnabled(true)
     useChatStore.setState({ ...initialChatState })
+    useApprovalInbox.getState().reset()
   })
 
   it('stays silent when the operator is viewing chat in the foreground', () => {
@@ -254,5 +257,48 @@ describe('useRunNotifications', () => {
       useChatStore.setState({ runStatus: 'idle' })
     })
     expect(toast.success).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useRunNotifications — cross-device approval inbox', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    notifier.ensurePermission.mockResolvedValue(true)
+    setNotificationsEnabled(true)
+    useApprovalInbox.getState().reset()
+  })
+  afterEach(() => {
+    useApprovalInbox.getState().reset()
+  })
+
+  it('notifies on a NEW inbox approval even while viewing chat (it is a different run)', async () => {
+    viewingChat = true
+    mount()
+    await act(async () => {
+      useApprovalInbox.getState().markPending({ runId: 'run_elsewhere', command: 'deploy' })
+    })
+    // Fires despite viewingChat — the cross-device approval is for a run not on screen.
+    expect(toast.warning).toHaveBeenCalledTimes(1)
+    expect(notifier.notify).toHaveBeenCalledTimes(1)
+  })
+
+  it('fires once per run id (a repeat broadcast for the same run is idempotent)', async () => {
+    viewingChat = false
+    mount()
+    await act(async () => {
+      useApprovalInbox.getState().markPending({ runId: 'run_a', command: 'x' })
+      useApprovalInbox.getState().markPending({ runId: 'run_a', command: 'x' })
+    })
+    expect(toast.warning).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays silent for inbox approvals when notifications are disabled', async () => {
+    setNotificationsEnabled(false)
+    mount()
+    await act(async () => {
+      useApprovalInbox.getState().markPending({ runId: 'run_b', command: 'y' })
+    })
+    expect(toast.warning).not.toHaveBeenCalled()
+    expect(notifier.notify).not.toHaveBeenCalled()
   })
 })

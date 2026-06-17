@@ -17,6 +17,7 @@ import { GatewayRestartCard } from '@/features/profiles/GatewayRestartCard'
 import {
   useSwitchProfile,
   switchAppliedLine,
+  switchInstantLine,
   SWITCH_RESTART_NOTE,
 } from '@/features/profiles/mutations'
 import { NewAgentDialog } from '@/features/profiles/NewAgentDialog'
@@ -47,7 +48,9 @@ export function ProfileSwitcher({
 }) {
   const navigate = useNavigate()
   const switchProfile = useSwitchProfile()
-  const [pendingSwitch, setPendingSwitch] = useState<string | null>(null)
+  const [pendingSwitch, setPendingSwitch] = useState<{ name: string; instant: boolean } | null>(
+    null,
+  )
   const [creating, setCreating] = useState(false)
 
   // Active first, then the rest in their natural order.
@@ -65,8 +68,8 @@ export function ProfileSwitcher({
       return
     }
     try {
-      await switchProfile.mutateAsync(profile.name)
-      setPendingSwitch(profile.name)
+      const result = await switchProfile.mutateAsync(profile.name)
+      setPendingSwitch({ name: profile.name, instant: result.instant })
     } catch (err) {
       toast.error("Couldn't set the active agent", {
         description: err instanceof Error ? err.message : 'Please try again.',
@@ -88,7 +91,7 @@ export function ProfileSwitcher({
             <DialogDescription>
               {single
                 ? 'Open your agent, or create another.'
-                : 'Pick the active agent. It takes over after a gateway restart.'}
+                : 'Pick the active agent. If it has its own gateway running it takes over instantly; otherwise after a gateway restart.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -133,14 +136,24 @@ export function ProfileSwitcher({
             })}
           </ul>
 
-          {/* Honest post-switch status: the restart-required line + the WHY (one
-              agent at a time) + a real browser restart. */}
-          {pendingSwitch && (
-            <GatewayRestartCard
-              message={switchAppliedLine(pendingSwitch)}
-              note={SWITCH_RESTART_NOTE}
-            />
-          )}
+          {/* Honest post-switch status. Instant (the agent has its own reachable
+              gateway) → a calm "active now" line. Otherwise → the restart-required
+              line + the WHY (one agent at a time) + a real browser restart. */}
+          {pendingSwitch &&
+            (pendingSwitch.instant ? (
+              <p
+                className="flex items-center gap-2 text-sm text-foreground-secondary"
+                role="status"
+              >
+                <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                {switchInstantLine(pendingSwitch.name)}
+              </p>
+            ) : (
+              <GatewayRestartCard
+                message={switchAppliedLine(pendingSwitch.name)}
+                note={SWITCH_RESTART_NOTE}
+              />
+            ))}
 
           {/* The always-present, never-pushy grow path (calm at N=1). */}
           <div className="flex items-center justify-between gap-2 border-t border-border pt-3">

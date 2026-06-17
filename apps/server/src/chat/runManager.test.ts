@@ -421,3 +421,80 @@ describe('mapGatewayEvent — unknown terminal event catch-all', () => {
     expect(terminal?.event).toBe('run.failed')
   })
 })
+
+/**
+ * Cross-device approval push: the manager notifies `onApprovalChange` when a
+ * run's approval gate opens and closes, so the chat namespace can broadcast it to
+ * every connected device (not just the run's tail).
+ */
+describe('RunManager approval-change signal', () => {
+  it('signals pending on approval.request and cleared on approval.responded', async () => {
+    const gateway = new ScriptedGateway()
+    const changes: Array<{ kind: string; runId: string; command?: string; description?: string }> =
+      []
+    const manager = new RunManager(gateway, new RunStore(), {
+      onApprovalChange: (c) => changes.push(c),
+    })
+
+    manager.start('r1')
+    gateway.stream('r1').push({
+      event: 'approval.request',
+      run_id: 'r1',
+      command: 'rm -rf ./build',
+      description: 'delete build',
+      choices: ['once', 'deny'],
+    })
+    await settle()
+    expect(changes).toEqual([
+      { kind: 'pending', runId: 'r1', command: 'rm -rf ./build', description: 'delete build' },
+    ])
+
+    gateway.stream('r1').push({
+      event: 'approval.responded',
+      run_id: 'r1',
+      choice: 'once',
+    })
+    gateway.stream('r1').push({ event: 'run.completed', run_id: 'r1' })
+    await settle()
+    // Cleared fires exactly once (on responded) — the terminal frame's catch-all
+    // clear is a no-op because the gate is already closed.
+    expect(changes.filter((c) => c.kind === 'cleared')).toEqual([{ kind: 'cleared', runId: 'r1' }])
+  })
+
+  it('clears a still-open approval when the run ends without an explicit response', async () => {
+    const gateway = new ScriptedGateway()
+    const changes: Array<{ kind: string; runId: string }> = []
+    const manager = new RunManager(gateway, new RunStore(), {
+      onApprovalChange: (c) => changes.push({ kind: c.kind, runId: c.runId }),
+    })
+
+    manager.start('r1')
+    gateway.stream('r1').push({
+      event: 'approval.request',
+      run_id: 'r1',
+      command: 'noop',
+      description: 'gate',
+      choices: ['once', 'deny'],
+    })
+    gateway.stream('r1').push({ event: 'run.cancelled', run_id: 'r1' })
+    await settle()
+    expect(changes).toEqual([
+      { kind: 'pending', runId: 'r1' },
+      { kind: 'cleared', runId: 'r1' },
+    ])
+  })
+
+  it('stays silent for a run that completes with no approval', async () => {
+    const gateway = new ScriptedGateway()
+    const changes: unknown[] = []
+    const manager = new RunManager(gateway, new RunStore(), {
+      onApprovalChange: (c) => changes.push(c),
+    })
+
+    manager.start('r1')
+    gateway.stream('r1').push({ event: 'message.delta', run_id: 'r1', delta: 'hi' })
+    gateway.stream('r1').push({ event: 'run.completed', run_id: 'r1' })
+    await settle()
+    expect(changes).toEqual([])
+  })
+})

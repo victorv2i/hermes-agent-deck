@@ -22,7 +22,7 @@ import {
 /**
  * Filesystem reader for Hermes profiles. Stock Hermes exposes a minimal
  * dashboard `/api/profiles` route today, but it returns absolute filesystem
- * paths and omits Agent Deck-specific fields. This surface reads HERMES_HOME
+ * paths and omits Agentdeck-specific fields. This surface reads HERMES_HOME
  * directly so the browser contract stays path-safe and complete.
  *
  * The shape is a faithful, read-only port of hermes_cli/profiles.py:
@@ -228,7 +228,7 @@ function summarize(name: string, dir: string, isDefault: boolean, active: string
 }
 
 /** Read the sticky active profile name. Mirrors `get_active_profile`. */
-function readActiveProfile(hermesHome: string): string {
+export function readActiveProfile(hermesHome: string): string {
   try {
     const name = readFileSync(join(hermesHome, 'active_profile'), 'utf8').trim()
     return name || 'default'

@@ -157,9 +157,7 @@ describe('Sidebar', () => {
     const linkLabels = Array.from(nav.querySelectorAll('a')).map((a) =>
       a.textContent?.trim().toLowerCase(),
     )
-    expect(linkLabels).toEqual(
-      flatNavItems().map((i) => i.label.toLowerCase()),
-    )
+    expect(linkLabels).toEqual(flatNavItems().map((i) => i.label.toLowerCase()))
     expect(linkLabels).toEqual([
       'home',
       'chat',
@@ -167,6 +165,7 @@ describe('Sidebar', () => {
       'files',
       'tasks',
       'board',
+      'runtimes',
       'system',
     ])
     // The headline requirement: Terminal sits immediately under Chat.

@@ -26,6 +26,8 @@ import {
   AbortCommand,
   ApprovalRespondCommand,
   ChatServerEvent,
+  APPROVAL_PENDING_EVENT,
+  APPROVAL_CLEARED_EVENT,
 } from '@agent-deck/protocol'
 import type { GatewayClientLike } from '../hermes/gatewayClient'
 import { socketHandshakeOk, type AuthConfig } from '../auth/auth'
@@ -74,6 +76,15 @@ export function pendingApprovalBefore(
 
 export interface ChatRunDeps {
   gateway: GatewayClientLike
+  /**
+   * Resolve the gateway client for a NEW run from the currently-active profile.
+   * Each run is then PINNED to whatever this returns at start time (the
+   * RunManager remembers it), so switching the active profile routes the next
+   * run to that profile's gateway with no restart, while in-flight runs keep
+   * their gateway. Omitted → every run uses {@link gateway} (back-compat / a
+   * single injected mock).
+   */
+  resolveGateway?: () => GatewayClientLike
   store?: RunStore
   /** Auth posture; when required, the handshake must carry a matching token.
    * Omitted/absent = no auth (loopback / tests). */
@@ -81,11 +92,27 @@ export interface ChatRunDeps {
 }
 
 export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespace {
+  const namespace = io.of(CHAT_NAMESPACE)
   // The run pump is SERVER-OWNED: one RunManager backs the whole namespace, so a
   // run is pumped to its terminal frame regardless of which sockets come and go.
-  const runManager = new RunManager(deps.gateway, deps.store ?? new RunStore())
+  // Its approval-gate transitions are BROADCAST to the whole namespace so every
+  // connected device learns instantly that an agent is waiting — even a device
+  // that is not tailing that run (cross-device approval push, no poll).
+  const runManager = new RunManager(deps.gateway, deps.store ?? new RunStore(), {
+    onApprovalChange: (change) => {
+      if (change.kind === 'pending') {
+        namespace.emit(APPROVAL_PENDING_EVENT, {
+          run_id: change.runId,
+          ...(change.sessionId ? { session_id: change.sessionId } : {}),
+          ...(change.command ? { command: change.command } : {}),
+          ...(change.description ? { description: change.description } : {}),
+        })
+      } else {
+        namespace.emit(APPROVAL_CLEARED_EVENT, { run_id: change.runId })
+      }
+    },
+  })
   const store = runManager.store
-  const namespace = io.of(CHAT_NAMESPACE)
 
   // C1: gate the handshake on a non-loopback bind. The browser sends the token
   // as handshake `auth: { token }`; a missing/mismatched token is refused before
@@ -171,9 +198,13 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
         socket.emit('command.error', { command: 'run', message: 'invalid run command' })
         return
       }
+      // Resolve the gateway for THIS run from the active profile, then pin it: the
+      // run's pump, Stop, and approvals all use this same client even if the user
+      // switches agents mid-run.
+      const gateway = deps.resolveGateway ? deps.resolveGateway() : deps.gateway
       let runId: string
       try {
-        const started = await deps.gateway.startRun({
+        const started = await gateway.startRun({
           input: cmd.data.input,
           model: cmd.data.model,
           sessionId: cmd.data.session_id,
@@ -200,7 +231,7 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
       // route to /chat/:id and rehydrate the transcript after a browser refresh.
       let sessionId: string | undefined = cmd.data.session_id
       if (!sessionId) {
-        const resolved = await deps.gateway.getRunSession(runId)
+        const resolved = await gateway.getRunSession(runId)
         sessionId = resolved.sessionId ?? undefined
       }
 
@@ -213,10 +244,10 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
         model: cmd.data.model,
         input: cmd.data.input,
       })
-      // Launch the SERVER-OWNED pump, then subscribe the issuing socket the same
-      // way a reconnect does (replay-then-tail). The pump now outlives this
-      // socket, so a reload/disconnect cannot stop the run.
-      runManager.start(runId, sessionId)
+      // Launch the SERVER-OWNED pump pinned to this run's gateway, then subscribe
+      // the issuing socket the same way a reconnect does (replay-then-tail). The
+      // pump now outlives this socket, so a reload/disconnect cannot stop the run.
+      runManager.start(runId, sessionId, gateway)
       subscribe(runId, 0)
     })
 
@@ -255,17 +286,22 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
       // it arrives.) run.stopping is not buffered into the replay log — it's a
       // transient status, and the real terminal frame is what the store records.
       emit({ event: 'run.stopping', run_id: runId })
-      // Abort the server-owned pump so the BFF stops holding the SSE open even if
-      // the gateway is slow to cancel. This is an EXPLICIT stop — distinct from a
-      // socket disconnect, which must NOT abort the run.
+      // Capture the run's PINNED gateway BEFORE aborting, and only while a pump is
+      // live: a run with no active pump is already terminal (nothing to stop), and
+      // routing to the fallback default gateway could hit the wrong agent after a
+      // profile switch. Abort the server-owned pump regardless (it's a no-op when
+      // none is live) so the BFF stops holding the SSE even if the gateway is slow.
+      const gateway = runManager.isActive(runId) ? runManager.gatewayFor(runId) : null
       runManager.abort(runId)
-      try {
-        await deps.gateway.stopRun(runId)
-      } catch (err) {
-        socket.emit('command.error', {
-          command: 'abort',
-          message: err instanceof Error ? err.message : 'stopRun failed',
-        })
+      if (gateway) {
+        try {
+          await gateway.stopRun(runId)
+        } catch (err) {
+          socket.emit('command.error', {
+            command: 'abort',
+            message: err instanceof Error ? err.message : 'stopRun failed',
+          })
+        }
       }
     })
 
@@ -278,8 +314,20 @@ export function registerChatRunHandlers(io: Server, deps: ChatRunDeps): Namespac
         })
         return
       }
+      const runId = cmd.data.run_id
+      // Only respond while a pump is live: the approval gate lives on the run's
+      // pinned gateway, and a run with no active pump has no open gate (it ended).
+      // Routing to the fallback default gateway could otherwise hit the wrong
+      // agent after a profile switch.
+      if (!runManager.isActive(runId)) return
       try {
-        await deps.gateway.respondApproval(cmd.data.run_id, cmd.data.approval_id, cmd.data.choice)
+        await runManager
+          .gatewayFor(runId)
+          .respondApproval(runId, cmd.data.approval_id, cmd.data.choice)
+        // Optimistically clear the cross-device "needs approval" badge now, rather
+        // than waiting on the gateway to echo approval.responded (idempotent with
+        // that echo / the run's terminal frame).
+        runManager.clearApproval(runId)
       } catch (err) {
         socket.emit('command.error', {
           command: 'approval.respond',

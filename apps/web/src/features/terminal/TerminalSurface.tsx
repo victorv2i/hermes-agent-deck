@@ -9,7 +9,16 @@ import {
   type ComponentType,
 } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Eraser, Plus, RotateCcw, Save, SquareTerminal, Trash2, TriangleAlert } from 'lucide-react'
+import {
+  Download,
+  Eraser,
+  Plus,
+  RotateCcw,
+  Save,
+  SquareTerminal,
+  Trash2,
+  TriangleAlert,
+} from 'lucide-react'
 import { Popover } from 'radix-ui'
 import type {
   CreateWorkspaceRequest,
@@ -27,6 +36,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { SurfaceHeader } from '@/components/ui/surface-header'
 import { apiDelete, apiFetch, apiPost } from '@/lib/apiFetch'
 import { useVisualViewportInset } from '@/lib/useVisualViewportInset'
@@ -46,6 +56,8 @@ import {
   writeLastWorkspaceId,
   writeWorkspacesCache,
 } from './terminalWorkspaces'
+import { WORKSPACE_TEMPLATES, instantiateTemplate } from './workspaceTemplates'
+import { downloadWorkspaceTemplate, parseWorkspaceTemplate } from './workspaceJson'
 import type { TerminalViewProps } from './TerminalView'
 import type { TerminalStatus } from './terminalSocket'
 
@@ -229,6 +241,18 @@ export function TerminalSurface({
     [createWorkspace, navigate, refreshWorkspaces],
   )
 
+  // Export the active workspace as a portable template JSON (re-importable from
+  // the New-workspace dialog). Fetches the FULL def (the switcher list carries
+  // only slim summaries), then triggers a browser download.
+  const onExport = useCallback(async () => {
+    if (!selectedId) return
+    const path = `/terminal/workspaces/${encodeURIComponent(selectedId)}`
+    const def = fetchImpl
+      ? ((await (await fetchImpl(`/api/agent-deck${path}`)).json()) as WorkspaceDefinition)
+      : await apiFetch<WorkspaceDefinition>(path)
+    if (def?.id) downloadWorkspaceTemplate(def)
+  }, [selectedId, fetchImpl])
+
   // Delete a saved workspace (confirm-gated). On deleting the ACTIVE workspace we
   // fall back to Scratch so the surface never sits on a workspace that is gone.
   const confirmDelete = useCallback(async () => {
@@ -280,6 +304,9 @@ export function TerminalSurface({
           // Save is only meaningful from Scratch with at least one pane.
           canSave={selectedId === null && scratchPaneCount > 0}
           onSave={() => setSaving(true)}
+          // Export is meaningful only for a SAVED workspace (Scratch has no def).
+          canExport={selectedId !== null}
+          onExport={() => void onExport()}
         />
       ) : null}
 
@@ -288,7 +315,7 @@ export function TerminalSurface({
       {probe.phase === 'failed' && (
         <Panel
           title="Terminal unavailable"
-          body="Couldn't reach the terminal backend. Make sure the Agent Deck server is running."
+          body="Couldn't reach the terminal backend. Make sure the Agentdeck server is running."
           tone="error"
         />
       )}
@@ -391,6 +418,8 @@ function SwitcherBar({
   onNew,
   canSave,
   onSave,
+  canExport,
+  onExport,
 }: {
   selectedId: string | null
   workspaces: WorkspaceSummary[]
@@ -400,6 +429,8 @@ function SwitcherBar({
   onNew: () => void
   canSave: boolean
   onSave: () => void
+  canExport: boolean
+  onExport: () => void
 }) {
   const phone = useMediaQuery(MOBILE_QUERY)
   const activeName =
@@ -448,6 +479,20 @@ function SwitcherBar({
           >
             <Save className="size-4" />
             Save
+          </Button>
+        ) : null}
+        {canExport ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="min-h-11 md:min-h-8"
+            aria-label="Export workspace as JSON"
+            title="Export this workspace as a portable JSON template"
+            onClick={onExport}
+          >
+            <Download className="size-4" />
+            Export
           </Button>
         ) : null}
         <Button
@@ -808,9 +853,11 @@ function CreateWorkspaceDialog({
   onCreated: (def: WorkspaceDefinition) => void
 }) {
   const [name, setName] = useState('')
+  const [template, setTemplate] = useState('blank')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nameId = useId()
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   // Reset on the closed -> open edge (no effect needed; adjust-during-render).
   const [wasOpen, setWasOpen] = useState(open)
@@ -818,6 +865,7 @@ function CreateWorkspaceDialog({
     setWasOpen(open)
     if (open) {
       setName('')
+      setTemplate('blank')
       setBusy(false)
       setError(null)
     }
@@ -831,20 +879,41 @@ function CreateWorkspaceDialog({
     setBusy(true)
     setError(null)
     try {
-      // A brand-new workspace starts with one neutral shell pane, ready to use.
+      // Start from the chosen template's preset layout (Blank = one shell). Each
+      // instantiation mints fresh, collision-free pane ids.
+      const panes = instantiateTemplate(template)
       const def = await onCreate({
         name: trimmed,
-        panes: [
-          {
-            id: `shell-1-${Math.random().toString(36).slice(2, 10)}`,
-            label: 'Shell 1',
-            cli: 'shell',
-          },
-        ],
+        panes:
+          panes.length > 0
+            ? panes
+            : [
+                {
+                  id: `shell-1-${Math.random().toString(36).slice(2, 10)}`,
+                  label: 'Shell 1',
+                  cli: 'shell',
+                },
+              ],
       })
       onCreated(def)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create the workspace.')
+      setBusy(false)
+    }
+  }
+
+  // Import a workspace template JSON (a previously-exported workspace): parse +
+  // re-mint pane ids, then create. The file name seeds nothing — the JSON's own
+  // `name` is used. Honest errors on a malformed/invalid file.
+  const importFromFile = async (file: File) => {
+    setBusy(true)
+    setError(null)
+    try {
+      const req = parseWorkspaceTemplate(await file.text())
+      const def = await onCreate(req)
+      onCreated(def)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import that file.')
       setBusy(false)
     }
   }
@@ -860,7 +929,7 @@ function CreateWorkspaceDialog({
         <DialogHeader>
           <DialogTitle>New workspace</DialogTitle>
           <DialogDescription>
-            Give it a name. It starts with one shell pane; add, rename, or remove panes any time.
+            Name it and pick a starting layout. Add, rename, or remove panes any time.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -885,14 +954,68 @@ function CreateWorkspaceDialog({
               aria-invalid={error != null || undefined}
             />
           </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Starting layout</span>
+            <div role="radiogroup" aria-label="Starting layout" className="grid grid-cols-2 gap-2">
+              {WORKSPACE_TEMPLATES.map((t) => {
+                const selected = t.id === template
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setTemplate(t.id)}
+                    className={cn(
+                      'flex flex-col gap-0.5 rounded-md border px-3 py-2 text-left transition-colors focus-visible:ad-focus',
+                      selected
+                        ? 'border-[var(--border-strong)] bg-muted/50'
+                        : 'border-border hover:border-[var(--border-strong)] hover:bg-muted/30',
+                    )}
+                  >
+                    <span className="text-sm font-medium text-foreground">{t.label}</span>
+                    <span className="text-xs leading-snug text-foreground-tertiary">
+                      {t.description}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
-              Cancel
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onClick={() => importInputRef.current?.click()}
+              className="text-foreground-tertiary"
+            >
+              Import JSON…
             </Button>
-            <Button type="submit" disabled={!canSubmit}>
-              Create
-            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              aria-hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                e.target.value = '' // allow re-selecting the same file
+                if (file) void importFromFile(file)
+              }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!canSubmit}>
+                Create
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

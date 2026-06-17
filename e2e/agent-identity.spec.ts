@@ -125,7 +125,7 @@ test('Agents page renders the default profile card', async ({ page }) => {
 
   await page.goto('/profiles')
   await expect(page.getByRole('heading', { name: /Agents/i })).toBeVisible()
-  await expect(page.getByTestId('profile-card-default')).toBeVisible()
+  await expect(page.getByTestId('studio-roster-card-default')).toBeVisible()
 
   expect(errors).toEqual([])
 })
@@ -207,8 +207,8 @@ test('create agent: POST fires, the new agent card appears in the Agents list', 
   // Navigate back to the list to verify the new card appears.
   await page.goto('/profiles')
   // The profiles list now includes the new "atlas" agent card.
-  await expect(page.getByTestId('profile-card-atlas')).toBeVisible()
-  await expect(page.getByTestId('profile-card-default')).toBeVisible()
+  await expect(page.getByTestId('studio-roster-card-atlas')).toBeVisible()
+  await expect(page.getByTestId('studio-roster-card-default')).toBeVisible()
 
   expect(errors).toEqual([])
 })

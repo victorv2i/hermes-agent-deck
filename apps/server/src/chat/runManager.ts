@@ -100,7 +100,26 @@ export interface RunManagerOptions {
   reaperIntervalMs?: number
   /** Injected clock (tests). Defaults to Date.now. */
   now?: () => number
+  /**
+   * Notified when a run's approval gate opens (`pending`) or closes (`cleared`)
+   * — when the pump observes an `approval.request`, an `approval.responded`, or a
+   * terminal frame. The chat namespace uses this to BROADCAST the change to every
+   * connected device (cross-device approval push), independent of which run a
+   * given socket is tailing. Optional; a fire-and-forget side channel.
+   */
+  onApprovalChange?: (change: ApprovalChange) => void
 }
+
+/** An approval-gate transition for a run (see {@link RunManagerOptions.onApprovalChange}). */
+export type ApprovalChange =
+  | {
+      kind: 'pending'
+      runId: string
+      sessionId?: string
+      command?: string
+      description?: string
+    }
+  | { kind: 'cleared'; runId: string }
 
 const DEFAULT_MAX_CONCURRENT_PUMPS = 64
 const DEFAULT_IDLE_TIMEOUT_MS = 120_000
@@ -112,6 +131,11 @@ interface PumpState {
   /** Timestamp (via the injected clock) of the last observed SSE activity —
    * any frame or keepalive. The reaper compares `now - lastActivityAt`. */
   lastActivityAt: number
+  /** The gateway this run lives on. A run is PINNED to the gateway it started on
+   * (the active profile at start time), so a mid-run profile switch never moves
+   * its pump/stop/approval to a different gateway. Defaults to the manager's
+   * default gateway when `start` is called without an explicit one. */
+  gateway: GatewayClientLike
 }
 
 /**
@@ -122,14 +146,20 @@ interface PumpState {
 export class RunManager {
   /** The shared, durable event log. Sockets subscribe to it; the pump appends. */
   readonly store: RunStore
+  /** The default gateway, used when `start` is called without a per-run one (back-
+   * compat) and as the fallback for {@link gatewayFor} once a pump has finished. */
   private readonly gateway: GatewayClientLike
-  /** Per-pump state (abort handle + last-activity clock), keyed by run id. */
+  /** Per-pump state (abort handle + last-activity clock + pinned gateway). */
   private readonly pumps = new Map<string, PumpState>()
 
   private readonly maxConcurrentPumps: number
   private readonly idleTimeoutMs: number
   private readonly reaperIntervalMs: number
   private readonly now: () => number
+  private readonly onApprovalChange?: (change: ApprovalChange) => void
+  /** Runs we have broadcast a still-OPEN approval for, so we clear exactly once
+   * (on the resolving frame or the terminal frame, whichever comes first). */
+  private readonly approvalOpen = new Set<string>()
   /** The single sweeping interval; only runs while ≥1 pump is active. */
   private reaperTimer: ReturnType<typeof setInterval> | null = null
 
@@ -144,11 +174,60 @@ export class RunManager {
     this.idleTimeoutMs = options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS
     this.reaperIntervalMs = options.reaperIntervalMs ?? DEFAULT_REAPER_INTERVAL_MS
     this.now = options.now ?? Date.now
+    this.onApprovalChange = options.onApprovalChange
+  }
+
+  /** Broadcast an approval gate OPENING for a run (idempotent per open gate). */
+  private signalApprovalPending(
+    runId: string,
+    info: Extract<ChatServerEvent, { event: 'approval.request' }>,
+  ): void {
+    if (!this.onApprovalChange) return
+    this.approvalOpen.add(runId)
+    const sessionId = typeof info.session_id === 'string' ? info.session_id : undefined
+    this.onApprovalChange({
+      kind: 'pending',
+      runId,
+      ...(sessionId ? { sessionId } : {}),
+      ...(info.command ? { command: info.command } : {}),
+      ...(info.description ? { description: info.description } : {}),
+    })
+  }
+
+  /** Broadcast an approval gate CLOSING for a run — only if one was open, so a
+   * routine terminal frame for a run that never had an approval is silent. */
+  private signalApprovalCleared(runId: string): void {
+    if (!this.onApprovalChange) return
+    if (!this.approvalOpen.delete(runId)) return
+    this.onApprovalChange({ kind: 'cleared', runId })
   }
 
   /** True while a server-owned pump is actively draining this run's SSE. */
   isActive(runId: string): boolean {
     return this.pumps.has(runId)
+  }
+
+  /**
+   * The gateway a run is PINNED to (the one its pump started on). Falls back to
+   * the default gateway only when no pump is active — callers must therefore gate
+   * on {@link isActive} before routing a Stop/approval, since a terminal run has
+   * nothing to act on and the fallback could otherwise reach the wrong agent
+   * after a profile switch.
+   */
+  gatewayFor(runId: string): GatewayClientLike {
+    return this.pumps.get(runId)?.gateway ?? this.gateway
+  }
+
+  /**
+   * Optimistically broadcast that a run's approval gate has CLOSED — called right
+   * after a successful `respondApproval` so a cross-device "needs approval" badge
+   * clears immediately, instead of waiting on the gateway to echo an
+   * `approval.responded` SSE frame (which it normally does, but the cross-device
+   * push must not hinge on that echo). Idempotent: a later echoed responded/terminal
+   * frame finds the gate already closed and is a no-op.
+   */
+  clearApproval(runId: string): void {
+    this.signalApprovalCleared(runId)
   }
 
   /**
@@ -159,8 +238,11 @@ export class RunManager {
    *
    * Over the concurrency cap, NO pump is launched; the run is made terminal
    * (run.failed) so the issuing client gets a definite outcome instead of hanging.
+   *
+   * `gateway` pins this run to a specific gateway (the active profile's, resolved
+   * by the caller at start time). Omitted → the manager's default gateway.
    */
-  start(runId: string, sessionId?: string): void {
+  start(runId: string, sessionId?: string, gateway?: GatewayClientLike): void {
     if (this.pumps.has(runId)) return
     if (this.pumps.size >= this.maxConcurrentPumps) {
       // Don't add a pump we can't watch; fail the run deterministically.
@@ -174,9 +256,10 @@ export class RunManager {
       return
     }
     const abort = new AbortController()
-    this.pumps.set(runId, { abort, lastActivityAt: this.now() })
+    const pinned = gateway ?? this.gateway
+    this.pumps.set(runId, { abort, lastActivityAt: this.now(), gateway: pinned })
     this.ensureReaper()
-    void this.pump(runId, sessionId, abort.signal)
+    void this.pump(runId, sessionId, abort.signal, pinned)
   }
 
   /** Mark fresh activity for a pump (any frame or keepalive resets its clock). */
@@ -260,6 +343,7 @@ export class RunManager {
     runId: string,
     sessionId: string | undefined,
     signal: AbortSignal,
+    gateway: GatewayClientLike,
   ): Promise<void> {
     try {
       // A keepalive is liveness too: thread an onHeartbeat that resets the idle
@@ -275,7 +359,7 @@ export class RunManager {
           ...(sessionId ? { session_id: sessionId } : {}),
         })
       }
-      for await (const raw of this.gateway.streamRun(runId, signal, onHeartbeat)) {
+      for await (const raw of gateway.streamRun(runId, signal, onHeartbeat)) {
         // ANY frame — even one outside the protocol vocabulary that we drop —
         // proves the stream is alive, so reset the clock before mapping.
         this.touch(runId)
@@ -290,6 +374,10 @@ export class RunManager {
           this.store.broadcast(runId, mapped)
           continue
         }
+        // Cross-device approval push: announce the gate opening/closing to the
+        // whole namespace (the store.append below still drives the per-run tail).
+        if (mapped.event === 'approval.request') this.signalApprovalPending(runId, mapped)
+        else if (mapped.event === 'approval.responded') this.signalApprovalCleared(runId)
         this.store.append(runId, mapped)
       }
       // Stream ended. Only a terminal frame (run.completed/failed/cancelled)
@@ -316,6 +404,10 @@ export class RunManager {
       // delete is always our own. (A reaper sweep may have already deleted it;
       // delete is idempotent.) Stop the sweeper if this was the last pump.
       this.pumps.delete(runId)
+      // Clear any still-open approval broadcast for this run (idempotent): a run
+      // that ends — completed, cancelled, reaped, or errored — without an explicit
+      // approval.responded must still clear its cross-device "needs approval" badge.
+      this.signalApprovalCleared(runId)
       this.maybeStopReaper()
     }
   }

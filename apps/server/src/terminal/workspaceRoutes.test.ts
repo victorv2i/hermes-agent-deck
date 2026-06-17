@@ -10,8 +10,9 @@ import {
   DirListResponseSchema,
   type WorkspaceRoot,
 } from '@agent-deck/protocol'
-import { workspaceRoutes } from './workspaceRoutes'
+import { workspaceRoutes, type WorkspaceRoutesOptions } from './workspaceRoutes'
 import { WorkspaceStore } from './workspaceStore'
+import type { PaneRuntimeState } from '@agent-deck/protocol'
 
 const PREFIX = '/api/agent-deck/terminal'
 
@@ -35,6 +36,7 @@ async function build(
     roots?: () => Promise<WorkspaceRoot[]>
     allowHome?: boolean
     home?: string
+    readPaneState?: WorkspaceRoutesOptions['readPaneState']
   } = {},
 ): Promise<FastifyInstance> {
   app = Fastify({ logger: false })
@@ -44,6 +46,7 @@ async function build(
     roots: opts.roots ?? (async () => []),
     allowHome: opts.allowHome ?? false,
     home: opts.home,
+    ...(opts.readPaneState ? { readPaneState: opts.readPaneState } : {}),
   })
   await app.ready()
   return app
@@ -420,5 +423,77 @@ describe('workspaceRoutes GET /dirs (security-hardened cwd picker)', () => {
       url: `${PREFIX}/dirs?path=${encodeURIComponent('/tmp')}`,
     })
     expect(res.statusCode).toBe(400)
+  })
+})
+
+describe('workspaceRoutes GET /active-panes', () => {
+  function state(
+    over: Partial<PaneRuntimeState> & Pick<PaneRuntimeState, 'cli' | 'runState'>,
+  ): PaneRuntimeState {
+    return { activeFile: null, lastTool: null, sessionId: null, updatedAt: null, ...over }
+  }
+
+  /** Build with a REAL cwd dir under an allowlisted root (so POST cwd validation
+   * passes) + the injected reader. Returns the app and the real work dir. */
+  async function buildWithWork(
+    reader: WorkspaceRoutesOptions['readPaneState'],
+  ): Promise<{ a: FastifyInstance; work: string }> {
+    const work = join(dir, 'work')
+    await mkdir(work, { recursive: true })
+    const a = await build({
+      roots: async () => [{ name: 'work', path: work }],
+      readPaneState: reader,
+    })
+    return { a, work }
+  }
+
+  async function createWorkspace(a: FastifyInstance, name: string, panes: object[]): Promise<void> {
+    const res = await a.inject({
+      method: 'POST',
+      url: `${PREFIX}/workspaces`,
+      payload: { name, panes },
+    })
+    expect(res.statusCode).toBe(200)
+  }
+
+  it('aggregates agent panes with a known state and counts the working ones', async () => {
+    const { a, work } = await buildWithWork((cli, cwd) => {
+      if (cli === 'claude')
+        return state({ cli, runState: 'working', activeFile: `${cwd}/a.ts`, lastTool: 'Edit' })
+      if (cli === 'codex') return state({ cli, runState: 'idle', lastTool: 'exec_command' })
+      return state({ cli, runState: 'unknown' })
+    })
+    await createWorkspace(a, 'ws', [
+      { id: 'p1', label: 'Builder', cli: 'claude', cwd: work },
+      { id: 'p2', label: 'Helper', cli: 'codex', cwd: work },
+      { id: 'p3', label: 'Shell', cli: 'shell', cwd: work }, // not an agent → skipped
+    ])
+
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/active-panes` })
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(body.workingCount).toBe(1)
+    expect(body.panes).toHaveLength(2) // claude + codex; shell excluded
+    const builder = body.panes.find((p: { paneId: string }) => p.paneId === 'p1')
+    expect(builder).toMatchObject({
+      workspaceName: 'ws',
+      label: 'Builder',
+      cli: 'claude',
+      runState: 'working',
+      activeFile: `${work}/a.ts`,
+    })
+  })
+
+  it('omits panes whose transcript is unknown (no fabricated activity)', async () => {
+    const { a, work } = await buildWithWork((cli) => state({ cli, runState: 'unknown' }))
+    await createWorkspace(a, 'ws', [{ id: 'p1', label: 'Builder', cli: 'claude', cwd: work }])
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/active-panes` })
+    expect(res.json()).toEqual({ panes: [], workingCount: 0 })
+  })
+
+  it('returns an empty aggregate when there are no workspaces', async () => {
+    const { a } = await buildWithWork((cli) => state({ cli, runState: 'working' }))
+    const res = await a.inject({ method: 'GET', url: `${PREFIX}/active-panes` })
+    expect(res.json()).toEqual({ panes: [], workingCount: 0 })
   })
 })

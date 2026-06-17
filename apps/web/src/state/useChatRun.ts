@@ -20,6 +20,7 @@ import {
 } from '@/lib/chatSocket'
 import { toast } from '@/lib/toast'
 import { useChatStore } from './useChatStore'
+import { useApprovalInbox } from './useApprovalInbox'
 import {
   branchSendPolicy,
   conversationHistoryForRun,
@@ -134,6 +135,23 @@ export function useChatRun(socket?: SocketLike, storage?: StorageLike | null): U
             setActiveSessionId(event.session_id)
           }
           ingest(event)
+        },
+        onApprovalPending: (info) => {
+          // Cross-device push: an approval for a run THIS device is not tailing
+          // (started elsewhere, or a cron/telegram run). The run we ARE tailing
+          // already surfaces its approval through the store + transcript, so skip
+          // it here to avoid a duplicate notification.
+          if (info.run_id === clientRef.current?.runId) return
+          useApprovalInbox.getState().markPending({
+            runId: info.run_id,
+            ...(info.session_id ? { sessionId: info.session_id } : {}),
+            ...(info.command ? { command: info.command } : {}),
+            ...(info.description ? { description: info.description } : {}),
+          })
+        },
+        onApprovalCleared: (info) => {
+          // Always clear (idempotent): the gate resolved or the run ended.
+          useApprovalInbox.getState().clear(info.run_id)
         },
         onStatusChange: (status) => setConnection(status),
         onConnectionError: () => {

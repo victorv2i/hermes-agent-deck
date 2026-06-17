@@ -289,7 +289,7 @@ async function stubBff(page: Page) {
 
     if (path.endsWith('/health')) return json(route, HEALTH)
 
-    // Organization (Agent Deck's own project/tag store). The rail's
+    // Organization (Agentdeck's own project/tag store). The rail's
     // `['organization']` query drives render-time `Object.values(assignments)`,
     // so it MUST resolve to a well-formed store — a bare `{}` would crash the rail.
     if (path.endsWith('/organization') && !path.includes('/sessions/')) {
@@ -521,12 +521,14 @@ const TAB_REDIRECTS: { from: string; tab: string; heading: RegExp }[] = [
 ]
 
 for (const { from, tab, heading } of TAB_REDIRECTS) {
-  test(`${from} redirects to /connections?tab=${tab} and lands on the right tab`, async ({
-    page,
-  }) => {
+  test(`${from} redirects to the Studio Connections view on the ${tab} tab`, async ({ page }) => {
     await page.goto(from)
-    // The URL settles on the Connections surface with the matching ?tab=.
-    await expect(page).toHaveURL(new RegExp(`/connections\\?tab=${tab}$`))
+    // Connections folded INTO the Agent Studio (Home) as a global view, so the
+    // old standalone path redirects to `/?view=connections&tab=<id>` (the Studio
+    // URL), preserving the deep-linked tab. Assert both params are present
+    // (order-independent), rather than the retired `/connections` path.
+    await expect(page).toHaveURL(/[?&]view=connections(&|$)/)
+    await expect(page).toHaveURL(new RegExp(`[?&]tab=${tab}(&|$)`))
     // The matching tab is selected and that surface's own header is mounted.
     // Select by the tab's stable id — the MCP tab's label is "Integrations" (no
     // "MCP"), so matching by accessible name would miss it.

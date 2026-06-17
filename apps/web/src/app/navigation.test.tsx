@@ -84,6 +84,7 @@ describe('NAV registry', () => {
       'files',
       'jobs',
       'kanban',
+      'runtimes',
       'usage',
       'logs',
       'system',
@@ -159,6 +160,7 @@ describe('NAV registry', () => {
       'files',
       'jobs',
       'kanban',
+      'runtimes',
       'system',
     ])
     // Connections is gone (folded into the Studio), so it's not in the rail list.
@@ -203,6 +205,7 @@ describe('NAV registry', () => {
     expect(grouped.find((g) => g.group === 'activity')!.items.map((i) => i.key)).toEqual([
       'jobs',
       'kanban',
+      'runtimes',
       'system',
     ])
     // Grouping preserves the NAV_GROUPS order for any populated groups.

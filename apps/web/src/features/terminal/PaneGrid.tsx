@@ -139,6 +139,12 @@ export interface PaneGridProps {
   onActiveClearReady?: (clear: (() => void) | null) => void
   /** Report a Restart handle bound to the ACTIVE pane (null = no pane). */
   onActiveRestartReady?: (restart: (() => void) | null) => void
+  /**
+   * Optional per-pane header aside (e.g. the agent-awareness chip). Rendered in
+   * the grid-cell header for each pane. A render-prop so PaneGrid stays
+   * presentational + network-free (the chip self-fetches); omitted in tests.
+   */
+  renderPaneAside?: (pane: GridPane) => React.ReactNode
 }
 
 export function PaneGrid({
@@ -163,6 +169,7 @@ export function PaneGrid({
   onActiveStatusChange,
   onActiveClearReady,
   onActiveRestartReady,
+  renderPaneAside,
 }: PaneGridProps) {
   // Per-pane live status, so each tab/cell shows its own honest connection dot.
   const [statuses, setStatuses] = useState<Record<string, TerminalStatus>>({})
@@ -355,6 +362,7 @@ export function PaneGrid({
           onCloseReady={setCloseHandle}
           onActivate={onActivatePane}
           onRestart={requestRestart}
+          renderPaneAside={renderPaneAside}
         />
       )}
 
@@ -1059,6 +1067,7 @@ function GridPanels({
   onCloseReady,
   onActivate,
   onRestart,
+  renderPaneAside,
 }: {
   panes: GridPane[]
   activeId: string | null
@@ -1072,6 +1081,7 @@ function GridPanels({
   onCloseReady: (id: string, close: (() => void) | null) => void
   onActivate: (id: string) => void
   onRestart: (id: string) => void
+  renderPaneAside?: (pane: GridPane) => React.ReactNode
 }) {
   return (
     <div
@@ -1105,9 +1115,16 @@ function GridPanels({
           >
             <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
               <CliMark cli={pane.cli} />
-              <span className="min-w-0 flex-1 truncate text-xs text-foreground-tertiary">
+              <span className="min-w-0 max-w-[40%] truncate text-xs text-foreground-tertiary">
                 {pane.label}
               </span>
+              {renderPaneAside ? (
+                <span className="flex min-w-0 flex-1 items-center overflow-hidden">
+                  {renderPaneAside(pane)}
+                </span>
+              ) : (
+                <span className="flex-1" />
+              )}
               <PersistenceBadge
                 persistent={persistence[pane.id]}
                 foreign={pane.attach !== undefined}

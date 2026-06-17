@@ -192,3 +192,85 @@ describe('terminalRoutes GET /sessions', () => {
     })
   })
 })
+
+describe('terminalRoutes GET /pane-state', () => {
+  async function buildWithReader(
+    reader: NonNullable<TerminalRoutesOptions['readPaneState']>,
+  ): Promise<FastifyInstance> {
+    app = Fastify({ logger: false })
+    await app.register(terminalRoutes, {
+      prefix: '/api/agent-deck/terminal',
+      loadNodePty: async () => ({ spawn: () => ({}) as never }),
+      readPaneState: reader,
+    })
+    await app.ready()
+    return app
+  }
+
+  it('returns the reader snapshot for a valid cli + cwd', async () => {
+    const a = await buildWithReader((cli, cwd) => ({
+      cli,
+      runState: 'working',
+      activeFile: cwd ? `${cwd}/x.ts` : null,
+      lastTool: 'Edit',
+      sessionId: 's1',
+      updatedAt: '2026-06-17T10:00:00Z',
+    }))
+    const res = await a.inject({
+      method: 'GET',
+      url: '/api/agent-deck/terminal/pane-state?cli=claude&cwd=/home/u/app',
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual({
+      cli: 'claude',
+      runState: 'working',
+      activeFile: '/home/u/app/x.ts',
+      lastTool: 'Edit',
+      sessionId: 's1',
+      updatedAt: '2026-06-17T10:00:00Z',
+    })
+  })
+
+  it('400s an unknown cli (never reaches the reader)', async () => {
+    let called = false
+    const a = await buildWithReader((cli) => {
+      called = true
+      return {
+        cli,
+        runState: 'unknown',
+        activeFile: null,
+        lastTool: null,
+        sessionId: null,
+        updatedAt: null,
+      }
+    })
+    const res = await a.inject({
+      method: 'GET',
+      url: '/api/agent-deck/terminal/pane-state?cli=bogus',
+    })
+    expect(res.statusCode).toBe(400)
+    expect(called).toBe(false)
+  })
+
+  it('passes undefined cwd through (the reader returns unknown)', async () => {
+    const seen: Array<string | undefined> = []
+    const a = await buildWithReader((cli, cwd) => {
+      seen.push(cwd)
+      return {
+        cli,
+        runState: 'unknown',
+        activeFile: null,
+        lastTool: null,
+        sessionId: null,
+        updatedAt: null,
+      }
+    })
+    const res = await a.inject({
+      method: 'GET',
+      url: '/api/agent-deck/terminal/pane-state?cli=shell',
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().runState).toBe('unknown')
+    expect(seen).toEqual([undefined])
+  })
+})

@@ -27,10 +27,10 @@ import { runHermes, type ExecFileLike } from '../system/hermesCli'
  *
  *   GET /api/agent-deck/profiles -> { active, profiles[] }
  *
- * Reads the HERMES_HOME directory on the filesystem and exposes Agent Deck's
+ * Reads the HERMES_HOME directory on the filesystem and exposes Agentdeck's
  * path-safe profile facade. Stock Hermes does expose a minimal dashboard
  * `/api/profiles` route today, but that shape includes absolute `path` values
- * and lacks Agent Deck's active flags, MEMORY/USER files, avatar sidecar, and
+ * and lacks Agentdeck's active flags, MEMORY/USER files, avatar sidecar, and
  * active-profile switch route. The BFF therefore keeps the filesystem/CLI path
  * and returns only browser-safe fields.
  *
@@ -63,6 +63,19 @@ export interface ProfilesRouteOptions extends FastifyPluginOptions {
    * count. Returns `null` (or throws) → keep the fs count (graceful fallback).
    */
   skillCountForActive?: () => Promise<number | null>
+  /**
+   * Resolve a profile's gateway endpoint URL (per-profile routing). Supplied with
+   * {@link defaultGatewayEndpoint} + {@link probeGateway} it lets the switch route
+   * report whether a switch is INSTANT — i.e. the target agent has its OWN running
+   * gateway on a distinct port, so the deck routes to it with no restart. Omitted
+   * → the switch is reported as not-instant (the honest single-gateway default).
+   */
+  resolveGatewayEndpoint?: (profile: string) => string
+  /** The configured/default gateway endpoint, to tell a distinct per-profile
+   * gateway apart from the shared one. */
+  defaultGatewayEndpoint?: string
+  /** Probe whether a gateway endpoint is actually reachable right now. */
+  probeGateway?: (endpoint: string) => Promise<boolean>
 }
 
 function resolveHermesHome(opts: ProfilesRouteOptions): string {
@@ -368,53 +381,78 @@ export async function profilesRoutes(
   // 409). The exec is argv (NEVER a shell) with `--yes` so the CLI's confirmation
   // prompt can't block the request. Other failures surface as a generic 502 (we
   // never echo raw stderr, which may carry a path).
-  app.delete<{ Params: { name: string } }>(
-    '/api/agent-deck/profiles/:name',
-    async (req, reply) => {
-      const canonical = canonicalizeProfileName(req.params.name)
-      if (!isProfileId(canonical)) {
-        return reply
-          .code(403)
-          .send({ error: 'forbidden', message: 'name must be a valid profile id' })
-      }
-      if (canonical === 'default') {
-        return reply
-          .code(400)
-          .send({ error: 'bad_request', message: 'the default agent cannot be deleted' })
-      }
-      // Refuse to delete the ACTIVE agent (the gateway is bound to it). Best-effort:
-      // if the roster can't be read, the guarded CLI stays the backstop.
-      try {
-        if (readProfiles(hermesHome).active === canonical) {
-          return reply.code(409).send({
-            error: 'conflict',
-            message: 'Switch to another agent before deleting this one.',
-          })
-        }
-      } catch {
-        // fall through to the guarded CLI
-      }
-      try {
-        const result = await runHermes(['profile', 'delete', canonical, '--yes'], {
-          hermesBin,
-          execFile: opts.execFile,
+  app.delete<{ Params: { name: string } }>('/api/agent-deck/profiles/:name', async (req, reply) => {
+    const canonical = canonicalizeProfileName(req.params.name)
+    if (!isProfileId(canonical)) {
+      return reply
+        .code(403)
+        .send({ error: 'forbidden', message: 'name must be a valid profile id' })
+    }
+    if (canonical === 'default') {
+      return reply
+        .code(400)
+        .send({ error: 'bad_request', message: 'the default agent cannot be deleted' })
+    }
+    // Refuse to delete the ACTIVE agent (the gateway is bound to it). Best-effort:
+    // if the roster can't be read, the guarded CLI stays the backstop.
+    try {
+      if (readProfiles(hermesHome).active === canonical) {
+        return reply.code(409).send({
+          error: 'conflict',
+          message: 'Switch to another agent before deleting this one.',
         })
-        if (!result.ok) {
-          return reply
-            .code(502)
-            .send({ error: 'delete_failed', message: 'Hermes could not delete the profile.' })
-        }
-      } catch {
+      }
+    } catch {
+      // fall through to the guarded CLI
+    }
+    try {
+      const result = await runHermes(['profile', 'delete', canonical, '--yes'], {
+        hermesBin,
+        execFile: opts.execFile,
+      })
+      if (!result.ok) {
         return reply
           .code(502)
           .send({ error: 'delete_failed', message: 'Hermes could not delete the profile.' })
       }
-      return reply.send({ ok: true })
-    },
-  )
+    } catch {
+      return reply
+        .code(502)
+        .send({ error: 'delete_failed', message: 'Hermes could not delete the profile.' })
+    }
+    return reply.send({ ok: true })
+  })
 
-  // ── Switch (atomic active_profile flip — NEVER touches the gateway) ──
-  // POST /api/agent-deck/profiles/switch  body { name } -> { active }
+  /**
+   * Assess whether switching to `profile` is INSTANT: true only when that profile
+   * resolves to a gateway endpoint DISTINCT from the configured/default one AND
+   * that endpoint is reachable right now — i.e. the agent has its own running
+   * gateway the deck can route to with no restart. Needs all three injected deps;
+   * otherwise (the single-gateway default) it is honestly false. Never throws.
+   */
+  async function assessInstantSwitch(profile: string): Promise<boolean> {
+    if (!opts.resolveGatewayEndpoint || !opts.probeGateway || !opts.defaultGatewayEndpoint) {
+      return false
+    }
+    let endpoint: string
+    try {
+      endpoint = opts.resolveGatewayEndpoint(profile)
+    } catch {
+      return false
+    }
+    if (endpoint === opts.defaultGatewayEndpoint) return false
+    try {
+      return await opts.probeGateway(endpoint)
+    } catch {
+      return false
+    }
+  }
+
+  // ── Switch (atomic active_profile flip — an endpoint swap, no gateway restart) ──
+  // POST /api/agent-deck/profiles/switch  body { name } -> { active, instant }
+  // `instant` is true when the target agent has its own running gateway on a
+  // distinct port, so chat routes to it on the next run with no restart; false
+  // for the single-gateway case (the new agent applies after a gateway restart).
   app.post<{ Body: unknown }>('/api/agent-deck/profiles/switch', async (req, reply) => {
     const parsed = AgentDeckProfileSwitchRequest.safeParse(
       withCanonicalProfileField(req.body, 'name'),
@@ -431,7 +469,8 @@ export async function profilesRoutes(
           .send({ error: 'not_found', message: `Profile "${parsed.data.name}" not found` })
       }
       writeActiveProfile(hermesHome, parsed.data.name)
-      return await reply.send({ active: parsed.data.name })
+      const instant = await assessInstantSwitch(parsed.data.name)
+      return await reply.send({ active: parsed.data.name, instant })
     } catch (err) {
       return sendError(reply, err)
     }

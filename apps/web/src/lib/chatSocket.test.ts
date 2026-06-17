@@ -515,3 +515,48 @@ describe('reload-resume persistence', () => {
     expect(socket.lastEmit('resume')).toBeUndefined()
   })
 })
+
+describe('ChatSocket cross-device approval broadcasts', () => {
+  it('validates and forwards approval.pending / approval.cleared to the callbacks', () => {
+    const socket = new FakeSocket()
+    const pending: unknown[] = []
+    const cleared: unknown[] = []
+    new ChatSocket(
+      {
+        onEvent: () => {},
+        onApprovalPending: (info) => pending.push(info),
+        onApprovalCleared: (info) => cleared.push(info),
+      },
+      { socket, storage: null },
+    )
+
+    socket.dispatch('approval.pending', {
+      run_id: 'run_x',
+      session_id: 'sess_x',
+      command: 'rm -rf ./build',
+      description: 'delete build',
+    })
+    socket.dispatch('approval.cleared', { run_id: 'run_x' })
+
+    expect(pending).toEqual([
+      {
+        run_id: 'run_x',
+        session_id: 'sess_x',
+        command: 'rm -rf ./build',
+        description: 'delete build',
+      },
+    ])
+    expect(cleared).toEqual([{ run_id: 'run_x' }])
+  })
+
+  it('drops a malformed approval broadcast (no run_id)', () => {
+    const socket = new FakeSocket()
+    const pending: unknown[] = []
+    new ChatSocket(
+      { onEvent: () => {}, onApprovalPending: (info) => pending.push(info) },
+      { socket, storage: null },
+    )
+    socket.dispatch('approval.pending', { command: 'no run id' })
+    expect(pending).toEqual([])
+  })
+})

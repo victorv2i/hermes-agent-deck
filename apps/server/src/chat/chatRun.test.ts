@@ -306,7 +306,11 @@ describe('/chat-run socket namespace', () => {
   })
 
   it('(d) abort calls stopRun on the gateway', async () => {
-    const { client: c, gateway: g } = await boot({ runId: 'run_stop' })
+    // manualSse keeps the run's stream OPEN (no terminal frame) so the pump stays
+    // active when the abort arrives — the realistic "stop a running run" case. The
+    // BFF only forwards stopRun for a still-active run (a terminal run has nothing
+    // to stop, and routing it could reach the wrong agent after a profile switch).
+    const { client: c, gateway: g } = await boot({ runId: 'run_stop', manualSse: true })
 
     // Start a run so the BFF has a run id (also exercises the happy path).
     const started = new Promise<ChatServerEvent>((resolve) => {

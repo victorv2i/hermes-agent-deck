@@ -45,7 +45,11 @@ import type { SessionSummary } from '@/features/sessions/types'
 import { sanitizeSessionPreview } from '@/features/sessions/sessionPreview'
 import { Avatar } from '@/components/ui/avatar'
 import { useProfiles } from '@/features/profiles/useProfiles'
-import { useSwitchProfile, switchAppliedLine } from '@/features/profiles/mutations'
+import {
+  useSwitchProfile,
+  switchAppliedLine,
+  switchInstantLine,
+} from '@/features/profiles/mutations'
 import { resolveAvatar } from '@/features/profiles/avatarForProfile'
 import type { ProfileSummary } from '@/features/profiles/types'
 import { toast } from '@/lib/toast'
@@ -515,7 +519,12 @@ export function CommandPalette({
   const switchProfile = useSwitchProfile()
   const handleSwitchAgent = (name: string) => {
     switchProfile.mutate(name, {
-      onSuccess: () => toast.info(switchAppliedLine(name)),
+      // Instant (the agent has its own reachable gateway) → a success toast; the
+      // single-gateway case keeps the honest restart-required line.
+      onSuccess: (result) =>
+        result.instant
+          ? toast.success(switchInstantLine(name))
+          : toast.info(switchAppliedLine(name)),
       onError: (err) =>
         toast.error('Couldn’t set the active agent', {
           description: err instanceof Error ? err.message : 'Please try again.',

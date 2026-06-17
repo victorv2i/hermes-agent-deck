@@ -11,6 +11,7 @@ import {
   CalendarClock,
   ScrollText,
   KanbanSquare,
+  Layers,
   ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
@@ -65,6 +66,11 @@ const KanbanRoute = lazy(() =>
 )
 const SystemRoute = lazy(() =>
   import('@/features/system').then((m) => ({ default: m.SystemRoute })),
+)
+// Unified cross-runtime history (Hermes + Claude Code + Codex) — the visible
+// payoff of the multi-runtime adapters. Code-split like the other surfaces.
+const RuntimeHistory = lazy(() =>
+  import('@/features/runtimes/RuntimeHistory').then((m) => ({ default: m.RuntimeHistory })),
 )
 // Connections (Voice · Messaging · MCP · Pairing · Webhooks · Credentials) is no
 // longer a standalone rail surface — it folded INTO the Agent Studio (Home) as a
@@ -278,6 +284,18 @@ export const NAV: NavItem[] = [
     element: <KanbanRoute />,
   },
   {
+    // Runtimes — the unified session history across Hermes, Claude Code, and Codex
+    // (the multi-runtime adapters' visible payoff). Lives in "Activity" beside the
+    // other cross-cutting views; the read-only runtimes are badged inside.
+    key: 'runtimes',
+    label: navMessage('navigation.item.runtimes.label'),
+    labelKey: 'navigation.item.runtimes.label',
+    path: '/runtimes',
+    icon: Layers,
+    group: 'activity',
+    element: <RuntimeHistory />,
+  },
+  {
     // Usage = cost + token metering, not the agent's "Activity" (Tasks/Board). It is
     // floated to the pinned-bottom cluster, just above Settings, where metering and
     // preferences sit together. `group` stays a routing tag; `pinned` floats it out.
@@ -364,9 +382,7 @@ export function navByGroup(): { group: NavGroup; label: string; items: NavItem[]
  * guaranteed by the registry placing Terminal right after Chat. */
 export function flatNavItems(): NavItem[] {
   const top = NAV.filter((item) => item.pinnedTop && !item.hidden)
-  const rest = NAV.filter(
-    (item) => !item.pinnedTop && !item.pinned && !item.hidden,
-  )
+  const rest = NAV.filter((item) => !item.pinnedTop && !item.pinned && !item.hidden)
   return [...top, ...rest]
 }
 

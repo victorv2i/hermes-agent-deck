@@ -4,6 +4,8 @@ import type { CliId, UpdateWorkspaceRequest, WorkspaceDefinition } from '@agent-
 import { apiPatch } from '@/lib/apiFetch'
 import { MOBILE_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { PaneGrid, type GridPane } from './PaneGrid'
+import { PaneAwarenessChip } from './PaneAwarenessChip'
+import { isAwareCli } from './usePaneState'
 import { CliPicker, CwdPicker } from './WorkspacePanePickers'
 import {
   addPane,
@@ -215,6 +217,9 @@ export function WorkspacePaneController({
         onActiveStatusChange={onActiveStatusChange}
         onActiveClearReady={onActiveClearReady}
         onActiveRestartReady={onActiveRestartReady}
+        renderPaneAside={(pane) =>
+          isAwareCli(pane.cli) ? <PaneAwarenessChip cli={pane.cli} cwd={pane.cwd} /> : null
+        }
       />
     </>
   )

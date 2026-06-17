@@ -916,7 +916,9 @@ describe('POST /api/agent-deck/profiles (create)', () => {
       payload: { name: 'apprentice', cloneFrom: 'mentor', soulPreset: 'coder' },
     })
     expect(res.statusCode).toBe(201)
-    expect(readFileSync(join(home, 'profiles', 'apprentice', 'SOUL.md'), 'utf8')).toBe('MENTOR SOUL')
+    expect(readFileSync(join(home, 'profiles', 'apprentice', 'SOUL.md'), 'utf8')).toBe(
+      'MENTOR SOUL',
+    )
     await a.close()
   })
 
@@ -1032,5 +1034,96 @@ describe('POST /api/agent-deck/profiles/switch', () => {
     expect(res.statusCode).toBe(404)
     expect(res.json()).toMatchObject({ error: 'not_found' })
     expect(existsSync(join(home, 'active_profile'))).toBe(false)
+  })
+
+  it('reports instant:false when no gateway-resolution deps are injected', async () => {
+    mkdirSync(join(home, 'profiles', 'coder'), { recursive: true })
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles/switch',
+      payload: { name: 'coder' },
+    })
+    expect(res.json()).toMatchObject({ active: 'coder', instant: false })
+  })
+})
+
+/**
+ * Instant-switch assessment: with the gateway-resolution deps injected, the
+ * switch reports `instant: true` only when the target agent resolves to a
+ * DISTINCT, reachable gateway (its own gateway on its own port).
+ */
+describe('POST /api/agent-deck/profiles/switch — instant assessment', () => {
+  let instantHome: string
+  let instantApp: FastifyInstance
+  const DEFAULT_ENDPOINT = 'http://127.0.0.1:8642'
+
+  async function bootInstantApp(opts: {
+    endpointFor: (profile: string) => string
+    reachable: (endpoint: string) => boolean
+    probedEndpoints?: string[]
+  }) {
+    instantApp = Fastify({ logger: false })
+    await instantApp.register(profilesRoutes, {
+      hermesHome: instantHome,
+      defaultGatewayEndpoint: DEFAULT_ENDPOINT,
+      resolveGatewayEndpoint: opts.endpointFor,
+      probeGateway: (endpoint) => {
+        opts.probedEndpoints?.push(endpoint)
+        return Promise.resolve(opts.reachable(endpoint))
+      },
+    })
+    await instantApp.ready()
+  }
+
+  beforeEach(() => {
+    instantHome = mkdtempSync(join(tmpdir(), 'hermes-profiles-instant-'))
+    mkdirSync(join(instantHome, 'profiles', 'work'), { recursive: true })
+  })
+  afterEach(async () => {
+    await instantApp?.close()
+    rmSync(instantHome, { recursive: true, force: true })
+  })
+
+  it('instant:true when the target has a distinct, reachable gateway', async () => {
+    await bootInstantApp({
+      endpointFor: () => 'http://127.0.0.1:8643',
+      reachable: () => true,
+    })
+    const res = await instantApp.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles/switch',
+      payload: { name: 'work' },
+    })
+    expect(res.json()).toMatchObject({ active: 'work', instant: true })
+  })
+
+  it('instant:false when the distinct gateway is unreachable', async () => {
+    await bootInstantApp({
+      endpointFor: () => 'http://127.0.0.1:8643',
+      reachable: () => false,
+    })
+    const res = await instantApp.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles/switch',
+      payload: { name: 'work' },
+    })
+    expect(res.json()).toMatchObject({ active: 'work', instant: false })
+  })
+
+  it('instant:false (no probe) when the target shares the default endpoint', async () => {
+    const probedEndpoints: string[] = []
+    await bootInstantApp({
+      endpointFor: () => DEFAULT_ENDPOINT,
+      reachable: () => true,
+      probedEndpoints,
+    })
+    const res = await instantApp.inject({
+      method: 'POST',
+      url: '/api/agent-deck/profiles/switch',
+      payload: { name: 'work' },
+    })
+    expect(res.json()).toMatchObject({ active: 'work', instant: false })
+    // A shared endpoint is never probed — sharing one gateway can't be instant.
+    expect(probedEndpoints).toEqual([])
   })
 })

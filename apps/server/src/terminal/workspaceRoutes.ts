@@ -36,15 +36,20 @@ import { dirname, resolve, sep } from 'node:path'
 import {
   CreateWorkspaceRequestSchema,
   UpdateWorkspaceRequestSchema,
+  type ActivePane,
+  type ActivePanesResponse,
+  type CliId,
   type DirEntry,
   type DirListResponse,
   type ListWorkspacesResponse,
+  type PaneRuntimeState,
   type RootsResponse,
   type WorkspaceDefinition,
   type WorkspaceRoot,
 } from '@agent-deck/protocol'
 import { isPathInsideRoot } from '../files/pathGuard'
 import { WorkspaceStore, generateWorkspaceId } from './workspaceStore'
+import { readPaneState as defaultReadPaneState } from './paneAwareness'
 
 export interface WorkspaceRoutesOptions extends FastifyPluginOptions {
   /** The persistence store. Injectable for hermetic tests. */
@@ -62,6 +67,12 @@ export interface WorkspaceRoutesOptions extends FastifyPluginOptions {
   allowHome?: boolean
   /** The home dir used for the `$HOME` opt-in. Injectable for tests. */
   home?: string
+  /**
+   * Reader for a pane's live runtime state (for the `active-panes` aggregate the
+   * Home band shows). Injectable for tests; defaults to the real
+   * {@link readPaneState} over the CLIs' on-disk transcripts.
+   */
+  readPaneState?: (cli: CliId, cwd: string | undefined) => PaneRuntimeState
 }
 
 /** Thrown when a requested cwd/dir fails the realpath + containment guard. */
@@ -177,6 +188,33 @@ export async function workspaceRoutes(
 
   app.get('/workspaces', async (): Promise<ListWorkspacesResponse> => {
     return { workspaces: await store.listWorkspaces() }
+  })
+
+  // Active agent panes across saved workspaces: each pane running an agent CLI
+  // (claude/codex) with a cwd, resolved to its live runtime state from the CLI's
+  // own transcript. Panes with no locatable transcript (`unknown`) are OMITTED so
+  // the Home band shows only REAL activity. Drives the band's terminal section.
+  const readState = options.readPaneState ?? defaultReadPaneState
+  app.get('/active-panes', async (): Promise<ActivePanesResponse> => {
+    const summaries = await store.listWorkspaces()
+    const panes: ActivePane[] = []
+    for (const summary of summaries) {
+      const def = await store.getWorkspace(summary.id)
+      if (!def) continue
+      for (const pane of def.panes) {
+        if (pane.cli !== 'claude' && pane.cli !== 'codex') continue
+        const state = readState(pane.cli, pane.cwd)
+        if (state.runState === 'unknown') continue
+        panes.push({
+          ...state,
+          workspaceId: def.id,
+          workspaceName: def.name,
+          paneId: pane.id,
+          label: pane.label,
+        })
+      }
+    }
+    return { panes, workingCount: panes.filter((p) => p.runState === 'working').length }
   })
 
   app.get<{ Params: { id: string } }>(
