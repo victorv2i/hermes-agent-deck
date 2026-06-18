@@ -1,5 +1,5 @@
 /**
- * Organization store — the persistence layer for Agent Deck's project/tag
+ * Organization store — the persistence layer for Agentdeck's project/tag
  * metadata. Owns a single JSON file (default `<HERMES_HOME>/agent-deck/
  * organization.json`) holding `{ projects, assignments }`.
  *

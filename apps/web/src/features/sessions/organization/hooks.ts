@@ -22,7 +22,7 @@ import {
 } from './api'
 
 /**
- * TanStack Query hooks for Agent Deck's organization layer (projects + tags).
+ * TanStack Query hooks for Agentdeck's organization layer (projects + tags).
  * One query — `['organization']` — backs the whole sessions pane (the Projects
  * section, the tag chips, the active filter, and the per-session assignment
  * menu all read the same cache). Every mutation invalidates that one key so the

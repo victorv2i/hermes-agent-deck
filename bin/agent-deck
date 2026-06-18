@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Agent Deck single-process launcher.
+# Agentdeck single-process launcher.
 #
 # Builds the workspace (web client + server) then starts ONE Node process that
 # serves the built SPA, the /api/agent-deck/* surface, and the Socket.IO

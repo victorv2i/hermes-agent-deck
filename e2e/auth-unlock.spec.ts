@@ -128,9 +128,9 @@ test('health authRequired=true renders the unlock screen, not the app shell', as
 
   // The AuthGate renders its lock screen.
   await expect(page.getByTestId('auth-gate')).toBeVisible()
-  await expect(page.getByRole('heading', { name: /Agent Deck is locked/i })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Agentdeck is locked/i })).toBeVisible()
   // The unlock form is present.
-  await expect(page.getByRole('button', { name: /Unlock Agent Deck/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Unlock Agentdeck/i })).toBeVisible()
   // The app shell (connection-dot) must NOT be rendered behind the gate.
   await expect(page.getByTestId('connection-dot')).not.toBeVisible()
 
@@ -151,7 +151,7 @@ test('entering a wrong token shows the rejection message, stays on the unlock sc
 
   const tokenInput = page.getByLabel(/Access token/i)
   await tokenInput.fill('wrong-token-abc')
-  await page.getByRole('button', { name: /Unlock Agent Deck/i }).click()
+  await page.getByRole('button', { name: /Unlock Agentdeck/i }).click()
 
   // The rejection message appears.
   await expect(page.getByText(/Token rejected/i)).toBeVisible()
@@ -175,7 +175,7 @@ test('correct token unlocks the app and the shell renders', async ({ page }) => 
 
   const tokenInput = page.getByLabel(/Access token/i)
   await tokenInput.fill(CORRECT_TOKEN)
-  await page.getByRole('button', { name: /Unlock Agent Deck/i }).click()
+  await page.getByRole('button', { name: /Unlock Agentdeck/i }).click()
 
   // The auth gate disappears and the app shell renders.
   await expect(page.getByTestId('auth-gate')).not.toBeVisible()

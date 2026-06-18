@@ -4,7 +4,7 @@ import { z } from 'zod'
  * Cron job DTO — the WHITELISTED view of a hermes scheduler job as exposed by the
  * loopback dashboard's cron API (`/api/cron/jobs`, see hermes_cli/web_server.py +
  * cron/jobs.py `create_job`). The dashboard stores far more per job than a remote
- * Agent Deck operator needs (and some of it is filesystem-shaped); this schema is
+ * Agentdeck operator needs (and some of it is filesystem-shaped); this schema is
  * the contract that keeps the wire shape SLIM and stable.
  *
  * SECURITY: the raw dashboard job dict carries on-disk layout fields
@@ -46,7 +46,7 @@ export const CronSchedule = z.object({
 export type CronSchedule = z.infer<typeof CronSchedule>
 
 /**
- * A single cron job as Agent Deck surfaces it. `paused` is the inverse of the
+ * A single cron job as Agentdeck surfaces it. `paused` is the inverse of the
  * scheduler's `enabled` flag (a paused job is `enabled: false` + `state: paused`),
  * surfaced positively so the UI's pause/resume toggle reads naturally.
  */

@@ -84,7 +84,7 @@ import { toast } from '@/lib/toast'
  * Two mutations: PIN is client-side only (a local "float to the top" affordance —
  * the dashboard has no favorite field) and DELETE is real (proxies the
  * dashboard's `DELETE /api/sessions/{id}`, behind a destructive confirm).
- * Rename is not exposed by stock Hermes. Agent Deck offers an honest local
+ * Rename is not exposed by stock Hermes. Agentdeck offers an honest local
  * label overlay instead: browser-local, visibly marked as local, never written
  * back to Hermes.
  *
@@ -213,7 +213,7 @@ export function SessionList({
   const [inlineRenaming, setInlineRenaming] = useState<{ id: string; value: string } | null>(null)
   const searching = debounced.trim().length > 0
 
-  // Agent Deck's own project/tag store. Backs the Projects section, tag chips,
+  // Agentdeck's own project/tag store. Backs the Projects section, tag chips,
   // the active-filter row, and the per-session assignment menu — all one query.
   const orgQuery = useOrganization()
   const org = orgQuery.data ?? EMPTY_ORGANIZATION

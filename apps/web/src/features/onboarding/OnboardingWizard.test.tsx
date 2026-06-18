@@ -63,7 +63,7 @@ describe('OnboardingWizard — rung gating', () => {
   it('resumes on Detect when nothing is set up; Continue is disabled until hermes is detected', () => {
     renderWizard({ status: status() })
     expect(screen.getByRole('heading', { name: /find hermes/i })).toBeInTheDocument()
-    expect(screen.getByText(/agent deck is already open/i)).toBeInTheDocument()
+    expect(screen.getByText(/agentdeck is already open/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^continue$/i })).toBeDisabled()
   })
 

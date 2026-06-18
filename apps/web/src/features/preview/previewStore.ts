@@ -2,7 +2,7 @@
  * The PREVIEW panel store (#116) — a tiny Zustand singleton driving the in-app
  * iframe browser. The agent surfaces a link in chat, or a URL appears in
  * terminal output; clicking it opens the URL HERE (a side panel) so the user can
- * check it without leaving Agent Deck — the local-preview loop.
+ * check it without leaving Agentdeck — the local-preview loop.
  *
  * The store is intentionally dumb: it holds the current URL, whether the panel
  * is open, and the honest LOAD STATE of the iframe. The panel component drives

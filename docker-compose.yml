@@ -1,4 +1,4 @@
-# Run Agent Deck against your own Hermes gateway.
+# Run Agentdeck against your own Hermes gateway.
 #
 #   docker compose up --build
 #   open http://127.0.0.1:7878

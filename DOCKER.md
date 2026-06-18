@@ -1,6 +1,6 @@
-# Running Agent Deck in Docker
+# Running Agentdeck in Docker
 
-Agent Deck is a web UI for a Hermes agent. The container serves the web client
+Agentdeck is a web UI for a Hermes agent. The container serves the web client
 and the small backend in one process, and the backend talks to your Hermes
 gateway over HTTP. It runs against a stock hermes-agent and never modifies it.
 

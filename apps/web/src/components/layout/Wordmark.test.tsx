@@ -3,9 +3,9 @@ import { render, screen } from '@testing-library/react'
 import { Wordmark, BrandMark } from './Wordmark'
 
 describe('Wordmark', () => {
-  it('renders the "Agent Deck" accessible name in the real wordmark font', () => {
+  it('renders the "Agentdeck" accessible name in the real wordmark font', () => {
     render(<Wordmark />)
-    const text = screen.getByText('Agent Deck')
+    const text = screen.getByText('Agentdeck')
     expect(text).toBeInTheDocument()
     // The text stays a real React span (PP Mondwest via font-wordmark), not baked
     // into the mark image — so it stays crisp + themeable.
@@ -18,7 +18,7 @@ describe('Wordmark', () => {
     expect(img).not.toBeNull()
     // The fixed sky-blue identity image (the "AD" wing mark on transparent).
     expect(img).toHaveAttribute('src', '/brand-mark.png')
-    // Decorative; the visible "Agent Deck" text carries the accessible name.
+    // Decorative; the visible "Agentdeck" text carries the accessible name.
     expect(img).toHaveAttribute('alt', '')
     // It is a raster image now, not an inline vector.
     expect(container.querySelector('svg')).toBeNull()
@@ -32,14 +32,14 @@ describe('Wordmark', () => {
     expect(img.className).not.toContain('text-primary')
   })
 
-  it('exposes the "Agent Deck" wordmark as the lockup accessible name', () => {
+  it('exposes the "Agentdeck" wordmark as the lockup accessible name', () => {
     render(<Wordmark />)
-    expect(screen.getByText('Agent Deck')).toBeInTheDocument()
+    expect(screen.getByText('Agentdeck')).toBeInTheDocument()
   })
 
   it('forwards className to the wrapper', () => {
     render(<Wordmark className="custom-x" />)
-    const text = screen.getByText('Agent Deck')
+    const text = screen.getByText('Agentdeck')
     expect(text.parentElement).toHaveClass('custom-x')
   })
 })

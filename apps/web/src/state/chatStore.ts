@@ -110,7 +110,7 @@ export interface ConversationNode {
 }
 
 /**
- * A local conversation branch. `localOnly` means Agent Deck owns this branch as
+ * A local conversation branch. `localOnly` means Agentdeck owns this branch as
  * local metadata only — there is no Hermes-persisted DAG. `hermesSessionId` is
  * carried ONLY when the branch may legitimately continue an existing Hermes
  * session (a fork at the live head); a fork from a historical message clears it

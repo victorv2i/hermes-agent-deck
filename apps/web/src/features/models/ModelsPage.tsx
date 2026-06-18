@@ -131,7 +131,7 @@ export function ModelsPage(props: ModelsPageProps) {
         <ErrorState
           icon={ServerCog}
           title="Couldn’t load models"
-          description="Agent Deck reads this list from the agent runtime, which may be offline."
+          description="Agentdeck reads this list from the agent runtime, which may be offline."
           onRetry={props.onRetry}
           retryLabel="Try again"
         />
@@ -267,7 +267,7 @@ function Loaded({
         title="No models configured"
         description={
           hasConnectAction
-            ? 'Use Connect a provider to add an API key or sign in. Your agent stores provider credentials; Agent Deck only shows setup status.'
+            ? 'Use Connect a provider to add an API key or sign in. Your agent stores provider credentials; Agentdeck only shows setup status.'
             : 'No models are set up yet. Use "Connect a provider" to add one, or check your agent configuration.'
         }
       />

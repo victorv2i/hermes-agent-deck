@@ -56,7 +56,7 @@ describe('SystemPage — three stacked cards', () => {
     setup()
     expect(screen.getByRole('region', { name: /your agent/i })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: /hermes/i })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: /agent[- ]deck/i })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /agentdeck/i })).toBeInTheDocument()
   })
 })
 
@@ -270,7 +270,7 @@ describe('DoctorCard', () => {
 describe('AgentDeckUpdateCard', () => {
   it('is DISABLED with an honest "No update channel configured" reason on no-channel', () => {
     setup()
-    const region = screen.getByRole('region', { name: /agent[- ]deck/i })
+    const region = screen.getByRole('region', { name: /agentdeck/i })
     expect(within(region).getByText(/no update channel configured/i)).toBeInTheDocument()
     // There is no enabled action — the git flow stays gated off.
     const buttons = within(region).queryAllByRole('button')
@@ -279,7 +279,7 @@ describe('AgentDeckUpdateCard', () => {
 
   it('shows the running agent-deck version', () => {
     setup()
-    const region = screen.getByRole('region', { name: /agent[- ]deck/i })
+    const region = screen.getByRole('region', { name: /agentdeck/i })
     expect(within(region).getByText(/0\.1\.0/)).toBeInTheDocument()
   })
 
@@ -287,7 +287,7 @@ describe('AgentDeckUpdateCard', () => {
     setup({
       system: { ...SYSTEM, agentDeck: { status: 'idle', currentVersion: '0.1.0' } },
     })
-    const region = screen.getByRole('region', { name: /agent[- ]deck/i })
+    const region = screen.getByRole('region', { name: /agentdeck/i })
     const buttons = within(region).queryAllByRole('button')
     for (const b of buttons) expect(b).toBeDisabled()
   })

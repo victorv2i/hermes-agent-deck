@@ -1,13 +1,13 @@
 /**
- * Agent Deck service worker (S6) — minimal, no precache, no offline shell.
+ * Agentdeck service worker (S6) — minimal, no precache, no offline shell.
  *
  * Its ONE job is to be the surface that shows run notifications while the tab is
  * backgrounded: the page calls `registration.showNotification(...)` through this
  * worker (see src/lib/swNotify.ts), so a finished / failed / approval-blocked run
- * pings a phone whose Agent Deck tab is in the background — over the same
+ * pings a phone whose Agentdeck tab is in the background — over the same
  * Tailscale HTTPS origin the UI is served from.
  *
- * It deliberately does NOT cache assets (Agent Deck is a live cockpit over a
+ * It deliberately does NOT cache assets (Agentdeck is a live cockpit over a
  * running Hermes — a stale offline shell would be a lie), and it does NOT
  * pretend to deliver pushes from a fully-closed device: real off-device reach
  * still needs hermes' own Telegram channel. The `push` handler is here only so a
@@ -35,7 +35,7 @@ self.addEventListener('push', (event) => {
   } catch {
     data = {}
   }
-  const title = data.title || 'Agent Deck'
+  const title = data.title || 'Agentdeck'
   const options = {
     body: data.body || '',
     tag: data.tag || 'agent-deck-run',

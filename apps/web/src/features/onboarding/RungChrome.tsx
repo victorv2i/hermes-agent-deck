@@ -8,7 +8,7 @@ const RUNG_META: Record<Rung, { step: string; title: string; lede: string }> = {
   detect: {
     step: 'Detect',
     title: 'Find Hermes',
-    lede: 'Agent Deck is a calm way to see and talk to the Hermes agent running on your machine.',
+    lede: 'Agentdeck is a calm way to see and talk to the Hermes agent running on your machine.',
   },
   connect: {
     step: 'Connect',

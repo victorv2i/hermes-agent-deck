@@ -4,7 +4,7 @@
  * The dashboard's `GET /api/config` only strips keys that start with `_`, so the
  * raw config tree can still carry live credentials — provider `api_key`s, the
  * top-level `API_SERVER_KEY`, auxiliary-model keys, webhook URLs, tokens, etc.
- * Agent Deck NEVER sends secret values to the browser, so this module deeply
+ * Agentdeck NEVER sends secret values to the browser, so this module deeply
  * walks the config and replaces any non-empty value held under a secret-bearing
  * key with a non-reversible marker before the BFF responds.
  *

@@ -34,7 +34,7 @@ export function TranscriptExportMenu({
 }) {
   const [open, setOpen] = useState(false)
 
-  // Agent Deck's own project/tag store, so the History menu can move the open
+  // Agentdeck's own project/tag store, so the History menu can move the open
   // session into a project or edit its tags (alongside Copy ID / Export).
   const orgQuery = useOrganization()
   const org = orgQuery.data

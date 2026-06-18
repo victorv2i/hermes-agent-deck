@@ -22,7 +22,7 @@
  *
  * It also exposes thin provider-OAuth BFF proxies under
  * `/api/agent-deck/provider-oauth`, forwarding stock dashboard OAuth calls
- * without implementing OAuth/PKCE/client-id logic in Agent Deck.
+ * without implementing OAuth/PKCE/client-id logic in Agentdeck.
  *
  * The dashboard session token is handled entirely inside the client and is never
  * surfaced here.
@@ -351,7 +351,7 @@ export const registerModelsRoutes: FastifyPluginAsync<ModelsRouteOptions> = asyn
   })
 
   // ── Provider OAuth dashboard proxies ──
-  // Thin BFF pass-throughs for stock dashboard OAuth routes. Agent Deck validates
+  // Thin BFF pass-throughs for stock dashboard OAuth routes. Agentdeck validates
   // only route params and never implements OAuth/PKCE/token storage itself.
   app.get('/api/agent-deck/provider-oauth', async (_req, reply): Promise<unknown> => {
     try {

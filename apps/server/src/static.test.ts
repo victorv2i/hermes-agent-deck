@@ -11,7 +11,7 @@ beforeAll(() => {
   webDist = mkdtempSync(join(tmpdir(), 'agent-deck-web-dist-'))
   writeFileSync(
     join(webDist, 'index.html'),
-    '<!doctype html><title>Agent Deck</title><div id="root"></div>',
+    '<!doctype html><title>Agentdeck</title><div id="root"></div>',
   )
   mkdirSync(join(webDist, 'assets'))
   writeFileSync(join(webDist, 'assets', 'app.js'), 'console.log("hi")')

@@ -42,7 +42,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const savedTokenChecking = Boolean(savedToken) && !savedTokenAccepted && savedTokenCheck.isLoading
   const savedTokenRejected = Boolean(savedToken) && savedTokenCheck.data === false
 
-  if (!data && isLoading) return <AuthShell message="Checking Agent Deck access..." />
+  if (!data && isLoading) return <AuthShell message="Checking Agentdeck access..." />
   // If the public health probe is unreachable, fail open. The rest of the app
   // still cannot use gated APIs without a valid token, and the shell carries no
   // credential to leak.
@@ -88,7 +88,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             <ShieldCheck className="size-5" aria-hidden />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-normal">Agent Deck is locked</h1>
+            <h1 className="text-lg font-semibold tracking-normal">Agentdeck is locked</h1>
             <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               Enter the access token printed in the server console.
             </p>
@@ -123,7 +123,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             ) : (
               <KeyRound className="size-4" aria-hidden />
             )}
-            Unlock Agent Deck
+            Unlock Agentdeck
           </Button>
         </form>
       </section>

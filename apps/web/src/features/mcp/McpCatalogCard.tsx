@@ -74,7 +74,7 @@ export function McpCatalogCard({ entry }: McpCatalogCardProps) {
         ) : (
           <div className="flex flex-col gap-1.5">
             <p className="text-[12px] text-foreground-tertiary">
-              Run this in your terminal. Sign-in and setup happen there, not in Agent Deck:
+              Run this in your terminal. Sign-in and setup happen there, not in Agentdeck:
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <code className="flex-1 truncate rounded-md border border-border bg-muted/40 px-2.5 py-2 font-mono text-[12px] text-foreground">

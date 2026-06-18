@@ -3,7 +3,7 @@
  * (`/api/plugins/kanban/*`, auto-mounted when the plugin is installed — see
  * hermes-agent plugins/kanban/dashboard/plugin_api.py). It maps the plugin's rich
  * raw board/task/worker/stats dicts into the SLIM, whitelisted DTOs in
- * packages/protocol/src/kanban.ts, so a remote Agent Deck operator never learns the
+ * packages/protocol/src/kanban.ts, so a remote Agentdeck operator never learns the
  * server's filesystem layout, worker PIDs, claim locks, or idempotency keys.
  *
  * Auth + transport are delegated to the shared {@link DashboardClient}; this layer

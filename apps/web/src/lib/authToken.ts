@@ -1,4 +1,4 @@
-/** Browser half of the shared Agent Deck auth contract. */
+/** Browser half of the shared Agentdeck auth contract. */
 
 export const AUTH_TOKEN_STORAGE_KEY = 'agent-deck:auth-token'
 

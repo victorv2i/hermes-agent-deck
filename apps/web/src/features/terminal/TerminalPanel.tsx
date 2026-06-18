@@ -96,7 +96,7 @@ export function TerminalPanel({ fetchImpl, viewComponent, ackStorage }: Terminal
       {state.phase === 'failed' && (
         <Panel
           title="Terminal unavailable"
-          body="Couldn't reach the terminal backend. Make sure the Agent Deck server is running."
+          body="Couldn't reach the terminal backend. Make sure the Agentdeck server is running."
         />
       )}
 

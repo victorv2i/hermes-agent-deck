@@ -3,7 +3,7 @@
  * friends, see hermes_cli/web_server.py + cron/jobs.py). It maps the raw scheduler
  * job dict — which carries on-disk layout fields (`hermes_home`, `workdir`) and
  * delivery internals — into the SLIM, whitelisted {@link CronJob} wire shape, so a
- * remote Agent Deck operator never learns the server's filesystem layout.
+ * remote Agentdeck operator never learns the server's filesystem layout.
  *
  * Auth + transport are delegated to the shared {@link DashboardClient}: this layer
  * only names routes, shapes bodies, and normalizes payloads. The dashboard session

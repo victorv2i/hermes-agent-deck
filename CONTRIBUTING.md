@@ -1,6 +1,6 @@
-# Contributing to Agent Deck
+# Contributing to Agentdeck
 
-Thanks for your interest. Agent Deck is a local-first web UI for the
+Thanks for your interest. Agentdeck is a local-first web UI for the
 [NousResearch Hermes](https://github.com/NousResearch/hermes-agent) agent.
 Issues and PRs are welcome.
 

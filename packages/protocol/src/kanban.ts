@@ -3,7 +3,7 @@ import { z } from 'zod'
 /**
  * Kanban DTOs — the WHITELISTED view of hermes's native kanban dashboard plugin
  * (auto-mounted at `/api/plugins/kanban/`, SQLite-backed cross-profile coordination
- * board). The plugin returns a far richer shape per task than a remote Agent Deck
+ * board). The plugin returns a far richer shape per task than a remote Agentdeck
  * operator needs (diagnostics rule output, link graphs, attachment stored paths,
  * worker PIDs, claim locks, on-disk log paths); these schemas are the contract that
  * keeps the wire shape SLIM, stable, and free of filesystem/host internals.

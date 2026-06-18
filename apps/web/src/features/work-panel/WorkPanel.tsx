@@ -6,7 +6,7 @@ import { CodeBlock } from '@/components/chat/CodeBlock'
 import { useWorkPanelStore } from './workPanelStore'
 
 /**
- * The WORK PANEL — the artifact canvas for Agent Deck.
+ * The WORK PANEL — the artifact canvas for Agentdeck.
  *
  * This is the artifact-canvas equivalent: a docked side
  * panel that shows a real code/markdown/HTML artifact BESIDE the conversation,
@@ -151,13 +151,13 @@ function WorkPanelEmpty() {
  *
  * Sandbox: `allow-scripts` ONLY. We deliberately do NOT add `allow-same-origin`
  * — combined with `allow-scripts` on a `srcdoc` frame it would let the agent's
- * HTML reach back into Agent Deck's own DOM/origin (a sandbox escape). Without
+ * HTML reach back into Agentdeck's own DOM/origin (a sandbox escape). Without
  * it the frame runs in a unique opaque origin: scripts execute but cannot touch
  * the parent. We also omit `allow-top-navigation` (a framed page can't redirect
- * Agent Deck away), `allow-popups`, and `allow-forms`.
+ * Agentdeck away), `allow-popups`, and `allow-forms`.
  *
  * Honest ceiling: we render what the agent produced. We don't execute or augment
- * it further. Scripts run IN the opaque-origin sandbox, isolated from Agent Deck.
+ * it further. Scripts run IN the opaque-origin sandbox, isolated from Agentdeck.
  */
 function HtmlArtifact({ content, open }: { content: string; open: boolean }) {
   // White page canvas in BOTH modes: an HTML artifact assumes a white page, so a

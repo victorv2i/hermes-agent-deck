@@ -70,7 +70,7 @@ describe('AuthGate', () => {
     renderGate()
 
     await user.type(await screen.findByLabelText(/access token/i), 'SECRET')
-    await user.click(screen.getByRole('button', { name: /unlock agent deck/i }))
+    await user.click(screen.getByRole('button', { name: /unlock agentdeck/i }))
 
     expect(await screen.findByTestId('shell')).toBeInTheDocument()
     expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe('SECRET')

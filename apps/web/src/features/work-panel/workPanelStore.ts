@@ -1,7 +1,7 @@
 /**
  * WorkPanel store — the singleton that drives the artifact canvas.
  *
- * The WorkPanel is the "Artifacts / Canvas" equivalent for Agent Deck: a docked
+ * The WorkPanel is the "Artifacts / Canvas" equivalent for Agentdeck: a docked
  * side panel that shows a REAL code/markdown/HTML artifact beside the
  * conversation. It reuses the same docked-side-panel real estate as the Preview
  * panel (two separate panels, separately toggled; the user sees the most

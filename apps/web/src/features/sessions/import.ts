@@ -1,6 +1,6 @@
 /**
  * Transcript import (Lane D) — the symmetric inverse of `export.ts`. It turns a
- * transcript that Agent Deck previously exported (JSON `{ session, messages }`,
+ * transcript that Agentdeck previously exported (JSON `{ session, messages }`,
  * or the readable Markdown role-block format) back into the in-memory
  * `SessionDetail` + `SessionMessage[]` so the History view can render it
  * READ-ONLY with the exact chat vocabulary.
@@ -83,7 +83,7 @@ function parseJson(text: string): ParseResult {
   }
   const malformed = {
     ok: false as const,
-    error: "This JSON isn't a transcript Agent Deck can read (expected { session, messages }).",
+    error: "This JSON isn't a transcript Agentdeck can read (expected { session, messages }).",
   }
   if (!isRecord(raw) || !Array.isArray(raw.messages)) return malformed
 

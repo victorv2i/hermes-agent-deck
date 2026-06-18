@@ -10,7 +10,7 @@ export const PROVIDER_OAUTH_POPUP_COPY =
 export function providerOAuthErrorMessage(err: unknown, fallback: string): string {
   const message = err instanceof Error ? err.message.trim() : ''
   if (message && OFFLINE_OR_BLOCKED_RE.test(message)) {
-    return 'Agent Deck could not reach Hermes provider sign-in. Make sure your agent and the Hermes dashboard are running, then try again. If OAuth is blocked or offline, use the API-key fallback; use a terminal only for provider flows Hermes cannot start from the browser.'
+    return 'Agentdeck could not reach Hermes provider sign-in. Make sure your agent and the Hermes dashboard are running, then try again. If OAuth is blocked or offline, use the API-key fallback; use a terminal only for provider flows Hermes cannot start from the browser.'
   }
   return message || fallback
 }

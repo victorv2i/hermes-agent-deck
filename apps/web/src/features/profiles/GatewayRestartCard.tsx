@@ -89,7 +89,7 @@ export function GatewayRestartCard({
         <div className="grid gap-2" role="alert">
           <p className="flex items-start gap-1.5 text-xs leading-relaxed text-destructive">
             <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
-            <span>Couldn’t restart your agent from Agent Deck. {error}</span>
+            <span>Couldn’t restart your agent from Agentdeck. {error}</span>
           </p>
           <div className="ad-surface flex items-center gap-2 rounded-md bg-surface-2 px-2.5 py-1.5">
             <code className="min-w-0 flex-1 truncate font-mono text-[12px] text-foreground">

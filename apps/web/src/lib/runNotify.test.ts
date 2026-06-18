@@ -70,7 +70,7 @@ describe('createTitleController', () => {
   let originalTitle: string
   beforeEach(() => {
     originalTitle = document.title
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
   })
   afterEach(() => {
     document.title = originalTitle
@@ -81,7 +81,7 @@ describe('createTitleController', () => {
     ctl.flip(buildRunNotice('completed'))
     expect(document.title).toMatch(/^●/)
     ctl.restore()
-    expect(document.title).toBe('Agent Deck')
+    expect(document.title).toBe('Agentdeck')
   })
 
   it('captures the base title from the first flip, not from a stale flip', () => {
@@ -92,13 +92,13 @@ describe('createTitleController', () => {
     ctl.flip(buildRunNotice('approval'))
     expect(document.title).toMatch(/^!/)
     ctl.restore()
-    expect(document.title).toBe('Agent Deck')
+    expect(document.title).toBe('Agentdeck')
   })
 
   it('restore is a no-op when nothing was flipped', () => {
     const ctl = createTitleController()
     ctl.restore()
-    expect(document.title).toBe('Agent Deck')
+    expect(document.title).toBe('Agentdeck')
   })
 })
 

@@ -9,7 +9,7 @@ import {
 } from '@agent-deck/protocol'
 
 /**
- * Thin fetch helpers for Agent Deck's OWN organization BFF (`/api/agent-deck/
+ * Thin fetch helpers for Agentdeck's OWN organization BFF (`/api/agent-deck/
  * organization` + the project / session-org mutations). Unlike the read-only
  * session proxy, this surface owns a server-side store, so these are real
  * create/update/delete calls. Each rides the shared `apiFetch` (auth + ok-check

@@ -41,7 +41,7 @@ export interface ProjectsSectionProps {
   onDropSession?: (projectId: string | null, sessionId: string) => void
 }
 
-/** The dataTransfer MIME type carrying a dragged session id, so only Agent Deck
+/** The dataTransfer MIME type carrying a dragged session id, so only Agentdeck
  * session drags (not arbitrary text/files) are accepted as folder drops. */
 export const SESSION_DRAG_TYPE = 'application/x-agent-deck-session'
 

@@ -97,7 +97,7 @@ export interface ProviderCatalogEntry {
 }
 
 /**
- * Normalized shape for the Agent Deck provider OAuth BFF. The underlying Hermes
+ * Normalized shape for the Agentdeck provider OAuth BFF. The underlying Hermes
  * flow may return a browser URL, a device/user code, a polling session id, or a
  * combination of those. No provider access tokens belong in this contract.
  */

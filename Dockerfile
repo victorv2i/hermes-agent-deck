@@ -1,4 +1,4 @@
-# Agent Deck portable image. One container serves the web client AND the BFF,
+# Agentdeck portable image. One container serves the web client AND the BFF,
 # and the BFF proxies whatever Hermes gateway you point it at. It runs against a
 # STOCK hermes-agent over HTTP; it never modifies the gateway.
 #

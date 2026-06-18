@@ -116,7 +116,7 @@ async function stubBff(page: Page) {
 
     if (path.endsWith('/health')) return json(route, HEALTH)
 
-    // Organization (Agent Deck's own project/tag store) — the rail's
+    // Organization (Agentdeck's own project/tag store) — the rail's
     // `['organization']` query needs a well-formed store; a bare `{}` would crash it.
     if (path.endsWith('/organization') && !path.includes('/sessions/')) {
       return json(route, { projects: [], assignments: {} })

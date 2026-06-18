@@ -1,7 +1,7 @@
 /**
  * node-pty bridge — the loopback terminal's process layer.
  *
- * The hermes dashboard exposes NO PTY route (per the M0 spike), so Agent Deck's
+ * The hermes dashboard exposes NO PTY route (per the M0 spike), so Agentdeck's
  * BFF owns the terminal: it spawns a real shell with `node-pty` in a workspace
  * cwd and streams bytes both ways over a Socket.IO namespace
  * (see {@link ./terminalNamespace}).

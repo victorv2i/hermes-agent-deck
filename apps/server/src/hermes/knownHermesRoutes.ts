@@ -2,7 +2,7 @@
  * KNOWN_HERMES_ROUTES — the frozen, hand-transcribed allowlist of every HTTP
  * route that STOCK hermes v0.15.2 actually serves.
  *
- * This is the anti-recurrence net. Agent Deck v1 was built against a RETIRED
+ * This is the anti-recurrence net. Agentdeck v1 was built against a RETIRED
  * dashboard overlay and ended up calling endpoints that do not exist in
  * stock (Models `/api/chat/model-state`, Files `/api/workspace/{roots,tree,file}`),
  * so those surfaces silently 404'd. To make that class of bug impossible to ship

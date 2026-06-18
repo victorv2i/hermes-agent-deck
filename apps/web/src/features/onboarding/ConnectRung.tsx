@@ -61,7 +61,7 @@ function providerLabel(value: string): string {
 
 /**
  * Rung 2 - Connect. The recommended path is browser sign-in through Hermes'
- * stock provider OAuth routes; Agent Deck opens the returned URL and polls the
+ * stock provider OAuth routes; Agentdeck opens the returned URL and polls the
  * returned session id when Hermes supplies one. Below it, an expandable API-key
  * path the BFF can drive (`hermes auth add <provider> --type api-key --api-key`,
  * masked + argv-scrubbed server-side). Continue is disabled until the REAL probe
@@ -258,7 +258,7 @@ export function ConnectRung({
             <span className="text-foreground">A model is connected and ready. It's working.</span>
           </div>
           <p className="text-xs leading-relaxed text-foreground-tertiary">
-            Agent Deck is running at{' '}
+            Agentdeck is running at{' '}
             <code className="font-mono text-foreground">{currentDeckUrl()}</code>. Bookmark this
             address so you can come back any time. The app stays in your browser; no install needed
             again.
@@ -272,7 +272,7 @@ export function ConnectRung({
               <div className="min-w-0">
                 <h2 className="text-sm font-medium text-foreground">Browser sign-in</h2>
                 <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  Agent Deck opens your browser to sign in, no terminal needed. Your credential
+                  Agentdeck opens your browser to sign in, no terminal needed. Your credential
                   stays with Hermes; this page only sees whether it worked.
                 </p>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -468,7 +468,7 @@ export function ConnectRung({
                   )}
                 </div>
                 <p className="text-xs leading-relaxed text-foreground-tertiary">
-                  Sent once to Hermes to store the credential. Agent Deck does not store or echo the
+                  Sent once to Hermes to store the credential. Agentdeck does not store or echo the
                   key after submission.
                 </p>
                 <div className="flex justify-end">

@@ -7,7 +7,7 @@ import { z } from 'zod'
  * The wizard is gated on a REAL readiness probe ({@link SetupStatus}), never the
  * `useOnboarded` localStorage bit. Provider connect can happen through the
  * Hermes-owned browser OAuth BFF or the provider-key path
- * (`hermes auth add <provider> --type api-key --api-key`); Agent Deck never owns
+ * (`hermes auth add <provider> --type api-key --api-key`); Agentdeck never owns
  * provider token storage.
  */
 

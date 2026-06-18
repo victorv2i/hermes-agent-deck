@@ -6,7 +6,7 @@ import type { ProfileSummary, ProfilesResponse } from '@/features/profiles/types
 /**
  * P8 — ambient identity. The document title + favicon follow the agent the
  * running gateway has ACTUALLY adopted, so a backgrounded tab honestly reads
- * "Mercury - Agent Deck" with Mercury's face. Crucially this is the RUNNING
+ * "Mercury - Agentdeck" with Mercury's face. Crucially this is the RUNNING
  * agent, not merely the selected `active_profile`: writing `active_profile`
  * doesn't restart the gateway, so until a restart the live agent is still the
  * old one — and the tab must not lie about which agent is answering. We only
@@ -18,14 +18,14 @@ import type { ProfileSummary, ProfilesResponse } from '@/features/profiles/types
  *
  * Honest by construction: it reads the SAME `/profiles` roster every identity
  * surface reads (no new state, no Hermes route), and falls back to the stable
- * "Agent Deck" mark whenever there's no running/named agent (roster loading, or
+ * "Agentdeck" mark whenever there's no running/named agent (roster loading, or
  * the unnamed default).
  */
 
 /** The suffix every titled tab carries, so the product is always legible. */
-export const TITLE_SUFFIX = 'Agent Deck'
+export const TITLE_SUFFIX = 'Agentdeck'
 
-/** The stable, agent-agnostic favicon shipped in /public (the Agent Deck mark). */
+/** The stable, agent-agnostic favicon shipped in /public (the Agentdeck mark). */
 export const DEFAULT_FAVICON = '/favicon-32.png'
 
 /** The active profile in a roster, or null. The BFF marks exactly one `isActive`;
@@ -69,7 +69,7 @@ export function titleForActive(profile: ProfileSummary | null): string {
 }
 
 /** The favicon href for an active profile: the agent's resolved avatar webp, or
- * the stable Agent Deck mark when there's no active agent yet. The avatar is the
+ * the stable Agentdeck mark when there's no active agent yet. The avatar is the
  * agent's real face (identity, never the accent) — an honest, tasteful tab mark. */
 export function faviconForActive(profile: ProfileSummary | null): string {
   if (!profile) return DEFAULT_FAVICON

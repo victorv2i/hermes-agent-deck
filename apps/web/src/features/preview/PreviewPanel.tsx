@@ -23,7 +23,7 @@ import { usePreviewStore } from './previewStore'
  * The iframe `sandbox` is deliberately scoped (`allow-scripts allow-same-origin
  * allow-forms allow-popups`) so local dev apps actually work, and
  * `referrerpolicy="no-referrer"` keeps the host private. There is NO
- * `allow-top-navigation`, so a previewed page can't navigate Agent Deck away.
+ * `allow-top-navigation`, so a previewed page can't navigate Agentdeck away.
  *
  * Reachability is host-local-honest: an iframe loads from the USER'S browser, so
  * a `localhost` URL only resolves when the browser runs on the same machine as
@@ -142,7 +142,7 @@ export function PreviewPanel({ open = true }: PreviewPanelProps) {
             onError={markBlocked}
             // Scoped sandbox: enough for a real local app (scripts/forms/same-origin/
             // popups), but NO top-navigation so a previewed page can't redirect
-            // Agent Deck itself.
+            // Agentdeck itself.
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
             referrerPolicy="no-referrer"
             className="h-full w-full border-0 bg-surface-elevated"
@@ -211,7 +211,7 @@ function PreviewEmpty() {
         <p className="mt-3 text-sm font-medium text-foreground">Nothing to preview yet</p>
         <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
           Open a link your agent shares in chat, or a URL from the terminal, to load it here without
-          leaving Agent Deck.
+          leaving Agentdeck.
         </p>
       </div>
     </div>

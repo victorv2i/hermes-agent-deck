@@ -3,7 +3,7 @@
 # A clean bridge network with a FRESH (empty) Hermes home volume — NONE of the developer's
 # ~/.hermes, no host paths, no override.conf. ONE Hermes container runs the stock
 # supervised stack: the gateway + the in-stack dashboard (HERMES_DASHBOARD=1) + the
-# /v1 API server the deck's chat rides (API_SERVER_*). Agent Deck is built from the
+# /v1 API server the deck's chat rides (API_SERVER_*). Agentdeck is built from the
 # working tree via its real local install path and wired to this Hermes purely
 # through documented env — surfacing every default that ASSUMES the developer's machine.
 #

@@ -1,5 +1,5 @@
 /**
- * Organization BFF — Agent Deck's OWN project/tag metadata over the read-only
+ * Organization BFF — Agentdeck's OWN project/tag metadata over the read-only
  * hermes session list. Unlike the dashboard-proxy surfaces, this owns a
  * server-side JSON store ({@link OrganizationStore}) at
  * `<HERMES_HOME>/agent-deck/organization.json`, so the data syncs across the

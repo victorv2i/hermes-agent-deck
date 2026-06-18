@@ -1,4 +1,4 @@
-# Hardening harness — build Agent Deck from the copied working tree via its REAL
+# Hardening harness — build Agentdeck from the copied working tree via its REAL
 # local install path, so the container tests exactly what a newcomer's
 # `pnpm install && pnpm build && pnpm start` does on a clean machine.
 #

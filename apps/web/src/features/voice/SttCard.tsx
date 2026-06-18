@@ -94,7 +94,7 @@ export function SttCard({ state, onUpdate, onSetKey, saving }: SttCardProps) {
           ) : null}
 
           <p className="border-t border-border pt-3 text-[12px] leading-relaxed text-foreground-tertiary">
-            This sets the provider your agent uses. Agent Deck doesn&apos;t record from your
+            This sets the provider your agent uses. Agentdeck doesn&apos;t record from your
             browser&apos;s microphone; that would capture this device, not where your agent runs.
           </p>
         </CardContent>

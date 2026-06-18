@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="apps/web/public/brand-mark.png" alt="Agent Deck" width="96">
+  <img src="apps/web/public/brand-mark.png" alt="Agentdeck" width="96">
 </p>
 
-<h1 align="center">Agent Deck</h1>
+<h1 align="center">Agentdeck</h1>
 
-<p align="center"><strong>Give your <a href="https://github.com/NousResearch/hermes-agent">Hermes</a> agents a home.</strong></p>
+<p align="center"><strong>The AI builder's cockpit.</strong></p>
 
-<p align="center">An Agent Studio to shape each one, and one calm browser tab where you watch them work, approve<br>what matters, and see what it costs. Chat, files, terminal, and schedules included.</p>
+<p align="center">Run your AI agents and dev terminals on your machine, then pick them up from any device: the same live sessions and tmux panes, no reconnect.<br>A calm, local-first cockpit powered by <a href="https://github.com/NousResearch/hermes-agent">Hermes</a>, all in one browser tab.</p>
 
 <p align="center">
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3da639">
@@ -15,32 +15,44 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/agents.png" alt="Agent Deck: the Agent Studio, where each agent gets a face, model, skills, and memory" width="920">
+  <img src="assets/readme/agents.png" alt="Agentdeck: the Agent Studio, where each agent gets a face, model, skills, and memory" width="920">
 </p>
 
-> **Never used a terminal?** Agent Deck is a friendly web page for talking to your own [Hermes](https://github.com/NousResearch/hermes-agent) AI agent. You need a computer (Mac or Linux) where Hermes runs, or will run; the one command in [Quickstart](#quickstart) below sets everything up for you, including Hermes itself, and makes it all start again on its own after a reboot.
+> **New to AI agents?** Agentdeck is a browser-based cockpit for running AI agents from your own computer. The one command in [Quickstart](#quickstart) installs everything and opens the setup wizard.
 
-Agent Deck is a calm, local-first web UI and a third way to work with your agent, alongside the CLI and Telegram. **MIT-licensed**, yours to use, fork, and build on. No fake states, no fabricated endpoints, and no magic hiding what's real.
+Agentdeck is a calm, local-first web UI and a third way to work with your agent, alongside the CLI and Telegram. **MIT-licensed**, yours to use, fork, and build on. No fake states, no fabricated endpoints, and no magic hiding what's real.
 
-## What is Agent Deck
+## Cross-device terminal workspaces
 
-Agent Deck puts your Hermes agent in a browser tab. Chat with it, watch its tools and reasoning unfold, approve what it wants to run, and pick up any past session right where you left off.
+Leave your desk with three sessions running. Open your phone. Same panes, same tmux sessions, no reconnect, no setup.
 
-It serves two people at once. For power users it's an **operator cockpit**: a live Run drawer, a cross-source fleet band, Jobs/Cron, Logs, Skills, Files, a real terminal, and a ⌘K palette wired for the keyboard. For someone who's never touched a CLI it's a **welcoming front door**: a demo path, first-run setup, and a single button to start a chat.
+The Terminal surface is a workspace manager. Each named workspace saves its pane layout server-side and reattaches the running tmux sessions from any device. A quick **Scratch** terminal gives you an ephemeral shell in one click; saved workspaces give you a persistent layout you can deep-link to from anywhere (`/workspaces/:id`).
 
-It runs locally, next to the CLI and Telegram, and talks to the Hermes gateway and dashboard you already have. If Hermes is running, there's nothing to configure. If a provider still needs setup, Agent Deck can launch Hermes-owned browser sign-in through its BFF or send an API key once to Hermes; the terminal is a fallback, not the only path.
+The launcher screen detects which CLIs you have installed (Hermes CLI, Claude Code, Codex, or a raw shell) and opens each honestly: available CLIs are one click, missing ones show a real install link. No fake states, no phantom processes.
+
+## What is Agentdeck
+
+Agentdeck is a local-first web cockpit for your AI agents and dev terminals, reachable from any device on your network. Start a chat or a terminal on your laptop and resume it on your phone: the same live run, tmux panes, and pending approvals, with no reconnect and no setup.
+
+It is powered by [Hermes](https://github.com/NousResearch/hermes-agent), where the gateway, agents, memory, and skills live. The built-in terminal drives any CLI you already have (Hermes, Claude Code, Codex, or a raw shell), and a unified history shows your sessions across all of them. Power users get a live Run drawer, a cross-source fleet band, Jobs/Cron, Logs, Skills, Files, and a ⌘K palette; a first-runner gets a demo path, a setup wizard, and one button to start a chat.
+
+If Hermes is running there is nothing to configure. If a provider still needs setup, Agentdeck launches Hermes-owned browser sign-in through its BFF or sends an API key to Hermes once; the terminal is a fallback, not the only path. No fake states, no fabricated endpoints.
 
 ## Highlights
 
 - **Run cockpit.** A live drawer that streams your agent's tool timeline, reasoning, token usage, and recent errors as a run unfolds, plus a fleet band showing sessions across `cli`, `telegram`, and `cron` in one place.
+- **Instant agent switching.** Run one gateway per agent on its own port and switch agents with no restart: chat routes to the active agent on your next message, in-flight runs stay pinned to where they started, and the UI tells you honestly whether a switch was instant or needs a restart.
+- **Terminal pane awareness.** A Claude Code or Codex pane surfaces what it's doing right now, read from that tool's own session log: a working/idle chip, the file it's touching, and its last tool call. No scraping, no fake states.
+- **One history across runtimes.** Hermes, Claude Code, and Codex sessions in a single filterable list (All / per-runtime) with per-runtime token usage, so every agent you run is in one place. Read-only runtimes are clearly badged.
+- **Cross-device terminal workspaces.** Named workspaces save pane layouts server-side and reattach tmux sessions from any device. Scratch gives you an ephemeral quick shell; saved workspaces give you persistence, start from a preset template, and export to a shareable JSON. One deep link opens the same layout on your phone.
 - **Surface-aware split rail.** On Chat you get an icon-nav plus a dedicated sessions pane; everywhere else it collapses to a single rail. Toggle with ⌘B. Past sessions resume in one click and your next message continues them.
 - **Three designed theme families**, each with a light and dark variant, switchable from Settings or ⌘K.
 - **Streaming chat** with inline tools, reasoning, and approvals (deny, allow once, allow for session, always allow), plus stop and resume.
 - **Operator surfaces:** Jobs and Cron, Logs, and Skills, alongside Models, Profiles, and Usage.
 - **Agent profile controls:** profile pages expose files, skills, soul, and the active memory provider; provider switch/reset controls are scoped to the active profile and surface Hermes errors honestly.
-- **Files and Terminal** built in (terminal is off by default on remote binds, see below). The Terminal opens with a one-click **launcher** for the CLIs you already have installed (Hermes CLI, Claude Code, Codex, or a raw shell), detected honestly through your own shell (so a `claude` shell alias is found), with an install link for any you don't have yet.
-- **⌘K command palette** and deep keyboard support throughout, with navigation/command labels flowing through the i18n catalog. Full app translation is still pre-release work.
-- **Honest security and remote posture:** frictionless on loopback, bearer-gated and Host-allowlisted on a remote bind. No hand-waving; the boundaries are spelled out.
+- **Files** built in with a file browser and code editor, accessible from any device.
+- **⌘K command palette** and deep keyboard support throughout.
+- **Honest security and remote posture:** frictionless on loopback, bearer-gated and Host-allowlisted on a remote bind.
 
 | Streaming chat that greets you by name                                                          | Three theme families, light and dark                           |
 | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -53,10 +65,10 @@ It runs locally, next to the CLI and Telegram, and talks to the Hermes gateway a
 > **Experimental.** Works on macOS (Apple Silicon and Intel) and Linux (x64 and arm64). Falls back to the manual path below if anything goes wrong. Re-run at any time to update.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/victorv2i/hermes-agent-deck/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/victorv2i/agentdeck/main/install.sh | bash
 ```
 
-This installs Hermes, builds Agent Deck, and registers all three pieces (the Hermes gateway, the Hermes dashboard, and Agent Deck itself) as persistent services (systemd user units on Linux, launchd on macOS), so everything comes back after a reboot. On Linux without a systemd user session (the default in WSL2) they run as plain background processes instead, and the installer says so; re-run it after a reboot to start them again. Then it opens your browser to the setup wizard. Nothing is configured before you see the wizard; it handles provider sign-in. If you already run Hermes your own way, the installer reuses your running gateway/dashboard instead of taking them over. If port 7878 is taken, it picks the next free port and prints your address (or set `AGENT_DECK_PORT` to choose one). Curious what it will do before it runs? Use `--dry-run`:
+This installs Hermes, builds Agentdeck, and registers all three pieces (the Hermes gateway, the Hermes dashboard, and Agentdeck itself) as persistent services (systemd user units on Linux, launchd on macOS), so everything comes back after a reboot. On Linux without a systemd user session (the default in WSL2) they run as plain background processes instead, and the installer says so; re-run it after a reboot to start them again. Then it opens your browser to the setup wizard. Nothing is configured before you see the wizard; it handles provider sign-in. If you already run Hermes your own way, the installer reuses your running gateway/dashboard instead of taking them over. If port 7878 is taken, it picks the next free port and prints your address (or set `AGENT_DECK_PORT` to choose one). Curious what it will do before it runs? Use `--dry-run`:
 
 ```bash
 bash install.sh --dry-run
@@ -76,8 +88,8 @@ bash install.sh --dry-run
 npm install -g pnpm@10
 
 # Then clone and enter the repo:
-git clone https://github.com/victorv2i/hermes-agent-deck.git
-cd agent-deck
+git clone https://github.com/victorv2i/agentdeck.git
+cd agentdeck
 pnpm install
 ```
 
@@ -94,7 +106,7 @@ pnpm demo
 
 ### Run against your Hermes
 
-Ready to use a real local Hermes agent. First make sure **Hermes itself is running**, both the **gateway** (`hermes gateway`) and the **dashboard** (`hermes dashboard`); Agent Deck connects to them, it does not launch them. Then start the deck:
+Ready to use a real local Hermes agent. First make sure **Hermes itself is running**, both the **gateway** (`hermes gateway`) and the **dashboard** (`hermes dashboard`); Agentdeck connects to them, it does not launch them. Then start the deck:
 
 ```bash
 pnpm start
@@ -105,9 +117,9 @@ pnpm start
 
 Bookmark `http://127.0.0.1:7878` for the real local app. Reopen it while `pnpm start` is running; for phone access, bookmark the Tailscale HTTPS URL below instead.
 
-On first run, the app checks whether Hermes is installed and whether a usable model is connected. **Nous Portal** is the recommended browser sign-in path for Nous-hosted models, but it is not the only option: Gemini CLI OAuth uses Hermes' `google-gemini-cli` browser provider, while Google AI Studio API keys use Hermes' `gemini` provider. Anthropic, OpenRouter, OpenAI, xAI, and custom Hermes provider slugs can also be connected with an API key when needed. Browser sign-in is launched by Hermes through the BFF, and API keys are sent once to Hermes; Agent Deck does not keep provider credentials in the browser.
+On first run, the app checks whether Hermes is installed and whether a usable model is connected. **Nous Portal** is the recommended browser sign-in path for Nous-hosted models, but it is not the only option: Gemini CLI OAuth uses Hermes' `google-gemini-cli` browser provider, while Google AI Studio API keys use Hermes' `gemini` provider. Anthropic, OpenRouter, OpenAI, xAI, and custom Hermes provider slugs can also be connected with an API key when needed. Browser sign-in is launched by Hermes through the BFF, and API keys are sent once to Hermes; Agentdeck does not keep provider credentials in the browser.
 
-Terminal fallback is still honest and narrow: use it to install Hermes, start Agent Deck, or run a provider auth flow that Hermes cannot start from the browser. Do not expect Agent Deck to own provider OAuth tokens or install Hermes silently.
+Terminal fallback is still honest and narrow: use it to install Hermes, start Agentdeck, or run a provider auth flow that Hermes cannot start from the browser. Do not expect Agentdeck to own provider OAuth tokens or install Hermes silently.
 
 ### Phone / remote access (Tailscale)
 
@@ -127,7 +139,7 @@ AGENT_DECK_HOST=your-host.ts.net pnpm start
 # then open http://your-host.ts.net:7878 from any tailnet device
 ```
 
-A non-loopback bind turns on the auth described in [Security](#security). The server prints a bearer token once at startup (or set `AGENT_DECK_TOKEN` to pin one). For reach-me when the tab is closed (true off-device notifications), use Hermes's Telegram channel; agent-deck's browser notifications only fire while the tab is open.
+A non-loopback bind turns on the auth described in [Security](#security). The server prints a bearer token once at startup (or set `AGENT_DECK_TOKEN` to pin one). For reach-me when the tab is closed (true off-device notifications), use Hermes's Telegram channel; Agentdeck's browser notifications only fire while the tab is open.
 
 **Behind a reverse proxy on your own domain** (nginx / Caddy / Cloudflare / Traefik → `127.0.0.1:7878`): the browser sends your domain as the `Host`, which the DNS-rebinding guard rejects by default. Allow your front-door name(s) with `AGENT_DECK_TRUSTED_HOSTS` (comma-separated), which the Host- and Origin-allowlists (HTTP, chat WS, and terminal WS) honor in addition to loopback / `*.ts.net`:
 
@@ -138,13 +150,15 @@ AGENT_DECK_FORCE_AUTH=1 AGENT_DECK_REMOTE=1 AGENT_DECK_TOKEN=choose-a-long-token
 
 ## How it connects to Hermes
 
-Agent Deck is a thin client and local BFF over stock Hermes:
+Agentdeck is a thin client and local BFF over stock Hermes:
 
 - **Chat** goes to the Hermes gateway (`/v1/runs`); the deck reads its port from your `~/.hermes/config.yaml` (`API_SERVER_PORT`), defaulting to the stock `:8642`, and streams it back as tools, reasoning, and approvals.
 - **Data surfaces** (sessions, config, models, usage) come from the Hermes dashboard data API.
 - **Provider setup** uses real Hermes paths: browser OAuth is proxied through the dashboard's provider-OAuth routes, and the API-key fallback runs guarded `hermes auth add` from the BFF.
 
 If Hermes is up, there's nothing to configure. If it isn't, the app still boots and serves the UI: health reports `degraded` and data surfaces show empty/error states instead of crashing.
+
+**Multiple agents, instant switching.** A stock gateway binds one profile for its process life, so switching agents normally means a restart. Run one gateway per profile on its own port (set `API_SERVER_PORT` in each `~/.hermes/profiles/<name>/config.yaml`, or map them with `AGENT_DECK_GATEWAY_PORTS`) and the deck routes chat to whichever agent is active, switching on the next message with no restart. In-flight runs stay pinned to the gateway they started on. When a target agent has no gateway of its own, the switch stays honest: it applies after a gateway restart.
 
 Defaults (override via env vars):
 
@@ -154,6 +168,7 @@ HERMES_DASHBOARD_URL      dashboard data API (default http://127.0.0.1:9119)
 HERMES_DASHBOARD_HOST     Host the dashboard authorizes (default 127.0.0.1:9119)
 HERMES_HOME               hermes home dir (default ~/.hermes; profile-aware)
 API_SERVER_KEY            gateway bearer key (else read from ~/.hermes/config.yaml)
+AGENT_DECK_GATEWAY_PORTS  optional profile=port overrides for multi-agent routing (e.g. default=8642,work=8643)
 ```
 
 The local BFF holds the gateway key and dashboard session token server-side. Hermes owns provider OAuth tokens and API-key persistence. They are never logged per-request or returned to the browser.
@@ -221,4 +236,4 @@ AGENT_DECK_LIVE_SMOKE=1 pnpm e2e --project=live     # live check: drives a real 
 
 ### Trademarks
 
-"Claude" and "Claude Code" are trademarks of Anthropic; "Codex" is a trademark of OpenAI; "Hermes" is a project of Nous Research. Agent Deck is an independent project and is not affiliated with, endorsed by, or sponsored by any of them. The Terminal launcher only launches the CLIs **you already have installed** on your own machine; the names are used solely to identify those tools.
+"Claude" and "Claude Code" are trademarks of Anthropic; "Codex" is a trademark of OpenAI; "Hermes" is a project of Nous Research. Agentdeck is an independent project and is not affiliated with, endorsed by, or sponsored by any of them. The Terminal launcher only launches the CLIs **you already have installed** on your own machine; the names are used solely to identify those tools.

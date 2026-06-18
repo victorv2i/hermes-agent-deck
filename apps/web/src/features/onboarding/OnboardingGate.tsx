@@ -104,7 +104,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           <div className="ad-enter ad-surface rounded-xl bg-card px-4 py-3 text-sm shadow-lg">
             <p className="font-medium text-foreground">Setup is not finished</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Agent Deck is open, but your agent still needs setup before everything works.
+              Agentdeck is open, but your agent still needs setup before everything works.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button

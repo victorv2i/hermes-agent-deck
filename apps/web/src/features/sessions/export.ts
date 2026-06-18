@@ -172,7 +172,7 @@ function toHtml(detail: SessionDetail | null, messages: SessionMessage[]): strin
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content="Agent Deck" />
+    <meta name="generator" content="Agentdeck" />
     <title>${escapeHtml(title)}</title>
     <style>
       :root { color-scheme: light dark; }
@@ -217,7 +217,7 @@ function toHtml(detail: SessionDetail | null, messages: SessionMessage[]): strin
         <h1>${escapeHtml(title)}</h1>${meta}
       </header>
 ${cards.join('\n')}
-      <footer>Exported locally from Agent Deck · ${escapeHtml(formatExportDate(nowSeconds()) ?? '')}</footer>
+      <footer>Exported locally from Agentdeck · ${escapeHtml(formatExportDate(nowSeconds()) ?? '')}</footer>
     </main>
   </body>
 </html>

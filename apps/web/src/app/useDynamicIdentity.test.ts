@@ -118,11 +118,11 @@ describe('titleForActive', () => {
   })
 
   it('uses the display name when set', () => {
-    expect(titleForActive(profile({ displayName: 'Mercury' }))).toBe('Mercury - Agent Deck')
+    expect(titleForActive(profile({ displayName: 'Mercury' }))).toBe('Mercury - Agentdeck')
   })
 
   it('uses the profile id for a non-default unnamed agent', () => {
-    expect(titleForActive(profile({ name: 'coder', isDefault: false }))).toBe('coder - Agent Deck')
+    expect(titleForActive(profile({ name: 'coder', isDefault: false }))).toBe('coder - Agentdeck')
   })
 
   it('falls back to the product for a blank/whitespace name', () => {
@@ -156,7 +156,7 @@ describe('useDynamicIdentity', () => {
   }
 
   it('sets the title and favicon from the active agent', async () => {
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
     // clear any prior icon link
     document.querySelectorAll('link[rel="icon"]').forEach((n) => n.remove())
     stubProfiles(
@@ -165,7 +165,7 @@ describe('useDynamicIdentity', () => {
 
     renderHook(() => useDynamicIdentity(), { wrapper: wrapper() })
 
-    await waitFor(() => expect(document.title).toBe('mercury - Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('mercury - Agentdeck'))
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     expect(link).not.toBeNull()
     expect(link!.getAttribute('href')).toMatch(/^\/avatars\/.+\.webp$/)
@@ -175,7 +175,7 @@ describe('useDynamicIdentity', () => {
   })
 
   it('keeps the 32x32 sizes hint for the static default favicon (no active agent)', async () => {
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
     // Seed the existing index.html link the hook reuses, with its sizes hint.
     document.querySelectorAll('link[rel="icon"]').forEach((n) => n.remove())
     const seed = document.createElement('link')
@@ -187,7 +187,7 @@ describe('useDynamicIdentity', () => {
     // A roster where nothing is active -> faviconForActive falls back to the mark.
     stubProfiles(roster([profile({ name: 'default', isDefault: true, isActive: false })], 'ghost'))
     renderHook(() => useDynamicIdentity(), { wrapper: wrapper() })
-    await waitFor(() => expect(document.title).toBe('Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('Agentdeck'))
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     expect(link!.getAttribute('href')).toBe(DEFAULT_FAVICON)
     expect(link!.getAttribute('sizes')).toBe('32x32')
@@ -195,7 +195,7 @@ describe('useDynamicIdentity', () => {
   })
 
   it('uses the display name in the title', async () => {
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
     stubProfiles(
       roster(
         [profile({ name: 'mercury', isDefault: false, isActive: true, displayName: 'Mercury' })],
@@ -203,11 +203,11 @@ describe('useDynamicIdentity', () => {
       ),
     )
     renderHook(() => useDynamicIdentity(), { wrapper: wrapper() })
-    await waitFor(() => expect(document.title).toBe('Mercury - Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('Mercury - Agentdeck'))
   })
 
   it('updates the title when the active agent changes', async () => {
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
     const first = roster(
       [profile({ name: 'mercury', isDefault: false, isActive: true })],
       'mercury',
@@ -224,15 +224,15 @@ describe('useDynamicIdentity', () => {
       createElement(QueryClientProvider, { client }, children)
 
     renderHook(() => useDynamicIdentity(), { wrapper: wrap })
-    await waitFor(() => expect(document.title).toBe('mercury - Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('mercury - Agentdeck'))
 
     // Invalidate so the hook re-fetches the new roster (an agent switch).
     await client.invalidateQueries({ queryKey: ['profiles'] })
-    await waitFor(() => expect(document.title).toBe('venus - Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('venus - Agentdeck'))
   })
 
   it('titles the tab after the RUNNING agent, not a just-selected-but-not-restarted one', async () => {
-    document.title = 'Agent Deck'
+    document.title = 'Agentdeck'
     // active_profile = venus (selected), but the gateway is still running mercury.
     stubProfiles(
       roster(
@@ -244,13 +244,13 @@ describe('useDynamicIdentity', () => {
       ),
     )
     renderHook(() => useDynamicIdentity(), { wrapper: wrapper() })
-    await waitFor(() => expect(document.title).toBe('mercury - Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('mercury - Agentdeck'))
   })
 
   it('falls back to the bare product title for the unnamed default', async () => {
     document.title = 'something stale'
     stubProfiles(roster([profile({ name: 'default', isDefault: true, isActive: true })], 'default'))
     renderHook(() => useDynamicIdentity(), { wrapper: wrapper() })
-    await waitFor(() => expect(document.title).toBe('Agent Deck'))
+    await waitFor(() => expect(document.title).toBe('Agentdeck'))
   })
 })

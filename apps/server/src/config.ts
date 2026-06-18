@@ -22,7 +22,7 @@ export function isWildcardHost(host: string): boolean {
 export class UnsafeBindError extends Error {
   constructor(public readonly host: string) {
     super(
-      `Refusing to bind a broad wildcard host (${host}): this exposes Agent Deck on ` +
+      `Refusing to bind a broad wildcard host (${host}): this exposes Agentdeck on ` +
         `EVERY network interface, and the access token is not a network boundary. ` +
         `Bind a specific address (loopback or a single Tailscale name/IP) instead, ` +
         `or set AGENT_DECK_UNSAFE_BIND=1 to override (you accept the exposure).`,

@@ -4,7 +4,7 @@ import { KNOWN_HERMES_ROUTES, routeKey, type HttpMethod } from './knownHermesRou
 /**
  * CONTRACT-CONFORMANCE TEST - the anti-recurrence net.
  *
- * Agent Deck's BFF must only ever call hermes routes that STOCK hermes actually
+ * Agentdeck's BFF must only ever call hermes routes that STOCK hermes actually
  * serves. v1 was built against a retired dashboard overlay and shipped
  * calls to endpoints absent from stock (Models, Files), which silently 404'd.
  * This test makes that class of bug a RED build: every hermes route shape the

@@ -79,7 +79,7 @@ const PROTECTED_ENV_VAR_NAMES = new Set([
 
 /**
  * Prefixes a guided MCP key must NOT be stored under. Two classes:
- *  - process/runtime mutators that could alter Hermes or Agent Deck — incl.
+ *  - process/runtime mutators that could alter Hermes or Agentdeck — incl.
  *    `PYTHON*` (PYTHONSTARTUP/PYTHONPATH/… = code injection into the Python
  *    Hermes process on its next restart);
  *  - provider/cloud credential names, so a malicious MCP can't trick the user

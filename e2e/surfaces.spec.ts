@@ -242,7 +242,7 @@ async function stubBff(page: Page) {
 
     if (path.endsWith('/health')) return json(route, HEALTH)
 
-    // Organization (Agent Deck's own project/tag store). The rail's
+    // Organization (Agentdeck's own project/tag store). The rail's
     // `['organization']` query drives render-time `Object.values(assignments)`,
     // so it MUST resolve to a well-formed store (an empty one is fine here) — the
     // earlier catch-all `{}` stub would crash the rail. Match the session-scoped

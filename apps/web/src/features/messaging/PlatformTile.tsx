@@ -131,8 +131,8 @@ export function PlatformTile({
 
           <p className="text-13 leading-relaxed text-muted-foreground">
             You create the bot in{' '}
-            <span className="font-medium text-foreground">{platform.label}</span>; Agent Deck stores
-            its token and Hermes handles replies after a restart. Agent Deck can&apos;t create the
+            <span className="font-medium text-foreground">{platform.label}</span>; Agentdeck stores
+            its token and Hermes handles replies after a restart. Agentdeck can&apos;t create the
             bot for you.
           </p>
 

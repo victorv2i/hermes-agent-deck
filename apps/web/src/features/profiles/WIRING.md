@@ -3,7 +3,7 @@
 The profiles BFF lists every Hermes profile (the built-in `default` =
 `~/.hermes`, plus any named profiles under `~/.hermes/profiles/<name>/`), showing
 model/provider, gateway status, skill count, `.env` presence, the sticky active
-profile, and Agent Deck's avatar sidecar. Switching is real but honest: it only
+profile, and Agentdeck's avatar sidecar. Switching is real but honest: it only
 updates Hermes' sticky `active_profile` pointer and tells the user to restart the
 gateway.
 
@@ -80,16 +80,16 @@ Stock Hermes now exposes profile dashboard routes in the dashboard server
 - `GET /api/profiles/{name}/setup-command` -> `{ command }`
 - `POST /api/profiles/{name}/open-terminal` -> `{ ok, command }`
 
-Those routes are usable by the native dashboard, but Agent Deck should not proxy
+Those routes are usable by the native dashboard, but Agentdeck should not proxy
 them directly for the Agents surface:
 
 - The stock list/create/rename/delete payloads include absolute `path` values.
-  Agent Deck's browser contract uses `displayPath` and never returns absolute
+  Agentdeck's browser contract uses `displayPath` and never returns absolute
   filesystem paths.
-- The stock list does not include Agent Deck's `active`/`isActive` fields,
+- The stock list does not include Agentdeck's `active`/`isActive` fields,
   `gatewayRunning`, or avatar sidecar.
-- Stock HTTP only exposes SOUL; Agent Deck also edits MEMORY and USER.
-- Stock HTTP has no profile-use/switch route. Agent Deck writes the sticky
+- Stock HTTP only exposes SOUL; Agentdeck also edits MEMORY and USER.
+- Stock HTTP has no profile-use/switch route. Agentdeck writes the sticky
   pointer locally and mirrors Hermes' `set_active_profile("default")` behavior by
   removing `active_profile` when switching back to the built-in agent.
 - The filesystem/CLI BFF keeps working when the dashboard token/Host gate is

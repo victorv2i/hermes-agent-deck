@@ -12,7 +12,7 @@ function isWindows(): boolean {
 
 /**
  * The official Hermes Quick-Install one-liner (NousResearch docs). Shown as a
- * copy-paste command because Agent Deck can't safely install Hermes itself before
+ * copy-paste command because Agentdeck can't safely install Hermes itself before
  * packaging, can't sense a PATH reload, and shouldn't silently execute a piped
  * installer on the host. The user copies it, runs it once, then Re-checks.
  */
@@ -65,7 +65,7 @@ export function DetectRung({
       ) : (
         <>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Agent Deck is already open in your browser. We could not find the{' '}
+            Agentdeck is already open in your browser. We could not find the{' '}
             <code className="font-mono text-foreground">hermes</code> command that runs your local
             agent. Copy the command below, run it once in a terminal, then re-check.
           </p>

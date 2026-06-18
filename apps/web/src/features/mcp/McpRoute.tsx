@@ -179,7 +179,7 @@ export function McpRoute() {
         <ErrorState
           icon={Blocks}
           title="Couldn’t load tool servers"
-          description="Agent Deck couldn’t read your MCP configuration. Chat can continue without this tool view."
+          description="Agentdeck couldn’t read your MCP configuration. Chat can continue without this tool view."
           onRetry={() => query.refetch()}
         />
       </div>

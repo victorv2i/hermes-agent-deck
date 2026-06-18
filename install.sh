@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Agent Deck — One-Command Installer
+# Agentdeck — One-Command Installer
 # =============================================================================
 #
-# Run this to install Hermes + Agent Deck, start both, and open your browser:
+# Run this to install Hermes + Agentdeck, start both, and open your browser:
 #
-#   curl -fsSL https://raw.githubusercontent.com/victorv2i/hermes-agent-deck/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/victorv2i/agentdeck/main/install.sh | bash
 #
 # Or, if you already have the repo:
 #
@@ -23,11 +23,11 @@
 #   2. Installs Hermes via its own official installer
 #   3. Checks Node.js (you install it if missing -- cannot do it for you)
 #   4. Installs pnpm if missing
-#   5. Clones or updates Agent Deck, builds the web client
+#   5. Clones or updates Agentdeck, builds the web client
 #   6. Checks the ports (if 7878 is taken, picks the next free port automatically)
 #   7. Starts the Hermes gateway (port 8642) and dashboard (port 9119) as
-#      persistent services, same as Agent Deck below
-#   8. Starts Agent Deck as a persistent service (systemd user units on Linux,
+#      persistent services, same as Agentdeck below
+#   8. Starts Agentdeck as a persistent service (systemd user units on Linux,
 #      launchd on macOS) -- so everything comes back after a reboot
 #   9. Opens your browser to http://127.0.0.1:7878
 #  10. Prints a bookmark reminder and stop/start commands
@@ -62,18 +62,18 @@ trap '_cleanup_on_interrupt' INT TERM
 # ---------------------------------------------------------------------------
 # Configuration — adjust these env vars before running if needed
 # ---------------------------------------------------------------------------
-# Where to clone Agent Deck (defaults to ~/.local/share/agent-deck)
+# Where to clone Agentdeck (defaults to ~/.local/share/agent-deck)
 AGENT_DECK_DIR="${AGENT_DECK_DIR:-$HOME/.local/share/agent-deck}"
 # The repo URL (set the AGENT_DECK_REPO env var to override).
-AGENT_DECK_REPO="${AGENT_DECK_REPO:-https://github.com/victorv2i/hermes-agent-deck.git}"
-# Agent Deck web UI port. If this port is taken by something else, the installer
+AGENT_DECK_REPO="${AGENT_DECK_REPO:-https://github.com/victorv2i/agentdeck.git}"
+# Agentdeck web UI port. If this port is taken by something else, the installer
 # picks the next free port automatically (set AGENT_DECK_PORT to choose one).
 AGENT_DECK_PORT="${AGENT_DECK_PORT:-7878}"
 # Hermes dashboard port — 9119, the STOCK hermes dashboard default (and Agent
 # Deck's built-in default), so the started dashboard + the deck agree with no env.
 HERMES_DASHBOARD_PORT="9119"
 # Hermes gateway (chat API) port — 8642, the STOCK hermes gateway default. The
-# gateway is started with no --port so it binds this default; Agent Deck reads the
+# gateway is started with no --port so it binds this default; Agentdeck reads the
 # gateway port from the user's ~/.hermes/config.yaml (API_SERVER_PORT) and falls
 # back to this same stock 8642, so the BFF and the gateway agree with no env.
 HERMES_GATEWAY_PORT="8642"
@@ -154,7 +154,7 @@ print_banner() {
   printf "\n"
   printf "  +----------------------------------------------------------+\n"
   printf "  |                                                          |\n"
-  printf "  |   Agent Deck Installer                                   |\n"
+  printf "  |   Agentdeck Installer                                   |\n"
   printf "  |   The Hermes web UI -- easy on-ramp for everyone         |\n"
   printf "  |                                                          |\n"
   printf "  +----------------------------------------------------------+\n"
@@ -163,7 +163,7 @@ print_banner() {
     printf "  %s[DRY-RUN MODE]%s Nothing will be installed or changed.\n\n" \
       "${_YELLOW}" "${_RESET}"
   fi
-  log_info "This installer will set up Hermes and Agent Deck on your computer."
+  log_info "This installer will set up Hermes and Agentdeck on your computer."
   log_info "It takes about 5-10 minutes the first time (mostly downloading)."
   log_info "You can safely re-run it to update."
   printf "\n"
@@ -220,7 +220,7 @@ detect_os() {
       log_info "  2. Restart your computer."
       log_info "  3. Open the Ubuntu app and run this installer inside WSL2."
       log_info ""
-      log_info "  Or run this in PowerShell (Hermes only, no Agent Deck yet):"
+      log_info "  Or run this in PowerShell (Hermes only, no Agentdeck yet):"
       log_info "    iex (irm https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1)"
       printf "\n"
       exit 1
@@ -236,7 +236,7 @@ detect_os() {
     log_success "Operating system: $os_raw ($ARCH)"
     if [ "${WSL2:-0}" -eq 1 ]; then
       log_info "Running inside WSL2. Note: default WSL2 has no 'systemctl --user', so"
-      log_info "Agent Deck and Hermes won't auto-start on boot. Re-run this installer"
+      log_info "Agentdeck and Hermes won't auto-start on boot. Re-run this installer"
       log_info "after a restart, or enable systemd in /etc/wsl.conf."
     fi
   else
@@ -263,13 +263,13 @@ check_network() {
 }
 
 # ---------------------------------------------------------------------------
-# Step 3: Check git (needed to download Hermes and Agent Deck)
+# Step 3: Check git (needed to download Hermes and Agentdeck)
 # ---------------------------------------------------------------------------
 check_git() {
   log_step "[3/11] Checking git..."
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_dry "Would check that git is installed (it downloads Hermes and Agent Deck)."
+    log_dry "Would check that git is installed (it downloads Hermes and Agentdeck)."
     log_dry "If missing, would print installation instructions and exit."
     return 0
   fi
@@ -280,7 +280,7 @@ check_git() {
     # tools up front so that dialog never interrupts a later step.
     if ! xcode-select -p >/dev/null 2>&1; then
       log_error "git is not installed (the Xcode Command Line Tools are missing)."
-      log_info "This installer uses git to download Hermes and Agent Deck."
+      log_info "This installer uses git to download Hermes and Agentdeck."
       log_info ""
       log_info "Install the tools with:"
       log_info "  xcode-select --install"
@@ -293,7 +293,7 @@ check_git() {
 
   if ! command -v git >/dev/null 2>&1; then
     log_error "git is not installed."
-    log_info "This installer uses git to download Hermes and Agent Deck."
+    log_info "This installer uses git to download Hermes and Agentdeck."
     log_info ""
     log_info "Install it:"
     case "$OS" in
@@ -346,7 +346,7 @@ install_hermes() {
   if [ "$DRY_RUN" -eq 1 ]; then
     log_dry "Hermes not found. Would run:"
     log_dry "  curl -fsSL $HERMES_INSTALL_URL | bash -s -- --skip-setup"
-    log_dry "  (--skip-setup defers provider/model setup to the Agent Deck wizard)"
+    log_dry "  (--skip-setup defers provider/model setup to the Agentdeck wizard)"
     return 0
   fi
 
@@ -354,7 +354,7 @@ install_hermes() {
   log_info "Using the official Hermes installer from NousResearch."
   log_info ""
 
-  # --skip-setup: skip the interactive wizard; Agent Deck's onboarding handles it.
+  # --skip-setup: skip the interactive wizard; Agentdeck's onboarding handles it.
   # We do NOT pass --skip-browser because the gateway may need Node for its HTTP layer.
   if ! curl -fsSL "$HERMES_INSTALL_URL" | bash -s -- --skip-setup; then
     log_error "The Hermes installer reported an error (see output above)."
@@ -394,7 +394,7 @@ check_node() {
 
   if ! command -v node >/dev/null 2>&1; then
     log_error "Node.js is not installed."
-    log_info "Agent Deck's web interface requires Node.js $NODE_MIN or newer to build."
+    log_info "Agentdeck's web interface requires Node.js $NODE_MIN or newer to build."
     log_info ""
     log_info "Install it from: https://nodejs.org/en/download"
     log_info ""
@@ -429,7 +429,7 @@ check_node() {
   # the build. Enforce the real floor here so a too-old Node fails fast + clearly.
   if [ "$node_major" -lt "$NODE_MIN" ] ||
     { [ "$node_major" -eq 20 ] && [ "${node_minor:-0}" -lt 19 ]; }; then
-    log_error "Node.js v$node_ver is too old. Agent Deck needs Node.js 20.19+ (or 22.12+)."
+    log_error "Node.js v$node_ver is too old. Agentdeck needs Node.js 20.19+ (or 22.12+)."
     log_info "Update from: https://nodejs.org/en/download"
     log_info "After updating, re-run:"
     log_info "  bash install.sh"
@@ -495,17 +495,17 @@ check_pnpm() {
 }
 
 # ---------------------------------------------------------------------------
-# Step 7: Clone or update Agent Deck, then build the web client
+# Step 7: Clone or update Agentdeck, then build the web client
 # ---------------------------------------------------------------------------
 install_agent_deck() {
-  log_step "[7/11] Installing Agent Deck..."
+  log_step "[7/11] Installing Agentdeck..."
 
   # ---- Clone or update ----
   if [ -d "$AGENT_DECK_DIR/.git" ]; then
     if [ "$DRY_RUN" -eq 1 ]; then
-      log_dry "Agent Deck already at $AGENT_DECK_DIR. Would run: git pull origin main"
+      log_dry "Agentdeck already at $AGENT_DECK_DIR. Would run: git pull origin main"
     else
-      log_info "Agent Deck already installed at $AGENT_DECK_DIR -- updating..."
+      log_info "Agentdeck already installed at $AGENT_DECK_DIR -- updating..."
       if ! git -C "$AGENT_DECK_DIR" pull --ff-only origin main 2>/dev/null; then
         log_warn "Could not pull the latest update (local changes or network issue)."
         log_info "Continuing with the existing version."
@@ -515,10 +515,10 @@ install_agent_deck() {
     if [ "$DRY_RUN" -eq 1 ]; then
       log_dry "Would clone $AGENT_DECK_REPO to $AGENT_DECK_DIR"
     else
-      log_info "Downloading Agent Deck to $AGENT_DECK_DIR ..."
+      log_info "Downloading Agentdeck to $AGENT_DECK_DIR ..."
       mkdir -p "$(dirname "$AGENT_DECK_DIR")"
       if ! git clone "$AGENT_DECK_REPO" "$AGENT_DECK_DIR" 2>&1; then
-        log_error "Could not download Agent Deck."
+        log_error "Could not download Agentdeck."
         log_info "The repository URL is: $AGENT_DECK_REPO"
         log_info "Fix: check your internet connection and that git is installed, then re-run:"
         log_info "  bash install.sh"
@@ -560,7 +560,7 @@ install_agent_deck() {
       log_info "  cd $AGENT_DECK_DIR && pnpm --filter @agent-deck/web build"
       exit 1
     fi
-    log_success "Agent Deck built"
+    log_success "Agentdeck built"
   fi
 }
 
@@ -568,8 +568,8 @@ install_agent_deck() {
 # Step 8: Check ports
 # ---------------------------------------------------------------------------
 # Ports we need:
-#   7878  Agent Deck web UI (or the next free port if 7878 is taken)
-#   9119  Hermes dashboard (started on this port so Agent Deck finds it by default)
+#   7878  Agentdeck web UI (or the next free port if 7878 is taken)
+#   9119  Hermes dashboard (started on this port so Agentdeck finds it by default)
 #   8642  Hermes gateway / chat API
 #
 # The Hermes ports are handled at the start step: an already-running gateway or
@@ -602,7 +602,7 @@ _port_occupant() {
 }
 
 _deck_service_active() {
-  # Is the Agent Deck service this installer manages currently running?
+  # Is the Agentdeck service this installer manages currently running?
   case "$OS" in
     linux) command -v systemctl >/dev/null 2>&1 &&
       systemctl --user is-active agent-deck.service >/dev/null 2>&1 ;;
@@ -612,7 +612,7 @@ _deck_service_active() {
 }
 
 _deck_responds() {
-  # Is whatever listens on this port an Agent Deck (vs an unrelated process)?
+  # Is whatever listens on this port an Agentdeck (vs an unrelated process)?
   curl -fsSo /dev/null --max-time 2 \
     "http://127.0.0.1:$1/api/agent-deck/health" 2>/dev/null
 }
@@ -630,8 +630,8 @@ check_ports() {
   esac
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_dry "Would check port $AGENT_DECK_PORT for Agent Deck (set AGENT_DECK_PORT to choose another)."
-    log_dry "If the Agent Deck service already holds it, the restart simply takes over."
+    log_dry "Would check port $AGENT_DECK_PORT for Agentdeck (set AGENT_DECK_PORT to choose another)."
+    log_dry "If the Agentdeck service already holds it, the restart simply takes over."
     log_dry "If anything else holds it, would scan the next 20 ports, pick the first free"
     log_dry "one, print the new address, and write it into the service."
     log_dry "Ports $HERMES_GATEWAY_PORT (gateway) and $HERMES_DASHBOARD_PORT (dashboard) are checked at their start step;"
@@ -640,7 +640,7 @@ check_ports() {
   fi
 
   if ! _port_in_use "$AGENT_DECK_PORT"; then
-    log_success "Port $AGENT_DECK_PORT is free for Agent Deck"
+    log_success "Port $AGENT_DECK_PORT is free for Agentdeck"
     return 0
   fi
 
@@ -650,15 +650,15 @@ check_ports() {
     # The health probe is messaging only: a slow-starting service that has
     # not answered yet is still ours, so it must not change the decision.
     if _deck_responds "$AGENT_DECK_PORT"; then
-      log_success "Port $AGENT_DECK_PORT is held by the Agent Deck service -- the restart will take over"
+      log_success "Port $AGENT_DECK_PORT is held by the Agentdeck service -- the restart will take over"
     else
-      log_success "Port $AGENT_DECK_PORT is held by the Agent Deck service (still starting up) -- the restart will take over"
+      log_success "Port $AGENT_DECK_PORT is held by the Agentdeck service (still starting up) -- the restart will take over"
     fi
     return 0
   fi
 
   if _deck_responds "$AGENT_DECK_PORT"; then
-    log_error "An Agent Deck is already running on port $AGENT_DECK_PORT, but not as the managed service."
+    log_error "An Agentdeck is already running on port $AGENT_DECK_PORT, but not as the managed service."
     log_info "It was probably started by hand (pnpm start) or by an earlier run."
     log_info "Fix: stop it (or restart your computer), then re-run:"
     log_info "  bash install.sh"
@@ -689,13 +689,13 @@ check_ports() {
     exit 1
   fi
   AGENT_DECK_PORT="$picked"
-  log_success "Agent Deck will use port $AGENT_DECK_PORT instead"
+  log_success "Agentdeck will use port $AGENT_DECK_PORT instead"
   log_info "Your address will be: http://127.0.0.1:$AGENT_DECK_PORT"
   log_info "(The service remembers this port, so it stays the same after reboots.)"
 }
 
 # ---------------------------------------------------------------------------
-# Steps 9 + 10: Start the Hermes gateway + dashboard, then Agent Deck.
+# Steps 9 + 10: Start the Hermes gateway + dashboard, then Agentdeck.
 # All three are registered the same way: systemd user units on Linux, launchd
 # agents on macOS, so everything comes back after a reboot. On systems without
 # a systemd user session (e.g. default WSL2) they fall back to plain background
@@ -753,7 +753,7 @@ _write_gateway_systemd_unit() {
   mkdir -p "$HOME/.config/systemd/user"
   cat > "$HOME/.config/systemd/user/agent-deck-hermes-gateway.service" <<EOF
 [Unit]
-Description=Hermes gateway (chat engine) for Agent Deck
+Description=Hermes gateway (chat engine) for Agentdeck
 After=network.target
 
 [Service]
@@ -778,7 +778,7 @@ _write_dashboard_systemd_unit() {
   mkdir -p "$HOME/.config/systemd/user"
   cat > "$HOME/.config/systemd/user/agent-deck-hermes-dashboard.service" <<EOF
 [Unit]
-Description=Hermes dashboard (data API) for Agent Deck
+Description=Hermes dashboard (data API) for Agentdeck
 After=network.target
 
 [Service]
@@ -877,9 +877,9 @@ EOF
 }
 
 start_hermes_gateway() {
-  # The gateway is the chat engine. It must be running before Agent Deck starts.
+  # The gateway is the chat engine. It must be running before Agentdeck starts.
   # It runs on port 8642 (the stock Hermes default) and is registered as a
-  # service the same way Agent Deck is, so it comes back after a reboot.
+  # service the same way Agentdeck is, so it comes back after a reboot.
   log_step "[9/11] Starting the Hermes gateway and dashboard..."
   local hermes
   hermes="$(_hermes_bin)"
@@ -995,9 +995,9 @@ start_hermes_gateway() {
 
 start_hermes_dashboard() {
   # The dashboard serves sessions, models, config, and provides the session token
-  # that Agent Deck needs to access data surfaces. It runs on port 9119 so Agent
+  # that Agentdeck needs to access data surfaces. It runs on port 9119 so Agent
   # Deck finds it without any extra configuration, and is registered as a
-  # service the same way Agent Deck is, so it comes back after a reboot.
+  # service the same way Agentdeck is, so it comes back after a reboot.
   local hermes
   hermes="$(_hermes_bin)"
 
@@ -1063,7 +1063,7 @@ start_hermes_dashboard() {
           log_warn "systemd user session not available. Starting the dashboard in the background."
           log_warn "It will not restart automatically if it stops. Re-run the installer to restart."
           mkdir -p "$HOME/.hermes/logs"
-          # --no-open: we open the browser to Agent Deck, not the raw Hermes dashboard
+          # --no-open: we open the browser to Agentdeck, not the raw Hermes dashboard
           nohup "$hermes" dashboard \
             --port "$HERMES_DASHBOARD_PORT" \
             --no-open \
@@ -1107,21 +1107,21 @@ start_hermes_dashboard() {
   done
 
   # A 10s timeout here is not fatal — the dashboard may just be slow to start.
-  # Agent Deck retries internally and will show a helpful status once it boots.
+  # Agentdeck retries internally and will show a helpful status once it boots.
   log_warn "Hermes dashboard did not respond within 10s."
-  log_info "Agent Deck will keep retrying. Some data surfaces may be empty at first."
+  log_info "Agentdeck will keep retrying. Some data surfaces may be empty at first."
   log_info "Dashboard log: $HOME/.hermes/logs/dashboard-agent-deck.log"
 }
 
 _write_systemd_unit() {
-  # Write (or overwrite) the systemd user unit for Agent Deck.
+  # Write (or overwrite) the systemd user unit for Agentdeck.
   local node_bin
   node_bin="$(_node_bin)"
 
   mkdir -p "$HOME/.config/systemd/user"
   cat > "$HOME/.config/systemd/user/agent-deck.service" <<EOF
 [Unit]
-Description=Agent Deck -- Hermes web UI
+Description=Agentdeck -- Hermes web UI
 After=network.target
 
 [Service]
@@ -1157,7 +1157,7 @@ EOF
 }
 
 _write_launchd_plist() {
-  # Write (or overwrite) the launchd plist for Agent Deck.
+  # Write (or overwrite) the launchd plist for Agentdeck.
   local plist_path="$HOME/Library/LaunchAgents/io.agent-deck.app.plist"
   local node_bin pnpm_bin
   node_bin="$(_node_bin)"
@@ -1214,7 +1214,7 @@ EOF
 }
 
 start_agent_deck() {
-  log_step "[10/11] Starting Agent Deck..."
+  log_step "[10/11] Starting Agentdeck..."
   if [ "$DRY_RUN" -eq 0 ]; then
     mkdir -p "$HOME/.hermes/logs"
   fi
@@ -1233,16 +1233,16 @@ start_agent_deck() {
           systemctl --user daemon-reload
           systemctl --user enable agent-deck.service
           systemctl --user restart agent-deck.service
-          log_success "Agent Deck started as a systemd user service"
+          log_success "Agentdeck started as a systemd user service"
           log_info "It will restart automatically if it crashes, and start again after login."
         fi
       else
         # No systemd user session: fall back to nohup background process
         if [ "$DRY_RUN" -eq 1 ]; then
-          log_dry "No systemd user session available. Would start Agent Deck with nohup."
+          log_dry "No systemd user session available. Would start Agentdeck with nohup."
           log_dry "  AGENT_DECK_WEB_CLIENT_ROOT=... HERMES_GATEWAY_URL=... ... nohup pnpm ... &"
         else
-          log_warn "systemd user session not available. Starting Agent Deck in the background."
+          log_warn "systemd user session not available. Starting Agentdeck in the background."
           log_warn "It will not restart automatically if it stops. Re-run the installer to restart."
           AGENT_DECK_WEB_CLIENT_ROOT="$AGENT_DECK_DIR/apps/web/dist" \
           HERMES_GATEWAY_URL="http://127.0.0.1:$HERMES_GATEWAY_PORT" \
@@ -1251,7 +1251,7 @@ start_agent_deck() {
           AGENT_DECK_PORT="$AGENT_DECK_PORT" \
           nohup pnpm --dir "$AGENT_DECK_DIR" --filter '@agent-deck/server' exec tsx src/index.ts \
             > "$HOME/.hermes/logs/agent-deck.log" 2>&1 &
-          log_success "Agent Deck started in background (PID $!)"
+          log_success "Agentdeck started in background (PID $!)"
         fi
       fi
       ;;
@@ -1260,13 +1260,13 @@ start_agent_deck() {
         log_dry "Would write ~/Library/LaunchAgents/io.agent-deck.app.plist"
         log_dry "Would run: launchctl unload <plist>  (silently, in case it was loaded)"
         log_dry "Would run: launchctl load ~/Library/LaunchAgents/io.agent-deck.app.plist"
-        log_dry "Agent Deck will start automatically at login."
+        log_dry "Agentdeck will start automatically at login."
       else
         local plist_path
         plist_path="$(_write_launchd_plist)"
         launchctl unload "$plist_path" 2>/dev/null || true
         launchctl load "$plist_path"
-        log_success "Agent Deck started as a launchd service"
+        log_success "Agentdeck started as a launchd service"
         log_info "It will restart automatically if it crashes, and start again at login."
       fi
       ;;
@@ -1274,20 +1274,20 @@ start_agent_deck() {
 }
 
 # ---------------------------------------------------------------------------
-# Wait for Agent Deck to be ready, then open the browser
+# Wait for Agentdeck to be ready, then open the browser
 # ---------------------------------------------------------------------------
 open_browser_to_agent_deck() {
   log_step "[11/11] Opening your browser..."
   local url="http://127.0.0.1:$AGENT_DECK_PORT"
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    log_dry "Would wait up to 30s for Agent Deck to respond at $url"
+    log_dry "Would wait up to 30s for Agentdeck to respond at $url"
     log_dry "Would open $url in the default browser (open on macOS, xdg-open on Linux)."
     return 0
   fi
 
-  # Wait up to 30s for Agent Deck to respond
-  log_info "Waiting for Agent Deck to start (up to 30 seconds)..."
+  # Wait up to 30s for Agentdeck to respond
+  log_info "Waiting for Agentdeck to start (up to 30 seconds)..."
   local attempts=0
   while [ "$attempts" -lt 30 ]; do
     if curl -fsSo /dev/null --max-time 1 "$url/" 2>/dev/null; then
@@ -1300,14 +1300,14 @@ open_browser_to_agent_deck() {
   printf "\n"
 
   if ! curl -fsSo /dev/null --max-time 1 "$url/" 2>/dev/null; then
-    log_warn "Agent Deck did not respond within 30s."
+    log_warn "Agentdeck did not respond within 30s."
     log_info "It may still be starting. Check the log:"
     log_info "  $HOME/.hermes/logs/agent-deck.log"
     log_info "Once it starts, open: $url"
     return 0
   fi
 
-  log_success "Agent Deck is ready"
+  log_success "Agentdeck is ready"
 
   case "$OS" in
     macos)
@@ -1333,7 +1333,7 @@ print_success_banner() {
   printf "\n"
   printf "  +------------------------------------------------------------------+\n"
   printf "  |                                                                  |\n"
-  printf "  |  %sAgent Deck is running%s                                          |\n" \
+  printf "  |  %sAgentdeck is running%s                                          |\n" \
     "${_GREEN}" "${_RESET}"
   printf "  |                                                                  |\n"
   printf "  |  Bookmark this address in your browser:                         |\n"
@@ -1348,7 +1348,7 @@ print_success_banner() {
   printf "\n"
 
   log_info "Logs:"
-  log_info "  Agent Deck:       $HOME/.hermes/logs/agent-deck.log"
+  log_info "  Agentdeck:       $HOME/.hermes/logs/agent-deck.log"
   log_info "  Hermes gateway:   $HOME/.hermes/logs/gateway-agent-deck.log"
   log_info "  Hermes dashboard: $HOME/.hermes/logs/dashboard-agent-deck.log"
   printf "\n"
@@ -1393,7 +1393,7 @@ print_success_banner() {
   esac
 
   printf "\n"
-  log_info "To update Agent Deck: re-run this installer at any time."
+  log_info "To update Agentdeck: re-run this installer at any time."
   printf "\n"
 }
 

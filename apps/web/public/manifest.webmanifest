@@ -1,7 +1,7 @@
 {
-  "name": "Agent Deck",
-  "short_name": "Agent Deck",
-  "description": "A web UI for your hermes agent: chat, files, terminal, and a live cockpit for what your agent is doing.",
+  "name": "Agentdeck",
+  "short_name": "Agentdeck",
+  "description": "The AI builder's cockpit. Chat, terminal workspaces, approvals, and fleet visibility for your agents.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

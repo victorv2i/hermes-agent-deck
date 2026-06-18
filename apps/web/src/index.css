@@ -9,7 +9,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Agent Deck design language — a THEME-SWITCHED palette system. The action accent
+  Agentdeck design language — a THEME-SWITCHED palette system. The action accent
   and every surface/semantic color are TOKENIZED; a user-selected palette swaps the
   token VALUES under [data-palette='<id>'] (dark) + [data-palette='<id>'][data-theme='light']
   (light). Governance is identical across palettes (design-language §2/§10): one

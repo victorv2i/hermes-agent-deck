@@ -43,7 +43,7 @@ describe('SystemRoute', () => {
       expect(screen.getByRole('region', { name: /your agent/i })).toBeInTheDocument(),
     )
     expect(screen.getByRole('region', { name: /hermes/i })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: /agent[- ]deck/i })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /agentdeck/i })).toBeInTheDocument()
   })
 
   it('renders the error state (calm, no chat impact) when the read fails', async () => {

@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Agent Deck is pre-1.0 and ships from the `main` branch. Security fixes land on `main`, so please run the latest version.
+Agentdeck is pre-1.0 and ships from the `main` branch. Security fixes land on `main`, so please run the latest version.
 
 ## Reporting a vulnerability
 
@@ -15,7 +15,7 @@ Include steps to reproduce, the affected version or commit, and the impact. We a
 
 ## Threat model (summary)
 
-Agent Deck is safe by default and explicit about its boundaries. The full model is in the README "Security" section. In short:
+Agentdeck is safe by default and explicit about its boundaries. The full model is in the README "Security" section. In short:
 
 - Loopback bind (`127.0.0.1`, `localhost`, `::1`) is frictionless, with no token.
 - Any non-loopback bind automatically requires a bearer token, enforces a `Host` allowlist (DNS-rebinding defense) and a CORS Origin allowlist, and sends hardening headers (CSP, `nosniff`, `X-Frame-Options: DENY`).

@@ -66,7 +66,7 @@ function SessionLabelForm({
       <DialogHeader>
         <DialogTitle>Label this session</DialogTitle>
         <DialogDescription>
-          Hermes does not rename sessions yet. Agent Deck stores this label in this browser only.
+          Hermes does not rename sessions yet. Agentdeck stores this label in this browser only.
         </DialogDescription>
       </DialogHeader>
       <form

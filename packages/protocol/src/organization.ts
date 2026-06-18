@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /**
- * Organization DTOs — Agent Deck's OWN project/tag metadata layer over the
+ * Organization DTOs — Agentdeck's OWN project/tag metadata layer over the
  * read-only hermes session list. The dashboard's sessions carry no project/tag
  * fields, so this data lives in agent-deck's own server-side JSON store
  * (`<HERMES_HOME>/agent-deck/organization.json`) and syncs across the user's

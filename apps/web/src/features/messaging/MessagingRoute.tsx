@@ -86,7 +86,7 @@ export function MessagingRoute() {
         <ErrorState
           icon={MessagesSquare}
           title="Couldn’t load messaging status"
-          description="Agent Deck couldn’t reach Hermes to read your platforms. This doesn’t affect chatting."
+          description="Agentdeck couldn’t reach Hermes to read your platforms. This doesn’t affect chatting."
           onRetry={() => query.refetch()}
         />
       </div>

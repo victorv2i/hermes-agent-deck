@@ -245,7 +245,7 @@ export async function fetchProviderOAuthProviders(signal?: AbortSignal): Promise
 }
 
 /**
- * Start a Hermes-owned provider OAuth flow through the Agent Deck BFF. The
+ * Start a Hermes-owned provider OAuth flow through the Agentdeck BFF. The
  * browser receives only launch/session metadata; provider tokens stay with
  * Hermes/BFF state and are not stored client-side.
  */

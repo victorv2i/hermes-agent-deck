@@ -2,7 +2,7 @@
   "name": "agent-deck",
   "version": "0.1.0",
   "private": true,
-  "description": "A local-first web UI for the NousResearch Hermes agent.",
+  "description": "The AI builder's cockpit. Local-first agent management, cross-device terminal workspaces, and fleet visibility.",
   "keywords": [
     "hermes",
     "agent",
@@ -14,11 +14,11 @@
   "author": "victorv2i",
   "repository": {
     "type": "git",
-    "url": "https://github.com/victorv2i/hermes-agent-deck.git"
+    "url": "https://github.com/victorv2i/agentdeck.git"
   },
-  "homepage": "https://github.com/victorv2i/hermes-agent-deck#readme",
+  "homepage": "https://github.com/victorv2i/agentdeck#readme",
   "bugs": {
-    "url": "https://github.com/victorv2i/hermes-agent-deck/issues"
+    "url": "https://github.com/victorv2i/agentdeck/issues"
   },
   "license": "MIT",
   "type": "module",

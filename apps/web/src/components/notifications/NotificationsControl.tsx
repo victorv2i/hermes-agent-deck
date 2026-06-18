@@ -102,7 +102,7 @@ export function NotificationsControl({
             </p>
             <p id={hintId} className="mt-1 text-xs leading-relaxed text-muted-foreground">
               Ping you when a run finishes, fails, or blocks waiting for your approval and you
-              aren&rsquo;t looking at the conversation. Works only while Agent Deck is open in a
+              aren&rsquo;t looking at the conversation. Works only while Agentdeck is open in a
               tab; it can&rsquo;t reach a closed tab or a sleeping device.
             </p>
           </div>

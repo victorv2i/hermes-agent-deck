@@ -4,7 +4,7 @@ import { z } from 'zod'
  * Cross-source agent status — the SLIM, WHITELISTED view of the hermes
  * dashboard's `GET /api/status`. The dashboard knows the running gateway, its
  * per-platform connection states (telegram/cron/cli/…), an active-session count,
- * and config version drift. Agent Deck's own chat surface only sees the LOCAL
+ * and config version drift. Agentdeck's own chat surface only sees the LOCAL
  * web run; this DTO is how the "Active recently" band learns that an operator is
  * also driving the agent from other sources.
  *

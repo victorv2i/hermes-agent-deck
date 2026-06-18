@@ -14,7 +14,7 @@ test('app loads in the warm-void AppShell, console-clean', async ({ page }) => {
   // The dedicated sessions pane is the second column (default-open on desktop).
   await expect(page.getByTestId('sessions-pane')).toBeVisible()
   // The slim icon-nav has no room for the wordmark text, so it moves to the header.
-  await expect(page.getByRole('banner').getByText('Agent Deck')).toBeVisible()
+  await expect(page.getByRole('banner').getByText('Agentdeck')).toBeVisible()
   await expect(page.getByRole('button', { name: /new chat/i })).toBeVisible()
 
   // Connection dot reflects the BFF health probe (online or offline, never crashes).

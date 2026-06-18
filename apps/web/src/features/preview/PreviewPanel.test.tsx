@@ -38,7 +38,7 @@ describe('PreviewPanel', () => {
     expect(sandbox).toContain('allow-scripts')
     expect(sandbox).toContain('allow-same-origin')
     expect(sandbox).toContain('allow-forms')
-    // Critically must NOT let the framed page navigate Agent Deck away.
+    // Critically must NOT let the framed page navigate Agentdeck away.
     expect(sandbox).not.toContain('allow-top-navigation')
     expect(frame).toHaveAttribute('referrerpolicy', 'no-referrer')
   })

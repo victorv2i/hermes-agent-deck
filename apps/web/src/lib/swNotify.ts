@@ -2,7 +2,7 @@
  * Service-worker registration for run notifications (S6).
  *
  * Registering a service worker lets {@link BrowserNotifier} post notices through
- * `registration.showNotification(...)`, which keeps firing while the Agent Deck
+ * `registration.showNotification(...)`, which keeps firing while the Agentdeck
  * tab is backgrounded (the in-tab `new Notification(...)` path can be throttled
  * or suppressed once the page is hidden). This is what pings a phone whose tab is
  * in the background over Tailscale HTTPS.

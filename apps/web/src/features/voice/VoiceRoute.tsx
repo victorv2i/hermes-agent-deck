@@ -70,7 +70,7 @@ export function VoiceRoute() {
         <ErrorState
           icon={AudioLines}
           title="Couldn’t load voice settings"
-          description="Agent Deck couldn’t reach Hermes to read your voice configuration. This doesn’t affect chatting."
+          description="Agentdeck couldn’t reach Hermes to read your voice configuration. This doesn’t affect chatting."
           onRetry={() => query.refetch()}
         />
       </div>

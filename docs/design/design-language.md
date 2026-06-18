@@ -1,4 +1,4 @@
-# Agent Deck: Design Language (v1)
+# Agentdeck: Design Language (v1)
 
 > Goal: best-in-class clarity with a distinctive Nous/Hermes soul. A beautifully crafted instrument for thinking *with* your agent, not a SaaS dashboard. Restraint over decoration; the conversation is the hero.
 

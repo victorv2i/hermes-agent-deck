@@ -1,7 +1,7 @@
 /*
   Theme FAMILIES (the non-default color schemes). Imported by index.css.
 
-  Agent Deck ships THREE families. The DEFAULT "Clay & Sky" lives at the bare :root
+  Agentdeck ships THREE families. The DEFAULT "Clay & Sky" lives at the bare :root
   in index.css; this sheet holds the other two selectable families (Warm Void · Nous,
   Indigo Atelier). Each family defines its tokens for BOTH a real
   DARK variant ([data-palette='<id>'], also matched by

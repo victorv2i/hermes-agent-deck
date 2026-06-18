@@ -3,7 +3,7 @@
  *
  * Two connection paths stay intentionally separate:
  *
- *  1. Browser sign-in for providers Hermes can OAuth: Agent Deck asks the BFF to
+ *  1. Browser sign-in for providers Hermes can OAuth: Agentdeck asks the BFF to
  *     start a Hermes-owned OAuth session, opens the returned URL when present,
  *     shows returned device/user-code details, polls returned session ids, and
  *     can cancel the session. Provider tokens are never stored in the browser.
@@ -435,7 +435,7 @@ export function ConnectProviderDialog({
                     id={`${ids}-key-hint`}
                     className="text-[11px] leading-relaxed text-foreground-tertiary"
                   >
-                    Sent to Hermes for credential storage. Agent Deck does not store or echo this
+                    Sent to Hermes for credential storage. Agentdeck does not store or echo this
                     key after submission.
                   </p>
                 </div>
@@ -664,7 +664,7 @@ function OAuthLauncher({
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-info" aria-hidden />
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-sm font-medium text-foreground">
-            Agent Deck launches Hermes-owned OAuth
+            Agentdeck launches Hermes-owned OAuth
           </span>
           <span className="text-[12px] leading-relaxed text-muted-foreground">
             Hermes handles authorization for {provider.label} and keeps any provider token. This

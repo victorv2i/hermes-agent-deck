@@ -1,5 +1,5 @@
 /**
- * Workspace store - the persistence layer for Agent Deck's terminal WORKSPACES.
+ * Workspace store - the persistence layer for Agentdeck's terminal WORKSPACES.
  *
  * A workspace is a named, freeform grid of terminal panes. The SERVER is the
  * source of truth for these DEFINITIONS so every device (Mac, Windows, iPhone

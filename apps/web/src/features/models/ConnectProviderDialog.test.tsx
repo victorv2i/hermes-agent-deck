@@ -208,7 +208,7 @@ describe('ConnectProviderDialog', () => {
     await user.click(screen.getByRole('radio', { name: /nous portal/i }))
     const launcher = screen.getByTestId('oauth-browser-launcher')
     expect(
-      within(launcher).getByText(/agent deck launches hermes-owned oauth/i),
+      within(launcher).getByText(/agentdeck launches hermes-owned oauth/i),
     ).toBeInTheDocument()
     expect(within(launcher).getByText(/api-key fallback/i)).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/oauth.*can.?t be driven from here/i)
