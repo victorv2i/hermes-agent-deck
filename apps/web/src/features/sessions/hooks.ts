@@ -156,15 +156,33 @@ export function useSessionsPaginated(pageSize: number = RAIL_PAGE_SIZE): Paginat
 }
 
 /**
- * The Hermes `source` that tags a chat opened through THIS deck. The deck drives
- * the gateway's DASHBOARD, so its own chats arrive as `dashboard` (never
- * `cli` / `telegram` / `cron` / `api_server`). This is the canonical
- * "agent-deck-originated" source on any install.
+ * The Hermes `source` tags for a chat opened through THIS deck. The deck drives
+ * the gateway, which stamps the session by its ingress:
+ *  - `api_server`: the current tag, since the deck moved to the gateway's
+ *    `/v1/runs` transport on 2026-05-29 (the gateway owns the tag; the deck
+ *    cannot relabel it, see the gateway-v1-runs contract).
+ *  - `dashboard`: the pre-switch tag (the deck drove the dashboard's chat).
+ * The rail surfaces BOTH so no chat is lost across that cutover. Every other
+ * channel (cli / telegram / cron / handoff / …) stays external.
  */
-export const DECK_SESSION_SOURCE = 'dashboard'
+export const DECK_SESSION_SOURCES = ['dashboard', 'api_server'] as const
 
 /** Stable empty array so the hook returns a referentially-stable default. */
 const NO_DECK_SESSIONS: SessionSummary[] = []
+
+/** One source-scoped deck fetch; returns the raw session array (or undefined
+ * while loading) so the caller can merge across sources. */
+function useDeckSourceSessions(source: string, enabled: boolean): SessionSummary[] | undefined {
+  const params: ListSessionsParams = { source, limit: 100, order: 'recent' }
+  const query = useQuery({
+    queryKey: sessionKeys.list(params),
+    queryFn: ({ signal }) => fetchSessions(params, signal),
+    enabled,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  })
+  return query.data?.sessions
+}
 
 /**
  * The deck's OWN sessions, fetched BY SOURCE so they surface regardless of age.
@@ -174,23 +192,32 @@ const NO_DECK_SESSIONS: SessionSummary[] = []
  * recent cli/telegram/cron sessions push the deck's sparse, often-older chats
  * far past that page, so a pure client-side split finds NO web-originated
  * sessions and trips the rail's "nothing web here, show everything" fallback —
- * defeating the web-first fold. This small, capped, source-filtered fetch gives
- * the fold a stable non-empty default to scope to (the deck's own chats), so the
+ * defeating the web-first fold. These small, capped, source-filtered fetches
+ * give the fold a stable non-empty default to scope to (the deck's own chats,
+ * across BOTH the legacy `dashboard` and current `api_server` source), so the
  * automated/other-channel sessions can fold under "Other sessions (N)".
  *
  * `enabled` gates it to the dense chat rail; the full History surface keeps its
  * pure recency pagination.
  */
 export function useDeckSessions(enabled: boolean): SessionSummary[] {
-  const params: ListSessionsParams = { source: DECK_SESSION_SOURCE, limit: 100, order: 'recent' }
-  const query = useQuery({
-    queryKey: sessionKeys.list(params),
-    queryFn: ({ signal }) => fetchSessions(params, signal),
-    enabled,
-    staleTime: 10_000,
-    refetchOnWindowFocus: true,
-  })
-  return query.data?.sessions ?? NO_DECK_SESSIONS
+  // A fixed number of source fetches (Rules of Hooks): one per deck source.
+  const legacy = useDeckSourceSessions('dashboard', enabled)
+  const current = useDeckSourceSessions('api_server', enabled)
+  return useMemo(() => {
+    const merged: SessionSummary[] = []
+    const seen = new Set<string>()
+    for (const session of [...(legacy ?? []), ...(current ?? [])]) {
+      if (seen.has(session.id)) continue
+      seen.add(session.id)
+      merged.push(session)
+    }
+    if (merged.length === 0) return NO_DECK_SESSIONS
+    // Most-recently-active first: a stable order across the two source queries
+    // for the consumer's union + date grouping.
+    merged.sort((a, b) => (b.last_active ?? 0) - (a.last_active ?? 0))
+    return merged
+  }, [legacy, current])
 }
 
 export function useSession(id: string | null): UseQueryResult<SessionDetail> {

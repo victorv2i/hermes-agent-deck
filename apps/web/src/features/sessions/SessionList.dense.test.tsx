@@ -239,6 +239,66 @@ describe('SessionList dense rail surfaces the deck\'s own (dashboard) sessions e
   })
 })
 
+// The SAME scenario for the CURRENT deck source. Since the 2026-05-29 gateway
+// `/v1/runs` switch, a chat opened through this deck is tagged `api_server` (not
+// `dashboard`). Those chats must surface in the dense rail even when older than
+// the recency page (exactly like the legacy `dashboard` chats) so a device
+// that did NOT create the chat can still see and continue it. A source-aware
+// stub mimics this: ?source=api_server returns an old deck chat absent from the
+// recency page (which returns only external sessions); ?source=dashboard is empty.
+describe("SessionList dense rail surfaces the deck's own (api_server) sessions even when older than the recent page", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString()
+        if (url.includes('/organization'))
+          return jsonResponse({ projects: [], assignments: {} })
+        if (url.includes('/search/sessions')) return jsonResponse({ results: [] })
+        if (url.includes('/sessions')) {
+          const u = new URL(url, 'http://localhost')
+          if (u.searchParams.get('source') === 'api_server') {
+            // The deck's own current-source chat (absent from the recency page).
+            return jsonResponse({
+              total: 1,
+              sessions: [{ ...webRow('run-old', 'My gateway chat'), source: 'api_server' }],
+            })
+          }
+          if (u.searchParams.get('source') === 'dashboard') {
+            // No legacy dashboard chats in this scenario.
+            return jsonResponse({ total: 0, sessions: [] })
+          }
+          // The recency page is ALL external (no deck sessions in view).
+          const offset = Number(u.searchParams.get('offset') ?? 0)
+          return jsonResponse({
+            total: RAIL_PAGE_SIZE,
+            sessions:
+              offset === 0
+                ? [
+                    { ...webRow('cron-1', 'Nightly Ops'), source: 'cron' },
+                    { ...webRow('tg-1', 'Telegram chat'), source: 'telegram' },
+                  ]
+                : [],
+          })
+        }
+        throw new Error(`unexpected fetch: ${url}`)
+      }),
+    )
+  })
+
+  it('shows the deck (api_server) chat by default and folds the recent external ones', async () => {
+    renderDenseRail()
+    // The deck's own gateway chat surfaces even though it's not in the recency page.
+    expect(await screen.findByText('My gateway chat')).toBeInTheDocument()
+    // The recent external (cron/telegram) sessions fold away by default.
+    expect(screen.queryByText('Nightly Ops')).not.toBeInTheDocument()
+    expect(screen.queryByText('Telegram chat')).not.toBeInTheDocument()
+    // The closed "Other sessions (2)" reveal names the folded external count.
+    const toggle = screen.getByRole('button', { name: /other sessions \(2\)/i })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  })
+})
+
 // A reference assertion: the FULL (non-dense) rail still renders the suppressed
 // chrome, so the dense suppression above is the flag's doing — not missing data.
 describe('SessionList full rail still renders management chrome (control)', () => {

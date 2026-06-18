@@ -47,14 +47,18 @@ export function sessionSourceMeta(session: SessionSummary): SourceMeta {
 
 /**
  * The source values that count as "this UI / agent-deck-originated". `web` + its
- * `ui` alias are the portable web markers; `dashboard` is what a real Hermes
- * install tags a chat opened through this deck (the deck talks to the gateway's
- * dashboard, so its own chats arrive as `dashboard`, not `web`). These are the
- * sessions the chat rail + History default to; every other channel
- * (cli / telegram / discord / cron / api_server / handoff / …) is an EXTERNAL
- * source folded behind the closed "Other sessions" reveal, never a default dump.
+ * `ui` alias are the portable web markers. The deck also drives the Hermes
+ * gateway, which tags a chat opened through this deck by its ingress:
+ *  - `dashboard`: the pre-2026-05-29 tag (the deck drove the dashboard's chat).
+ *  - `api_server`: the current tag, since the deck moved to the gateway's
+ *    `/v1/runs` transport on `:8643` (see the gateway-v1-runs contract). The
+ *    gateway stamps `source: api_server` and the deck cannot relabel it.
+ * Both are agent-deck-originated chats and BOTH default into the chat rail +
+ * History; every other channel (cli / telegram / discord / cron / handoff / …)
+ * is an EXTERNAL source folded behind the closed "Other sessions" reveal, never
+ * a default dump.
  */
-const WEB_SOURCES = new Set(['web', 'ui', 'dashboard'])
+const WEB_SOURCES = new Set(['web', 'ui', 'dashboard', 'api_server'])
 
 /** Whether a session opened in THIS web UI (web/ui), case-insensitively. */
 export function isWebOriginated(session: SessionSummary): boolean {

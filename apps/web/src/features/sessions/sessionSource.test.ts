@@ -63,6 +63,15 @@ describe('isWebOriginated', () => {
     expect(isWebOriginated(s({ id: 'e', source: 'Dashboard' }))).toBe(true)
   })
 
+  it('treats api_server (gateway /v1/runs deck chats) as web-originated', () => {
+    // Since the 2026-05-29 gateway `/v1/runs` switch, a chat opened through THIS
+    // deck is tagged `api_server` by the gateway's `:8643` API server (NOT
+    // `dashboard`, the pre-switch tag). It must surface in the deck rail, never
+    // fold under "Other sessions". Case-insensitive like the other web sources.
+    expect(isWebOriginated(s({ id: 'r', source: 'api_server' }))).toBe(true)
+    expect(isWebOriginated(s({ id: 'r2', source: ' API_SERVER ' }))).toBe(true)
+  })
+
   it('treats every other channel as external (cli/telegram/discord/cron/api/…)', () => {
     for (const src of ['cli', 'telegram', 'discord', 'cron', 'api', 'job', 'handoff', 'terminal']) {
       expect(isWebOriginated(s({ id: src, source: src }))).toBe(false)
@@ -86,6 +95,20 @@ describe('splitBySource', () => {
     const { web, external } = splitBySource(list)
     expect(web.map((x) => x.id)).toEqual(['a', 'c'])
     expect(external.map((x) => x.id)).toEqual(['b', 'd'])
+  })
+
+  it('places api_server (current deck chats) on the web side alongside dashboard', () => {
+    // The rail must show BOTH the legacy `dashboard` chats and the current
+    // `api_server` chats; only the automated channels stay external.
+    const list = [
+      s({ id: 'a', source: 'dashboard' }),
+      s({ id: 'b', source: 'api_server' }),
+      s({ id: 'c', source: 'cron' }),
+      s({ id: 'd', source: 'telegram' }),
+    ]
+    const { web, external } = splitBySource(list)
+    expect(web.map((x) => x.id)).toEqual(['a', 'b'])
+    expect(external.map((x) => x.id)).toEqual(['c', 'd'])
   })
 
   it('returns empty partitions for an empty list', () => {
