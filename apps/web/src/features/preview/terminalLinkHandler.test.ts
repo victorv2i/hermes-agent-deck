@@ -23,6 +23,19 @@ describe('handleTerminalLink (terminal URL → Preview panel)', () => {
     expect(s.status).toBe('loading')
   })
 
+  it('a plain click on an EXTERNAL URL opens a new tab, NOT the Preview panel', () => {
+    // Public sites set X-Frame-Options and dead-end the iframe, so a plain click
+    // on a non-host-local URL goes straight to a native new tab.
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
+    handleTerminalLink(evt(), 'https://www.amazon.com/s?k=printer')
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://www.amazon.com/s?k=printer',
+      '_blank',
+      'noopener,noreferrer',
+    )
+    expect(usePreviewStore.getState().open).toBe(false)
+  })
+
   it('a ⌘/Ctrl/Shift/Alt click opens a native new tab and does NOT route the panel', () => {
     const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
     for (const mod of ['metaKey', 'ctrlKey', 'shiftKey', 'altKey'] as const) {

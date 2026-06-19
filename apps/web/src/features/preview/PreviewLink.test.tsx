@@ -10,16 +10,30 @@ function reset() {
 describe('PreviewLink (chat link → Preview panel)', () => {
   beforeEach(reset)
 
-  it('a plain left click opens the http(s) link in the Preview panel', () => {
-    render(<PreviewLink href="https://example.com/docs">docs</PreviewLink>)
+  it('opens an EXTERNAL public link in a new tab, NOT the Preview panel', () => {
+    // Public sites set X-Frame-Options and dead-end the iframe, so they must be
+    // a plain new-tab anchor with no in-app preview affordance.
+    render(<PreviewLink href="https://www.amazon.com/s?k=printer">amazon</PreviewLink>)
+    expect(screen.queryByTestId('preview-link')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('preview-link-external')).not.toBeInTheDocument()
+    const link = screen.getByText('amazon').closest('a')!
+    expect(link).toHaveAttribute('href', 'https://www.amazon.com/s?k=printer')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    fireEvent.click(link)
+    expect(usePreviewStore.getState().open).toBe(false)
+  })
+
+  it('a plain left click opens a HOST-LOCAL (localhost) link in the Preview panel', () => {
+    render(<PreviewLink href="http://localhost:3000/docs">docs</PreviewLink>)
     fireEvent.click(screen.getByTestId('preview-link'))
     const s = usePreviewStore.getState()
     expect(s.open).toBe(true)
-    expect(s.url).toBe('https://example.com/docs')
+    expect(s.url).toBe('http://localhost:3000/docs')
   })
 
-  it('does NOT hijack a modifier (⌘/Ctrl) click — native new-tab is preserved', () => {
-    render(<PreviewLink href="https://example.com">site</PreviewLink>)
+  it('does NOT hijack a modifier (⌘/Ctrl) click on a host-local link, native new-tab is preserved', () => {
+    render(<PreviewLink href="http://localhost:3000">site</PreviewLink>)
     const link = screen.getByTestId('preview-link')
     // A ⌘/Ctrl click should not preventDefault → the browser opens a new tab.
     const evt = fireEvent.click(link, { metaKey: true })
@@ -32,15 +46,15 @@ describe('PreviewLink (chat link → Preview panel)', () => {
   })
 
   it('keeps a real anchor (href + new-tab rel) so right-click/copy/AT still work', () => {
-    render(<PreviewLink href="https://example.com">site</PreviewLink>)
+    render(<PreviewLink href="http://localhost:3000">site</PreviewLink>)
     const link = screen.getByTestId('preview-link')
-    expect(link).toHaveAttribute('href', 'https://example.com/')
+    expect(link).toHaveAttribute('href', 'http://localhost:3000/')
     expect(link).toHaveAttribute('target', '_blank')
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'))
   })
 
   it('exposes a small explicit "open in new tab" control that does NOT open the panel', () => {
-    render(<PreviewLink href="https://example.com">site</PreviewLink>)
+    render(<PreviewLink href="http://localhost:3000">site</PreviewLink>)
     const external = screen.getByTestId('preview-link-external')
     expect(external).toHaveAttribute('target', '_blank')
     fireEvent.click(external)

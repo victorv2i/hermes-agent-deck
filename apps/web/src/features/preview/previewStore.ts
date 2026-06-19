@@ -95,6 +95,34 @@ export function normalizeUrl(raw: string): string | null {
   return parsed.href
 }
 
+/**
+ * Whether a URL points at the user's OWN machine (a loopback / localhost / mDNS
+ * `.local` host). Only these are worth loading into the in-app iframe Preview:
+ * a public site almost always sets `X-Frame-Options` / `frame-ancestors` and
+ * would dead-end the iframe, so those open in a real browser tab instead. A
+ * look-alike host that merely contains "localhost" (e.g. `localhost.evil.com`)
+ * is NOT local.
+ */
+export function isHostLocalUrl(raw: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(raw)
+  } catch {
+    return false
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false
+  // URL.hostname keeps IPv6 brackets (`[::1]`); strip them for a clean compare.
+  const host = parsed.hostname.replace(/^\[|\]$/g, '').toLowerCase()
+  return (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    /^127\./.test(host)
+  )
+}
+
 export const usePreviewStore = create<PreviewState>((set) => ({
   open: false,
   url: null,

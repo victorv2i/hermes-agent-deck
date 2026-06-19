@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { usePreviewStore, normalizeUrl } from './previewStore'
+import { usePreviewStore, normalizeUrl, isHostLocalUrl } from './previewStore'
 
 /** Reset the singleton store between tests. */
 function resetStore() {
@@ -32,6 +32,31 @@ describe('normalizeUrl', () => {
     expect(normalizeUrl('file:///etc/passwd')).toBeNull()
     expect(normalizeUrl('mailto:a@b.com')).toBeNull()
     expect(normalizeUrl('about:blank')).toBeNull()
+  })
+})
+
+describe('isHostLocalUrl', () => {
+  it('classifies loopback / localhost / .local hosts as host-local', () => {
+    expect(isHostLocalUrl('http://localhost:3000/')).toBe(true)
+    expect(isHostLocalUrl('http://127.0.0.1:5173/x')).toBe(true)
+    expect(isHostLocalUrl('http://127.1.2.3/')).toBe(true)
+    expect(isHostLocalUrl('http://0.0.0.0:8080/')).toBe(true)
+    expect(isHostLocalUrl('http://[::1]:3000/')).toBe(true)
+    expect(isHostLocalUrl('http://mybox.local/')).toBe(true)
+    expect(isHostLocalUrl('http://app.localhost/')).toBe(true)
+  })
+
+  it('classifies public sites as NOT host-local (they open in a new tab)', () => {
+    expect(isHostLocalUrl('https://www.amazon.com/s?k=printer')).toBe(false)
+    expect(isHostLocalUrl('https://example.com/')).toBe(false)
+    // A look-alike host that merely CONTAINS "localhost" is not local.
+    expect(isHostLocalUrl('https://localhost.example.com/')).toBe(false)
+  })
+
+  it('returns false for unparseable or non-http input', () => {
+    expect(isHostLocalUrl('not a url')).toBe(false)
+    expect(isHostLocalUrl('')).toBe(false)
+    expect(isHostLocalUrl('ftp://localhost/')).toBe(false)
   })
 })
 

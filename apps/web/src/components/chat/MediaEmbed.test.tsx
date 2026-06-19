@@ -83,7 +83,9 @@ describe('MediaEmbed', () => {
   })
 
   it('passes a normal (non-media) link straight through to a chat link', () => {
-    renderEmbed('https://example.com/article', 'an article')
+    // A host-local URL keeps PreviewLink's in-app preview affordance, which is
+    // the distinctive marker that MediaEmbed delegated to the chat link.
+    renderEmbed('http://localhost:3000/article', 'an article')
     // PreviewLink renders the primary link + a new-tab escape; the visible text
     // is preserved and no media element appears.
     expect(screen.queryByLabelText('an article')).not.toBeInTheDocument()

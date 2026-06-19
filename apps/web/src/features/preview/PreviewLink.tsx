@@ -1,17 +1,19 @@
 import { type ReactNode } from 'react'
 import { ExternalLink } from 'lucide-react'
-import { usePreviewStore, normalizeUrl } from './previewStore'
+import { usePreviewStore, normalizeUrl, isHostLocalUrl } from './previewStore'
 
 /**
- * An agent-rendered chat link, made openable INTO the Preview panel (#116). The
- * design line from the spec: clicking an agent link opens it in the in-app iframe
- * browser by default, WITHOUT hijacking every link destructively — a
- * modifier/middle click still does the native new-tab thing, and a small
- * adjacent control always offers the explicit new-tab escape.
+ * An agent-rendered chat link. A HOST-LOCAL URL (a localhost dev server) opens
+ * in the in-app iframe Preview panel (#116) on a plain left click, WITHOUT
+ * hijacking destructively: a modifier/middle click still does the native
+ * new-tab thing, and a small adjacent control always offers the explicit
+ * new-tab escape. A PUBLIC URL opens directly in a new browser tab instead,
+ * because public sites set `X-Frame-Options` / `frame-ancestors` and would
+ * dead-end the iframe.
  *
- * Used as the `a` renderer for chat markdown (see MarkdownContent). Only http(s)
- * links route to the panel; anything else (a mailto:, an anchor, a relative
- * path) falls back to a plain anchor so we never break those.
+ * Used as the `a` renderer for chat markdown (see MarkdownContent). Anything
+ * that isn't a previewable http(s) URL (a mailto:, an anchor, a relative path)
+ * falls back to a plain anchor so we never break those.
  */
 export function PreviewLink({ href, children }: { href?: string; children: ReactNode }) {
   const openUrl = usePreviewStore((s) => s.openUrl)
@@ -22,6 +24,16 @@ export function PreviewLink({ href, children }: { href?: string; children: React
   if (previewable == null) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    )
+  }
+
+  // A public site can't be framed (X-Frame-Options), so the in-app preview would
+  // dead-end. Open it directly in a new tab; only host-local URLs use the panel.
+  if (!isHostLocalUrl(previewable)) {
+    return (
+      <a href={previewable} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
     )
