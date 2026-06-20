@@ -14,9 +14,7 @@ const MEMORY_CONFIG: StudioMemoryConfig = {
 
 const STATUS: MemoryStatus = {
   active: 'holographic_plus',
-  providers: [
-    { name: 'holographic_plus', description: 'Hybrid memory', configured: true },
-  ],
+  providers: [{ name: 'holographic_plus', description: 'Hybrid memory', configured: true }],
   builtin_files: { memory: 0, user: 0 },
 }
 

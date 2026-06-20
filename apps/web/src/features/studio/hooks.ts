@@ -9,12 +9,7 @@
  * SHARED profiles roster key ({@link profileKeys}.all), so the roster cards, the
  * presence chip, and any other surface reading the roster all refresh together.
  */
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import type {
   StudioConfigSubset,
   StudioConfigWriteRequest,

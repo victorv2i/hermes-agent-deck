@@ -119,7 +119,9 @@ export const registerStudioRoutes: FastifyPluginAsync<StudioRouteOptions> = asyn
         const parsed = StudioConfigSubset.safeParse(raw)
         if (!parsed.success) {
           req.log.warn({ reason: parsed.error.message }, 'studio config subset parse failed')
-          return reply.code(502).send({ error: 'unreadable', message: 'Could not read agent config.' })
+          return reply
+            .code(502)
+            .send({ error: 'unreadable', message: 'Could not read agent config.' })
         }
         return reply.send({ config: parsed.data })
       } catch (err) {
@@ -286,7 +288,9 @@ export const registerStudioRoutes: FastifyPluginAsync<StudioRouteOptions> = asyn
         const parsed = StudioEnvResponse.safeParse({ env })
         if (!parsed.success) {
           req.log.warn({ reason: parsed.error.message }, 'studio env parse failed')
-          return reply.code(502).send({ error: 'unreadable', message: 'Could not read agent keys.' })
+          return reply
+            .code(502)
+            .send({ error: 'unreadable', message: 'Could not read agent keys.' })
         }
         return reply.send(parsed.data)
       } catch (err) {

@@ -4,10 +4,7 @@ import { cn } from '@/lib/utils'
 import { toast } from '@/lib/toast'
 import { fetchMemoryProvider, setMemoryProvider } from '@/features/system/memoryApi'
 import type { ProfileSummary } from '@/features/profiles/types'
-import {
-  STUDIO_SECTIONS,
-  type StudioSection,
-} from './state/selection'
+import { STUDIO_SECTIONS, type StudioSection } from './state/selection'
 import {
   useModelOptions,
   useSetProfileModel,
@@ -68,7 +65,12 @@ export interface StudioWorkbenchProps {
   onSectionChange: (section: StudioSection) => void
 }
 
-export function StudioWorkbench({ agent, profile, section, onSectionChange }: StudioWorkbenchProps) {
+export function StudioWorkbench({
+  agent,
+  profile,
+  section,
+  onSectionChange,
+}: StudioWorkbenchProps) {
   const baseId = useId()
   const tabId = (s: StudioSection) => `${baseId}-tab-${s}`
   const panelId = (s: StudioSection) => `${baseId}-panel-${s}`
@@ -133,12 +135,7 @@ export function StudioWorkbench({ agent, profile, section, onSectionChange }: St
         </div>
       </div>
 
-      <div
-        role="tabpanel"
-        id={panelId(section)}
-        aria-labelledby={tabId(section)}
-        className="pt-3"
-      >
+      <div role="tabpanel" id={panelId(section)} aria-labelledby={tabId(section)} className="pt-3">
         <SectionPanel agent={agent} profile={profile} section={section} />
       </div>
     </div>

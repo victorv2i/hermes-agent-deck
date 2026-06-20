@@ -23,7 +23,15 @@ describe('cloneName', () => {
 
 describe('STUDIO_SECTIONS', () => {
   it('is the closed, ordered workbench section set from the spec', () => {
-    expect(STUDIO_SECTIONS).toEqual(['identity', 'soul', 'model', 'tools', 'memory', 'skills', 'env'])
+    expect(STUDIO_SECTIONS).toEqual([
+      'identity',
+      'soul',
+      'model',
+      'tools',
+      'memory',
+      'skills',
+      'env',
+    ])
   })
 
   it('defaults to identity', () => {

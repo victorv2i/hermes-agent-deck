@@ -272,8 +272,8 @@ export function ConnectRung({
               <div className="min-w-0">
                 <h2 className="text-sm font-medium text-foreground">Browser sign-in</h2>
                 <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  Agentdeck opens your browser to sign in, no terminal needed. Your credential
-                  stays with Hermes; this page only sees whether it worked.
+                  Agentdeck opens your browser to sign in, no terminal needed. Your credential stays
+                  with Hermes; this page only sees whether it worked.
                 </p>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                   <strong className="text-foreground">Nous Portal</strong> is NousResearch's free

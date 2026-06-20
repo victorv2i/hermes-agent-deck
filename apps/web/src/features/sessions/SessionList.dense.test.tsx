@@ -182,14 +182,13 @@ describe('SessionList dense rail (connected)', () => {
 // sessions BY SOURCE so they surface regardless of age and the fold still scopes
 // to them. A source-aware stub mimics this: ?source=dashboard returns an old deck
 // chat absent from the recency page, which returns only external sessions.
-describe('SessionList dense rail surfaces the deck\'s own (dashboard) sessions even when older than the recent page', () => {
+describe("SessionList dense rail surfaces the deck's own (dashboard) sessions even when older than the recent page", () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url.includes('/organization'))
-          return jsonResponse({ projects: [], assignments: {} })
+        if (url.includes('/organization')) return jsonResponse({ projects: [], assignments: {} })
         if (url.includes('/search/sessions')) return jsonResponse({ results: [] })
         if (url.includes('/sessions')) {
           const u = new URL(url, 'http://localhost')
@@ -252,8 +251,7 @@ describe("SessionList dense rail surfaces the deck's own (api_server) sessions e
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = typeof input === 'string' ? input : input.toString()
-        if (url.includes('/organization'))
-          return jsonResponse({ projects: [], assignments: {} })
+        if (url.includes('/organization')) return jsonResponse({ projects: [], assignments: {} })
         if (url.includes('/search/sessions')) return jsonResponse({ results: [] })
         if (url.includes('/sessions')) {
           const u = new URL(url, 'http://localhost')

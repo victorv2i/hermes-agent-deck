@@ -61,8 +61,12 @@ describe('StudioRoster', () => {
         onImport={vi.fn()}
       />,
     )
-    expect(within(screen.getByTestId('studio-roster-card-mercury')).getByText('Active')).toBeInTheDocument()
-    expect(within(screen.getByTestId('studio-roster-card-default')).getByText('Default')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('studio-roster-card-mercury')).getByText('Active'),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('studio-roster-card-default')).getByText('Default'),
+    ).toBeInTheDocument()
   })
 
   it('marks the selected card with aria-current', () => {

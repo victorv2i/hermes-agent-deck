@@ -22,8 +22,9 @@ vi.mock('@/features/files/CodeView', () => ({
 const writeConfig = vi.fn().mockResolvedValue({ ok: true })
 const setModel = vi.fn().mockResolvedValue({ ok: true, provider: 'anthropic', model: 'm' })
 const writeSoul = vi.fn().mockResolvedValue({ ok: true })
-const toggleSkill = vi.fn((_vars: { name: string; enabled: boolean }, opts?: { onSettled?: () => void }) =>
-  opts?.onSettled?.(),
+const toggleSkill = vi.fn(
+  (_vars: { name: string; enabled: boolean }, opts?: { onSettled?: () => void }) =>
+    opts?.onSettled?.(),
 )
 const setEnv = vi.fn().mockResolvedValue({ ok: true, key: 'K', restartRequired: false })
 const exportProfile = vi.fn()
@@ -48,7 +49,14 @@ vi.mock('./hooks', () => ({
   useModelOptions: () => ({
     data: {
       providers: [
-        { slug: 'anthropic', name: 'Anthropic', is_current: true, is_user_defined: false, models: ['m1'], total_models: 1 },
+        {
+          slug: 'anthropic',
+          name: 'Anthropic',
+          is_current: true,
+          is_user_defined: false,
+          models: ['m1'],
+          total_models: 1,
+        },
       ],
       model: 'm1',
       provider: 'anthropic',
@@ -58,7 +66,12 @@ vi.mock('./hooks', () => ({
     error: null,
   }),
   useSetProfileModel: () => ({ mutateAsync: setModel, isPending: false }),
-  useSoul: () => ({ data: { content: '# soul', exists: true }, isLoading: false, isError: false, error: null }),
+  useSoul: () => ({
+    data: { content: '# soul', exists: true },
+    isLoading: false,
+    isError: false,
+    error: null,
+  }),
   useWriteSoul: () => ({ mutateAsync: writeSoul, isPending: false }),
   useStudioSkills: () => ({
     data: [

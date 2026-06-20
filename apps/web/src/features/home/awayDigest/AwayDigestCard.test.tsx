@@ -38,7 +38,14 @@ describe('AwayDigestCard', () => {
     render(
       <AwayDigestCard
         digest={digest({
-          runs: { total: 2, completed: 2, failed: 0, completedTitles: [], failedTitles: [], latestId: 's9' },
+          runs: {
+            total: 2,
+            completed: 2,
+            failed: 0,
+            completedTitles: [],
+            failedTitles: [],
+            latestId: 's9',
+          },
         })}
         onDismiss={vi.fn()}
         onOpenSession={vi.fn()}
@@ -52,7 +59,14 @@ describe('AwayDigestCard', () => {
     render(
       <AwayDigestCard
         digest={digest({
-          runs: { total: 1, completed: 1, failed: 0, completedTitles: [], failedTitles: [], latestId: 's1' },
+          runs: {
+            total: 1,
+            completed: 1,
+            failed: 0,
+            completedTitles: [],
+            failedTitles: [],
+            latestId: 's1',
+          },
         })}
         onDismiss={vi.fn()}
         onOpenSession={vi.fn()}
@@ -96,7 +110,14 @@ describe('AwayDigestCard', () => {
     render(
       <AwayDigestCard
         digest={digest({
-          runs: { total: 2, completed: 2, failed: 0, completedTitles: [], failedTitles: [], latestId: 'sess-42' },
+          runs: {
+            total: 2,
+            completed: 2,
+            failed: 0,
+            completedTitles: [],
+            failedTitles: [],
+            latestId: 'sess-42',
+          },
         })}
         onDismiss={vi.fn()}
         onOpenSession={onOpenSession}
@@ -136,7 +157,12 @@ describe('AwayDigestCard', () => {
 
   it('renders nothing when the digest reports no real activity', () => {
     const { container } = render(
-      <AwayDigestCard digest={digest()} onDismiss={vi.fn()} onOpenSession={vi.fn()} onOpenJobs={vi.fn()} />,
+      <AwayDigestCard
+        digest={digest()}
+        onDismiss={vi.fn()}
+        onOpenSession={vi.fn()}
+        onOpenJobs={vi.fn()}
+      />,
     )
     expect(container).toBeEmptyDOMElement()
   })
@@ -145,7 +171,14 @@ describe('AwayDigestCard', () => {
     render(
       <AwayDigestCard
         digest={digest({
-          runs: { total: 1, completed: 1, failed: 0, completedTitles: [], failedTitles: [], latestId: 's1' },
+          runs: {
+            total: 1,
+            completed: 1,
+            failed: 0,
+            completedTitles: [],
+            failedTitles: [],
+            latestId: 's1',
+          },
           crons: { total: 2, ok: 2, error: 0, failedNames: [] },
         })}
         onDismiss={vi.fn()}

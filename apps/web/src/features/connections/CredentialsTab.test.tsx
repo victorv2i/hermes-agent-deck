@@ -49,9 +49,7 @@ describe('CredentialsTab loading vs empty', () => {
     )
     renderTab()
 
-    await waitFor(() =>
-      expect(screen.getByText(/No credential pool entries/i)).toBeInTheDocument(),
-    )
+    await waitFor(() => expect(screen.getByText(/No credential pool entries/i)).toBeInTheDocument())
     expect(screen.queryByTestId('credentials-skeleton')).not.toBeInTheDocument()
   })
 })

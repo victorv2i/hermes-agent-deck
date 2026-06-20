@@ -109,8 +109,7 @@ export function ModelSection({
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {p.models.map((model) => {
-                    const isActive =
-                      options.provider === p.slug && options.model === model
+                    const isActive = options.provider === p.slug && options.model === model
                     return (
                       <button
                         key={model}
@@ -146,7 +145,10 @@ function ModelSkeleton() {
   return (
     <div data-testid="studio-model-skeleton" className="flex flex-col gap-3" aria-hidden>
       {[0, 1].map((i) => (
-        <div key={i} className="h-20 animate-pulse rounded-xl bg-foreground/[0.06] ring-1 ring-border" />
+        <div
+          key={i}
+          className="h-20 animate-pulse rounded-xl bg-foreground/[0.06] ring-1 ring-border"
+        />
       ))}
     </div>
   )

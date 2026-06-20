@@ -178,8 +178,8 @@ export function ImportAgentDialog({
 
           {/* Honest note: credentials are NOT in the archive. */}
           <p className="text-xs leading-relaxed text-foreground-tertiary">
-            Provider keys are not included in an export. After importing, add them in the agent&apos;s
-            Env section.
+            Provider keys are not included in an export. After importing, add them in the
+            agent&apos;s Env section.
           </p>
 
           <div className="flex justify-end gap-2">

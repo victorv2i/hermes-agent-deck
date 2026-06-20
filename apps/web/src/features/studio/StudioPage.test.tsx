@@ -77,12 +77,24 @@ describe('StudioPage', () => {
   })
 
   it('shows a roster loading skeleton while the roster loads', () => {
-    renderPage({ ...base(), loading: true, profiles: [], selectedAgent: null, selectedProfile: null })
+    renderPage({
+      ...base(),
+      loading: true,
+      profiles: [],
+      selectedAgent: null,
+      selectedProfile: null,
+    })
     expect(screen.getByTestId('studio-loading')).toBeInTheDocument()
   })
 
   it('shows an error state with retry when the roster fails to load', () => {
-    renderPage({ ...base(), error: 'down', profiles: [], selectedAgent: null, selectedProfile: null })
+    renderPage({
+      ...base(),
+      error: 'down',
+      profiles: [],
+      selectedAgent: null,
+      selectedProfile: null,
+    })
     expect(screen.getByText('down')).toBeInTheDocument()
   })
 

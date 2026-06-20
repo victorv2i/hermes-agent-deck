@@ -69,8 +69,8 @@ export function DeleteAgentDialog({
         <DialogHeader>
           <DialogTitle>Delete {friendly}?</DialogTitle>
           <DialogDescription>
-            This permanently removes the agent and everything it owns: its soul,
-            memory, skills, and .env. This cannot be undone.
+            This permanently removes the agent and everything it owns: its soul, memory, skills, and
+            .env. This cannot be undone.
           </DialogDescription>
         </DialogHeader>
 

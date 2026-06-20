@@ -582,7 +582,8 @@ export function Composer({
   return (
     <div
       className={cn(
-        floating && 'pointer-events-none sticky bottom-0 z-10 px-1 pb-[max(1rem,env(safe-area-inset-bottom))]',
+        floating &&
+          'pointer-events-none sticky bottom-0 z-10 px-1 pb-[max(1rem,env(safe-area-inset-bottom))]',
       )}
     >
       {/* Send-while-busy queue (C2): pending messages typed while a run is in

@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  AWAY_LAST_SEEN_STORAGE_KEY,
-  readLastSeenAt,
-  writeLastSeenAt,
-} from './lastSeenStore'
+import { AWAY_LAST_SEEN_STORAGE_KEY, readLastSeenAt, writeLastSeenAt } from './lastSeenStore'
 
 describe('lastSeenStore', () => {
   beforeEach(() => {

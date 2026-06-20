@@ -124,7 +124,10 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
               </Badge>
             )}
           </div>
-          <p className="truncate font-mono text-xs text-foreground-tertiary" title={profile.displayPath}>
+          <p
+            className="truncate font-mono text-xs text-foreground-tertiary"
+            title={profile.displayPath}
+          >
             {profile.name} · {profile.displayPath}
           </p>
         </div>
@@ -172,7 +175,10 @@ export function IdentitySection({ profile }: { profile: ProfileSummary }) {
         </MetaField>
 
         <MetaField icon={FileKey} label="Environment">
-          <StatusDot tone={profile.hasEnv ? 'info' : 'idle'} label={profile.hasEnv ? '.env present' : 'No .env'} />
+          <StatusDot
+            tone={profile.hasEnv ? 'info' : 'idle'}
+            label={profile.hasEnv ? '.env present' : 'No .env'}
+          />
           <span
             className={cn(
               'text-13 font-medium',

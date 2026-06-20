@@ -163,7 +163,12 @@ describe('computeAwayDigest', () => {
       const many = Array.from({ length: 6 }, (_, i) =>
         session({ id: `done-${i}`, title: i === 0 ? null : `Run ${i}`, status: 'completed' }),
       )
-      const digest = computeAwayDigest({ sessions: many, jobs: [], lastSeenAt: LAST_SEEN, now: NOW })
+      const digest = computeAwayDigest({
+        sessions: many,
+        jobs: [],
+        lastSeenAt: LAST_SEEN,
+        now: NOW,
+      })
       expect(digest!.runs.completed).toBe(6)
       // A capped, non-empty sample of human titles; the untitled one is dropped (not "null").
       expect(digest!.runs.completedTitles.length).toBeGreaterThan(0)

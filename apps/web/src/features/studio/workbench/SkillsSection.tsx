@@ -1,5 +1,14 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { ChevronRight, Loader2, Pencil, Plus, RotateCcw, ServerCog, Sparkles, Trash2 } from 'lucide-react'
+import {
+  ChevronRight,
+  Loader2,
+  Pencil,
+  Plus,
+  RotateCcw,
+  ServerCog,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
 import { EmptyState, ErrorState } from '@/components/ui/state'
 import { Button } from '@/components/ui/button'
 import {
@@ -178,7 +187,9 @@ function ViewButton({
       className={cn(
         'inline-flex min-h-9 items-center justify-center rounded-[7px] px-3.5 py-1.5 text-13 font-medium transition-colors',
         'focus-visible:ad-focus',
-        selected ? 'bg-primary/12 text-primary-hover' : 'text-muted-foreground hover:text-foreground',
+        selected
+          ? 'bg-primary/12 text-primary-hover'
+          : 'text-muted-foreground hover:text-foreground',
       )}
     >
       {children}

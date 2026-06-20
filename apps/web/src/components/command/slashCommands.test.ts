@@ -47,7 +47,13 @@ describe('filterSlashCommands', () => {
   })
 
   it('exposes the expected command set (all local UI actions, no agent passthrough)', () => {
-    expect(SLASH_COMMANDS.map((c) => c.id).sort()).toEqual(['clear', 'model', 'new', 'theme', 'usage'])
+    expect(SLASH_COMMANDS.map((c) => c.id).sort()).toEqual([
+      'clear',
+      'model',
+      'new',
+      'theme',
+      'usage',
+    ])
   })
 
   it('does NOT offer a compaction command — the gateway does not act on slash text', () => {

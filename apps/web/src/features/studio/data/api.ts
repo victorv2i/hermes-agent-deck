@@ -122,14 +122,11 @@ export async function setProfileModel(
   // Validate the request shape before it leaves the client (both fields
   // non-empty), mirroring the stock route's own guard.
   const body = ProfileModelSetRequest.parse({ provider, model })
-  const raw = await apiFetch<unknown>(
-    `/profiles/${encodeURIComponent(profile)}/model`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    },
-  )
+  const raw = await apiFetch<unknown>(`/profiles/${encodeURIComponent(profile)}/model`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
   return ProfileModelSetResponse.parse(raw)
 }
 
@@ -149,10 +146,9 @@ export interface SoulFile {
  * rather than reading a profile file directly, per the integration contract.
  */
 export async function fetchSoul(profile: string, signal?: AbortSignal): Promise<SoulFile> {
-  const raw = await apiFetch<unknown>(
-    `/studio/profiles/${encodeURIComponent(profile)}/soul`,
-    { signal },
-  )
+  const raw = await apiFetch<unknown>(`/studio/profiles/${encodeURIComponent(profile)}/soul`, {
+    signal,
+  })
   const obj = asRecord(raw)
   return { content: asString(obj.content), exists: obj.exists === true }
 }

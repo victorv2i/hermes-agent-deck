@@ -51,7 +51,10 @@ vi.mock('./StudioWorkbench', () => ({
 // launchpad still renders Start a chat.
 vi.mock('@/features/profiles/useProfiles', async (orig) => {
   const actual = (await orig()) as object
-  return { ...actual, useProfiles: () => ({ data: ROSTER, loading: false, error: null, refetch: vi.fn() }) }
+  return {
+    ...actual,
+    useProfiles: () => ({ data: ROSTER, loading: false, error: null, refetch: vi.fn() }),
+  }
 })
 vi.mock('@/features/activity/useStatus', () => ({
   useStatus: () => ({ data: undefined, isError: false }),

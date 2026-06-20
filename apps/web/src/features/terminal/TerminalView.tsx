@@ -413,7 +413,10 @@ export function TerminalView({
     const observer = new MutationObserver(() => {
       engineRef.current?.setTheme?.(buildTerminalTheme())
     })
-    observer.observe(html, { attributes: true, attributeFilter: ['data-theme', 'class', 'data-palette'] })
+    observer.observe(html, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'class', 'data-palette'],
+    })
     return () => observer.disconnect()
   }, [])
 

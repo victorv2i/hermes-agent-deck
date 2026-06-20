@@ -27,7 +27,12 @@ const SKILLS: StudioSkill[] = [
     category: 'research',
     enabled: true,
   },
-  { name: 'shell', description: 'Run shell commands in the workspace.', category: 'system', enabled: false },
+  {
+    name: 'shell',
+    description: 'Run shell commands in the workspace.',
+    category: 'system',
+    enabled: false,
+  },
 ]
 
 function renderSection(props: Partial<React.ComponentProps<typeof SkillsSection>> = {}) {
@@ -51,7 +56,13 @@ beforeEach(() => {
   // The on-disk skill list (active-profile scoped) backs edit/delete paths.
   vi.mocked(skillsApi.fetchSkills).mockResolvedValue({
     skills: [
-      { name: 'web-search', description: '', category: 'research', enabled: true, path: 'research/web-search' },
+      {
+        name: 'web-search',
+        description: '',
+        category: 'research',
+        enabled: true,
+        path: 'research/web-search',
+      },
       { name: 'shell', description: '', category: 'system', enabled: false, path: 'system/shell' },
     ],
   })

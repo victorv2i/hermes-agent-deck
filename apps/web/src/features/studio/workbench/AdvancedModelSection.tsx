@@ -230,9 +230,7 @@ function AuxiliaryTaskRow({
   const [provider, setProvider] = useState(value?.provider ?? '')
   const [model, setModel] = useState(value?.model ?? '')
   const [baseUrl, setBaseUrl] = useState(value?.base_url ?? '')
-  const [timeout, setTimeoutVal] = useState(
-    value?.timeout != null ? String(value.timeout) : '',
-  )
+  const [timeout, setTimeoutVal] = useState(value?.timeout != null ? String(value.timeout) : '')
 
   const timeoutNum = timeout.trim() === '' ? undefined : Number(timeout)
   const timeoutValid = timeoutNum === undefined || (Number.isFinite(timeoutNum) && timeoutNum >= 0)
@@ -301,7 +299,10 @@ function AuxiliaryTaskRow({
         />
       </div>
       <div className="flex justify-end">
-        <SaveButton disabled={!dirty || !timeoutValid || isSaving} testId={`studio-aux-${task}-save`} />
+        <SaveButton
+          disabled={!dirty || !timeoutValid || isSaving}
+          testId={`studio-aux-${task}-save`}
+        />
       </div>
     </form>
   )
@@ -329,8 +330,7 @@ function DelegationBlock({
   )
 
   const maxIterNum = maxIter.trim() === '' ? undefined : Number(maxIter)
-  const maxIterValid =
-    maxIterNum === undefined || (Number.isInteger(maxIterNum) && maxIterNum >= 0)
+  const maxIterValid = maxIterNum === undefined || (Number.isInteger(maxIterNum) && maxIterNum >= 0)
 
   const dirty =
     (provider.trim() || undefined) !== (value?.provider || undefined) ||
@@ -400,7 +400,10 @@ function DelegationBlock({
           />
         </div>
         <div className="flex justify-end">
-          <SaveButton disabled={!dirty || !maxIterValid || isSaving} testId="studio-delegation-save" />
+          <SaveButton
+            disabled={!dirty || !maxIterValid || isSaving}
+            testId="studio-delegation-save"
+          />
         </div>
       </form>
     </section>
@@ -489,7 +492,10 @@ function AdvancedSkeleton() {
   return (
     <div data-testid="studio-advanced-skeleton" className="flex flex-col gap-3" aria-hidden>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-24 animate-pulse rounded-xl bg-foreground/[0.06] ring-1 ring-border" />
+        <div
+          key={i}
+          className="h-24 animate-pulse rounded-xl bg-foreground/[0.06] ring-1 ring-border"
+        />
       ))}
     </div>
   )

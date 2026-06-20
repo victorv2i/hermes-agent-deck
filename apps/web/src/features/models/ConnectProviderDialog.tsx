@@ -435,8 +435,8 @@ export function ConnectProviderDialog({
                     id={`${ids}-key-hint`}
                     className="text-[11px] leading-relaxed text-foreground-tertiary"
                   >
-                    Sent to Hermes for credential storage. Agentdeck does not store or echo this
-                    key after submission.
+                    Sent to Hermes for credential storage. Agentdeck does not store or echo this key
+                    after submission.
                   </p>
                 </div>
 

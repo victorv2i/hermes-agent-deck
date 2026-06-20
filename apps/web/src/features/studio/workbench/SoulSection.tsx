@@ -97,7 +97,12 @@ export function SoulSection({
             </Button>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={isSaving}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditing(false)}
+                disabled={isSaving}
+              >
                 <X aria-hidden />
                 Cancel
               </Button>

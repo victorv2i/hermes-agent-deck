@@ -127,7 +127,11 @@ describe('deleteProfile', () => {
   })
 
   it('surfaces the BFF error on a failed delete', async () => {
-    mockFetch({ error: 'conflict', message: 'Switch to another agent before deleting this one.' }, false, 409)
+    mockFetch(
+      { error: 'conflict', message: 'Switch to another agent before deleting this one.' },
+      false,
+      409,
+    )
     await expect(deleteProfile('atlas')).rejects.toThrow(/switch to another agent/i)
   })
 })

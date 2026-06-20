@@ -83,7 +83,9 @@ const MOCK_CONFIG: Record<string, unknown> = {
     provider: 'holographic_plus',
   },
   // A whole unrelated secret block the subset must not surface.
-  auxiliary: { vision: { provider: 'openai-codex', model: 'gpt-5.5', api_key: 'sk-aux-secret-9999' } },
+  auxiliary: {
+    vision: { provider: 'openai-codex', model: 'gpt-5.5', api_key: 'sk-aux-secret-9999' },
+  },
 }
 
 const MOCK_MODEL_OPTIONS = {
@@ -211,7 +213,11 @@ async function startMock(
       if (opts.modelSetFails) return json(500, { detail: 'write failed' })
       void readBody(req).then((raw) => {
         recorded.modelSetBody = JSON.parse(raw) as { provider: string; model: string }
-        json(200, { ok: true, provider: recorded.modelSetBody.provider, model: recorded.modelSetBody.model })
+        json(200, {
+          ok: true,
+          provider: recorded.modelSetBody.provider,
+          model: recorded.modelSetBody.model,
+        })
       })
       return
     }

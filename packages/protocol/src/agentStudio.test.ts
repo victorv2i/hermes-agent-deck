@@ -279,9 +279,7 @@ describe('StudioConfigWriteRequest DTO', () => {
   })
 
   it('rejects an invalid profile name (path-traversal guard)', () => {
-    expect(() =>
-      StudioConfigWriteRequest.parse({ profile: '../../etc', config: {} }),
-    ).toThrow()
+    expect(() => StudioConfigWriteRequest.parse({ profile: '../../etc', config: {} })).toThrow()
   })
 
   it('echoes the stock { ok } write response', () => {
@@ -325,7 +323,14 @@ describe('ModelOption + ModelOptionsResponse DTO', () => {
   it('parses the { providers, model, provider } envelope', () => {
     const parsed = ModelOptionsResponse.parse({
       providers: [
-        { slug: 'anthropic', name: 'Anthropic', is_current: true, is_user_defined: false, models: ['m'], total_models: 1 },
+        {
+          slug: 'anthropic',
+          name: 'Anthropic',
+          is_current: true,
+          is_user_defined: false,
+          models: ['m'],
+          total_models: 1,
+        },
       ],
       model: 'm',
       provider: 'anthropic',

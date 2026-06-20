@@ -81,10 +81,20 @@ export function ToolsSection({
               key={name}
               data-testid={`studio-toolset-row-${name}`}
               data-enabled={on ? 'true' : 'false'}
-              className={cn('ad-surface flex items-center gap-3 rounded-md bg-card px-3 py-2.5', !on && 'opacity-80')}
+              className={cn(
+                'ad-surface flex items-center gap-3 rounded-md bg-card px-3 py-2.5',
+                !on && 'opacity-80',
+              )}
             >
-              <code className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">{name}</code>
-              <ToggleSwitch name={name} enabled={on} disabled={isSaving} onChange={(next) => onChange(name, next)} />
+              <code className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
+                {name}
+              </code>
+              <ToggleSwitch
+                name={name}
+                enabled={on}
+                disabled={isSaving}
+                onChange={(next) => onChange(name, next)}
+              />
             </li>
           )
         })}
@@ -134,7 +144,10 @@ function ToolsSkeleton() {
   return (
     <div data-testid="studio-tools-skeleton" className="flex flex-col gap-1.5" aria-hidden>
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-[46px] animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border" />
+        <div
+          key={i}
+          className="h-[46px] animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border"
+        />
       ))}
     </div>
   )

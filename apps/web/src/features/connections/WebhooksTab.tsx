@@ -325,7 +325,10 @@ interface WebhookCardProps {
 function WebhookCard({ sub, onDelete, onToggle, toggling, deleting }: WebhookCardProps) {
   return (
     <div
-      className={cn('ad-surface ad-raised rounded-xl bg-card px-4 py-3', !sub.enabled && 'opacity-70')}
+      className={cn(
+        'ad-surface ad-raised rounded-xl bg-card px-4 py-3',
+        !sub.enabled && 'opacity-70',
+      )}
     >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">

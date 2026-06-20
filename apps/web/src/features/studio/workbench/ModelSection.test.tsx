@@ -56,9 +56,7 @@ describe('ModelSection', () => {
   })
 
   it('renders an error state without crashing', () => {
-    render(
-      <ModelSection options={undefined} isLoading={false} error="boom" onSet={vi.fn()} />,
-    )
+    render(<ModelSection options={undefined} isLoading={false} error="boom" onSet={vi.fn()} />)
     expect(screen.getByText('boom')).toBeInTheDocument()
   })
 })

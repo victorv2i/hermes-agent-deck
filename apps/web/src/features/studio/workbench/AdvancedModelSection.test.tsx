@@ -52,7 +52,9 @@ describe('AdvancedModelSection', () => {
     })
 
     it('keeps Save disabled until the value changes', () => {
-      render(<AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />)
+      render(
+        <AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />,
+      )
       // current is 0 (auto) → empty field, unchanged → disabled.
       expect(screen.getByTestId('studio-context-length-save')).toBeDisabled()
     })
@@ -72,7 +74,9 @@ describe('AdvancedModelSection', () => {
 
   describe('auxiliary routing (item 2)', () => {
     it('renders the four surfaced tasks', () => {
-      render(<AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />)
+      render(
+        <AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />,
+      )
       expect(screen.getByTestId('studio-aux-vision')).toBeInTheDocument()
       expect(screen.getByTestId('studio-aux-web_extract')).toBeInTheDocument()
       expect(screen.getByTestId('studio-aux-approval')).toBeInTheDocument()
@@ -80,7 +84,9 @@ describe('AdvancedModelSection', () => {
     })
 
     it('pre-fills a task from the config', () => {
-      render(<AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />)
+      render(
+        <AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />,
+      )
       expect(screen.getByTestId('studio-aux-vision-provider')).toHaveValue('openrouter')
       expect(screen.getByTestId('studio-aux-vision-model')).toHaveValue('g/v')
     })
@@ -100,7 +106,9 @@ describe('AdvancedModelSection', () => {
     })
 
     it('keeps a task Save disabled until something changes', () => {
-      render(<AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />)
+      render(
+        <AdvancedModelSection config={CONFIG} isLoading={false} error={null} onSave={vi.fn()} />,
+      )
       // vision row is pre-filled and unchanged → disabled.
       expect(screen.getByTestId('studio-aux-vision-save')).toBeDisabled()
     })

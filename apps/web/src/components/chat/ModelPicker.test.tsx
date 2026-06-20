@@ -138,7 +138,11 @@ describe('ModelPicker', () => {
       },
     ]
     render(
-      <ModelPicker models={aggregated} value="nous/anthropic/claude-opus-4.8" onSelect={() => {}} />,
+      <ModelPicker
+        models={aggregated}
+        value="nous/anthropic/claude-opus-4.8"
+        onSelect={() => {}}
+      />,
     )
     const trigger = screen.getByTestId('model-picker-trigger')
     expect(trigger).toHaveTextContent('claude-opus-4.8')

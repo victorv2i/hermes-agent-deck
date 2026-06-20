@@ -45,15 +45,11 @@ describe('WebhooksTab loading vs empty', () => {
   it('replaces the skeleton with the crafted empty state once a truly-empty list resolves', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        jsonResponse({ enabled: true, base_url: 'http://x', subscriptions: [] }),
-      ),
+      vi.fn(async () => jsonResponse({ enabled: true, base_url: 'http://x', subscriptions: [] })),
     )
     renderTab()
 
-    await waitFor(() =>
-      expect(screen.getByText(/No webhook subscriptions/i)).toBeInTheDocument(),
-    )
+    await waitFor(() => expect(screen.getByText(/No webhook subscriptions/i)).toBeInTheDocument())
     expect(screen.queryByTestId('webhooks-skeleton')).not.toBeInTheDocument()
   })
 })

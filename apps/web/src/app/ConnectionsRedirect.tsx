@@ -15,8 +15,6 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 export function ConnectionsRedirect() {
   const [params] = useSearchParams()
   const tab = params.get('tab')
-  const to = tab
-    ? `/?view=connections&tab=${encodeURIComponent(tab)}`
-    : '/?view=connections'
+  const to = tab ? `/?view=connections&tab=${encodeURIComponent(tab)}` : '/?view=connections'
   return <Navigate to={to} replace />
 }

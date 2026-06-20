@@ -73,10 +73,7 @@ export function AwayDigestCard({
       <ul className="flex flex-col gap-2">
         {hasRuns && (
           <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <MessagesSquare
-              className="size-4 shrink-0 text-foreground-tertiary"
-              aria-hidden
-            />
+            <MessagesSquare className="size-4 shrink-0 text-foreground-tertiary" aria-hidden />
             <span className="text-foreground">
               {plural(runs.total, 'chat finished', 'chats finished')}
               {runs.failed > 0 && (
@@ -112,13 +109,7 @@ export function AwayDigestCard({
                 </span>
               )}
             </span>
-            <Button
-              type="button"
-              variant="link"
-              size="xs"
-              className="px-0"
-              onClick={onOpenJobs}
-            >
+            <Button type="button" variant="link" size="xs" className="px-0" onClick={onOpenJobs}>
               Review jobs
             </Button>
           </li>

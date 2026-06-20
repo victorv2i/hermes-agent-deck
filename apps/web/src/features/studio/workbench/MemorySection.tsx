@@ -295,7 +295,9 @@ function WriteApprovalField({
               className={cn(
                 'inline-flex min-h-9 items-center rounded-[7px] px-3 py-1 text-13 font-medium transition-colors',
                 'focus-visible:ad-focus disabled:opacity-60',
-                selected ? 'bg-primary/12 text-primary-hover' : 'text-muted-foreground hover:text-foreground',
+                selected
+                  ? 'bg-primary/12 text-primary-hover'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {opt.label}
@@ -361,7 +363,10 @@ function ProviderOption({
           <span className="text-[11px] leading-relaxed text-muted-foreground">{description}</span>
         </span>
         {isSwitching && !isActive && (
-          <Loader2 className="ml-auto mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="ml-auto mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground"
+            aria-hidden
+          />
         )}
       </button>
     </li>
@@ -372,7 +377,10 @@ function MemorySkeleton() {
   return (
     <div data-testid="studio-memory-skeleton" className="flex flex-col gap-3" aria-hidden>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-14 animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border" />
+        <div
+          key={i}
+          className="h-14 animate-pulse rounded-md bg-foreground/[0.06] ring-1 ring-border"
+        />
       ))}
     </div>
   )
