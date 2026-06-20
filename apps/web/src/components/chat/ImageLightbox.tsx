@@ -52,6 +52,10 @@ export function ImageLightbox({
         // so it can vanish over a light image region. We supply our own below with a
         // guaranteed-contrast backing disc instead.
         showClose={false}
+        // The title alone names this dialog; the image needs no separate prose
+        // description. Explicit-undefined is radix's sanctioned way to say so and
+        // silences its "missing Description" warning without inventing fake text.
+        aria-describedby={undefined}
       >
         {/* The accessible name for the dialog. Visually hidden — the image carries
             the visible meaning; the title narrates it to screen readers. */}

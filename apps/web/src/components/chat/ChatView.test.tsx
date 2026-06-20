@@ -715,6 +715,13 @@ describe('ChatView, conversation outline', () => {
     expect(screen.queryByTestId('outline-toggle')).not.toBeInTheDocument()
   })
 
+  it('does not show the outline toggle with a single prompt (nothing to jump between)', () => {
+    // One prompt has no second prompt to jump to, and the floating toggle would
+    // otherwise sit over a lone right-aligned message and steal its clicks.
+    renderView({ turns: [{ id: 'only', role: 'user', content: 'Look at this.' }] })
+    expect(screen.queryByTestId('outline-toggle')).not.toBeInTheDocument()
+  })
+
   it('shows a toggle once there are prompts, and the panel is closed until toggled', () => {
     renderView({ turns: outlineTurns })
     expect(screen.getByTestId('outline-toggle')).toBeInTheDocument()

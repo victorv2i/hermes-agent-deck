@@ -78,6 +78,58 @@ const SESSIONS = {
   ],
 }
 
+// Unified /runtimes history with worst-case content for the mobile overflow
+// check: a long absolute cwd + a long model id + six-figure token counts, the
+// row shape most likely to push past a 375px screen if a column isn't bounded.
+const RUNTIMES = {
+  sessions: [
+    {
+      runtime: 'hermes',
+      id: 'h1',
+      title: 'A reasonably long session title that should truncate, not overflow',
+      model: 'anthropic/claude-sonnet-4-6',
+      startedAt: 2,
+      lastActive: 2,
+      messageCount: 42,
+      inputTokens: 120000,
+      outputTokens: 30000,
+      cwd: null,
+    },
+    {
+      runtime: 'claude',
+      id: 'c1',
+      title: 'Refactor the runtimes surface',
+      model: 'claude-sonnet-4-6',
+      startedAt: 1,
+      lastActive: 1,
+      messageCount: 88,
+      inputTokens: 500000,
+      outputTokens: 90000,
+      cwd: '/home/wonny/Projects/agent-deck/apps/web/src/features/runtimes',
+    },
+  ],
+  sources: [
+    {
+      runtime: 'hermes',
+      capabilities: { chat: true, approvals: true, usage: true, sessions: true },
+      sessionCount: 1,
+      available: true,
+    },
+    {
+      runtime: 'claude',
+      capabilities: { chat: false, approvals: false, usage: true, sessions: true },
+      sessionCount: 1,
+      available: true,
+    },
+    {
+      runtime: 'codex',
+      capabilities: { chat: false, approvals: false, usage: true, sessions: true },
+      sessionCount: 0,
+      available: true,
+    },
+  ],
+}
+
 function trackConsole(page: Page): string[] {
   const errors: string[] = []
   page.on('console', (m: ConsoleMessage) => {
@@ -95,6 +147,9 @@ async function stubBff(page: Page) {
       return json(route, { projects: [], assignments: {} })
     if (path.endsWith('/organization')) return json(route, { projectId: null, tags: [] })
     if (path.includes('/search/sessions')) return json(route, { results: [] })
+    // MUST precede the generic `/sessions` branch: `/runtimes/sessions` also ends
+    // with `/sessions` but needs the unified-history shape, not the Hermes one.
+    if (path.endsWith('/runtimes/sessions')) return json(route, RUNTIMES)
     if (path.endsWith('/sessions')) return json(route, SESSIONS)
     if (path.endsWith('/models')) return json(route, MOCK_MODELS)
     if (path.endsWith('/profiles'))
@@ -266,6 +321,30 @@ test('mobile-release: no horizontal scroll on the main surfaces', async ({ page 
   await expect(rail).toHaveAttribute('data-mobile-open', 'true')
   await rail.getByRole('link', { name: /^Files$/i }).click()
   await expect(page).toHaveURL(/\/files$/)
+  await expectNoHorizontalScroll(page)
+
+  expect(errors).toEqual([])
+})
+
+// ---------------------------------------------------------------------------
+// Test 6 — the /runtimes history (dense rows) fits a phone screen
+// ---------------------------------------------------------------------------
+test('mobile-release: /runtimes has no horizontal scroll with dense content', async ({ page }) => {
+  const errors = trackConsole(page)
+  await page.setViewportSize(MOBILE_VIEWPORT)
+  await stubBff(page)
+  await page.goto('/chat')
+
+  // Reach /runtimes the way a phone user does: via the slide-over rail.
+  await page.getByRole('button', { name: /open navigation/i }).click()
+  const rail = page.locator('nav[aria-label="Sidebar"]').first()
+  await expect(rail).toHaveAttribute('data-mobile-open', 'true')
+  await rail.getByRole('link', { name: /^Runtimes$/i }).click()
+  await expect(page).toHaveURL(/\/runtimes$/)
+
+  // The dense session rows (long cwd, six-figure token counts, read-only badges,
+  // the usage rollup, the source filter) must render AND fit the 375px screen.
+  await expect(page.getByText('Refactor the runtimes surface')).toBeVisible()
   await expectNoHorizontalScroll(page)
 
   expect(errors).toEqual([])

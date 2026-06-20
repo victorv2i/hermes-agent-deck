@@ -373,10 +373,12 @@ export function ChatView({
       )}
 
       {/* Conversation outline: a calm floating jump-list of the user's own
-          prompts. The toggle shows only when there are prompts to jump to AND
-          find isn't open (so the two top-right affordances never overlap). When
-          toggled open, the panel renders just below the toggle. */}
-      {outline.items.length > 0 && !find.open && (
+          prompts. Shown only with more than one prompt (a lone prompt has
+          nothing to jump between, and the floating top-right toggle would
+          otherwise sit over a single right-aligned message and intercept its
+          clicks) AND while find is closed (so the two top-right affordances
+          never overlap). When toggled open, the panel renders below the toggle. */}
+      {outline.items.length > 1 && !find.open && (
         <div className="pointer-events-none absolute top-2 right-2 z-30 flex flex-col items-end gap-2">
           <button
             type="button"
