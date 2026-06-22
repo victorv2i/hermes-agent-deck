@@ -117,7 +117,7 @@ export function StudioWorkbench({
                 role="tab"
                 id={tabId(s)}
                 aria-selected={selected}
-                aria-controls={panelId(s)}
+                aria-controls={selected ? panelId(s) : undefined}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => onSectionChange(s)}
                 className={cn(

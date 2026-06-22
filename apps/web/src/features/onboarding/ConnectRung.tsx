@@ -104,6 +104,7 @@ export function ConnectRung({
   const providerHintId = useId()
   const keyId = useId()
   const keyHintId = useId()
+  const keyRegionId = useId()
 
   const selectedProvider = providerChoice === 'other' ? customProvider.trim() : providerChoice
   const canSubmit = selectedProvider.length > 0 && apiKey.trim().length > 0 && !submitting
@@ -373,6 +374,7 @@ export function ConnectRung({
             <button
               type="button"
               aria-expanded={keyOpen}
+              aria-controls={keyRegionId}
               onClick={() => setKeyOpen((o) => !o)}
               className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-foreground"
             >
@@ -382,109 +384,111 @@ export function ConnectRung({
                 aria-hidden
               />
             </button>
-            {keyOpen && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  void submitKey()
-                }}
-                className="grid gap-3 border-t border-border px-3 pt-3 pb-3"
-              >
-                <div className="grid gap-1.5">
-                  <label htmlFor={providerId} className="ad-section-label">
-                    Provider
-                  </label>
-                  <select
-                    id={providerId}
-                    value={providerChoice}
-                    onChange={(e) => setProviderChoice(e.target.value)}
-                    autoComplete="off"
-                    aria-describedby={providerHintId}
-                    className="ad-surface flex h-10 w-full min-w-0 rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ad-focus disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    <option value="">Choose a provider</option>
-                    {PROVIDER_CHOICES.map((choice) => (
-                      <option key={choice.value} value={choice.value}>
-                        {choice.label}
-                      </option>
-                    ))}
-                  </select>
-                  {providerChoice === 'other' && (
+            <div id={keyRegionId}>
+              {keyOpen && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void submitKey()
+                  }}
+                  className="grid gap-3 border-t border-border px-3 pt-3 pb-3"
+                >
+                  <div className="grid gap-1.5">
+                    <label htmlFor={providerId} className="ad-section-label">
+                      Provider
+                    </label>
+                    <select
+                      id={providerId}
+                      value={providerChoice}
+                      onChange={(e) => setProviderChoice(e.target.value)}
+                      autoComplete="off"
+                      aria-describedby={providerHintId}
+                      className="ad-surface flex h-10 w-full min-w-0 rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ad-focus disabled:pointer-events-none disabled:opacity-50"
+                    >
+                      <option value="">Choose a provider</option>
+                      {PROVIDER_CHOICES.map((choice) => (
+                        <option key={choice.value} value={choice.value}>
+                          {choice.label}
+                        </option>
+                      ))}
+                    </select>
+                    {providerChoice === 'other' && (
+                      <Input
+                        id={customProviderId}
+                        value={customProvider}
+                        onChange={(e) => setCustomProvider(e.target.value)}
+                        placeholder="Provider name"
+                        autoComplete="off"
+                        spellCheck={false}
+                        aria-label="Provider name"
+                        aria-describedby={providerHintId}
+                      />
+                    )}
+                    <p
+                      id={providerHintId}
+                      className="text-xs leading-relaxed text-foreground-tertiary"
+                    >
+                      Choose the company that issued your key.
+                    </p>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <label htmlFor={keyId} className="ad-section-label">
+                      API key
+                    </label>
+                    <p id={keyHintId} className="text-xs leading-relaxed text-foreground-tertiary">
+                      A secret token from your provider account.
+                    </p>
+                    {/* The key is a SECRET: masked by default, revealable only while
+                      typed, and never stored or echoed after submission. */}
                     <Input
-                      id={customProviderId}
-                      value={customProvider}
-                      onChange={(e) => setCustomProvider(e.target.value)}
-                      placeholder="Provider name"
+                      id={keyId}
+                      type={reveal ? 'text' : 'password'}
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="sk-..."
                       autoComplete="off"
                       spellCheck={false}
-                      aria-label="Provider name"
-                      aria-describedby={providerHintId}
+                      aria-describedby={keyHintId}
                     />
-                  )}
-                  <p
-                    id={providerHintId}
-                    className="text-xs leading-relaxed text-foreground-tertiary"
-                  >
-                    Choose the company that issued your key.
+                    {apiKey.length > 0 && (
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <code
+                          className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground-tertiary"
+                          aria-label="Masked key preview"
+                        >
+                          {reveal ? apiKey : maskKey(apiKey)}
+                        </code>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="xs"
+                          onClick={() => setReveal((r) => !r)}
+                          className="min-h-10 px-2 text-muted-foreground"
+                        >
+                          {reveal ? 'Hide' : 'Reveal'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-foreground-tertiary">
+                    Sent once to Hermes to store the credential. Agentdeck does not store or echo
+                    the key after submission.
                   </p>
-                </div>
-                <div className="grid gap-1.5">
-                  <label htmlFor={keyId} className="ad-section-label">
-                    API key
-                  </label>
-                  <p id={keyHintId} className="text-xs leading-relaxed text-foreground-tertiary">
-                    A secret token from your provider account.
-                  </p>
-                  {/* The key is a SECRET: masked by default, revealable only while
-                      typed, and never stored or echoed after submission. */}
-                  <Input
-                    id={keyId}
-                    type={reveal ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    autoComplete="off"
-                    spellCheck={false}
-                    aria-describedby={keyHintId}
-                  />
-                  {apiKey.length > 0 && (
-                    <div className="flex min-w-0 items-center justify-between gap-2">
-                      <code
-                        className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground-tertiary"
-                        aria-label="Masked key preview"
-                      >
-                        {reveal ? apiKey : maskKey(apiKey)}
-                      </code>
-                      <Button
-                        type="button"
-                        variant="link"
-                        size="xs"
-                        onClick={() => setReveal((r) => !r)}
-                        className="min-h-10 px-2 text-muted-foreground"
-                      >
-                        {reveal ? 'Hide' : 'Reveal'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs leading-relaxed text-foreground-tertiary">
-                  Sent once to Hermes to store the credential. Agentdeck does not store or echo the
-                  key after submission.
-                </p>
-                <div className="flex justify-end">
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    size="sm"
-                    disabled={!canSubmit}
-                    className="h-10 px-3"
-                  >
-                    {submitting && <Loader2 className="animate-spin" aria-hidden />}
-                    Connect key
-                  </Button>
-                </div>
-              </form>
-            )}
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      size="sm"
+                      disabled={!canSubmit}
+                      className="h-10 px-3"
+                    >
+                      {submitting && <Loader2 className="animate-spin" aria-hidden />}
+                      Connect key
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </>
       )}

@@ -141,6 +141,18 @@ describe('StudioWorkbench', () => {
     }
   })
 
+  it('the active tab has aria-controls pointing to the rendered tabpanel; inactive tabs do not', () => {
+    renderWorkbench('identity')
+    const tablist = screen.getByRole('tablist', { name: /workbench sections/i })
+    const activeTab = within(tablist).getByRole('tab', { name: 'Identity' })
+    const controlledId = activeTab.getAttribute('aria-controls')
+    expect(controlledId).toBeTruthy()
+    expect(document.getElementById(controlledId!)).toBeInTheDocument()
+    // Inactive tabs must not reference a non-existent element.
+    const inactiveTab = within(tablist).getByRole('tab', { name: 'Soul' })
+    expect(inactiveTab.getAttribute('aria-controls')).toBeNull()
+  })
+
   it('pins the section nav to the top of the page scroll container (sticky)', () => {
     renderWorkbench()
     // The switcher must stay reachable on a long section, so its wrapper sticks

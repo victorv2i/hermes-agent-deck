@@ -1,4 +1,12 @@
-import { Suspense, lazy, useCallback, useState, type ComponentType, type ReactNode } from 'react'
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useId,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react'
 import { Link } from 'react-router-dom'
 import { Eraser, ExternalLink, RotateCcw, SquareTerminal, TriangleAlert, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -230,16 +238,18 @@ function DockHeader({
  * commands here run for real on the host, with no sandbox.
  */
 function AcknowledgeGate({ onAcknowledge }: { onAcknowledge: () => void }) {
+  const descId = useId()
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-4">
       <div
         className="ad-surface max-w-sm rounded-xl bg-card p-5 text-center"
         role="alertdialog"
         aria-label="Real shell warning"
+        aria-describedby={descId}
       >
         <TriangleAlert className="mx-auto size-6 text-warning" aria-hidden />
         <p className="mt-3 text-sm font-medium text-foreground">A quick heads-up first</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <p id={descId} className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           This is a real shell on the host. Commands you run here execute on the server with your
           own account. There&apos;s no sandbox, so take the same care you would in a terminal on
           that machine.

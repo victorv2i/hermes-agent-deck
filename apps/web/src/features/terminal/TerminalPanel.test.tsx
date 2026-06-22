@@ -184,6 +184,25 @@ describe('TerminalPanel', () => {
     await waitFor(() => expect(viewMounts).toBe(2))
   })
 
+  it('real-shell alertdialog gate has aria-describedby pointing to its body paragraph', async () => {
+    const map = new Map<string, string>()
+    const freshStorage: AckStorage = {
+      getItem: (k) => map.get(k) ?? null,
+      setItem: (k, v) => void map.set(k, v),
+    }
+    renderPanel(
+      <TerminalPanel
+        fetchImpl={statusFetch({ available: true })}
+        viewComponent={StubView}
+        ackStorage={freshStorage}
+      />,
+    )
+    const dialog = await screen.findByRole('alertdialog', { name: /real shell warning/i })
+    const descId = dialog.getAttribute('aria-describedby')
+    expect(descId).toBeTruthy()
+    expect(document.getElementById(descId!)).toBeInTheDocument()
+  })
+
   it('does not connect a socket until the real-shell gate is acknowledged', async () => {
     // Fresh (un-acked) storage: the consent gate stands before any session mounts.
     const map = new Map<string, string>()

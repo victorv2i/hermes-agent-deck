@@ -130,6 +130,14 @@ describe('OnboardingWizard — Detect rung: plain-language newcomer guidance', (
     expect(screen.getByText(/mac:/i)).toBeInTheDocument()
   })
 
+  it('DetectRung disclosure button has aria-controls pointing to an element in the DOM', () => {
+    renderWizard({ status: status() })
+    const btn = screen.getByRole('button', { name: /not sure how to open a terminal/i })
+    const controlledId = btn.getAttribute('aria-controls')
+    expect(controlledId).toBeTruthy()
+    expect(document.getElementById(controlledId!)).toBeInTheDocument()
+  })
+
   it('shows a Windows/WSL note when the browser reports a Windows platform', () => {
     vi.stubGlobal('navigator', { ...navigator, userAgent: 'Windows NT 10.0; Win64' })
     renderWizard({ status: status() })
@@ -238,6 +246,14 @@ describe('OnboardingWizard — Connect API-key path (masking + honest result)', 
 
     expect(await screen.findByText(/could not reach Hermes provider sign-in/i)).toBeInTheDocument()
     expect(screen.getAllByText(/use a terminal only/i).length).toBeGreaterThan(0)
+  })
+
+  it('ConnectRung API-key disclosure button has aria-controls pointing to an element in the DOM', () => {
+    renderWizard({ status: status({ hermesInstalled: true }) })
+    const btn = screen.getByRole('button', { name: /paste an api key instead/i })
+    const controlledId = btn.getAttribute('aria-controls')
+    expect(controlledId).toBeTruthy()
+    expect(document.getElementById(controlledId!)).toBeInTheDocument()
   })
 
   it('connects via the masked API-key path and re-probes on success', async () => {

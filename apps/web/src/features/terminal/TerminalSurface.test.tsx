@@ -267,6 +267,20 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
     expect(stubClear).toHaveBeenCalledTimes(1)
   })
 
+  it('Clear button decorative icon is hidden from assistive technology', async () => {
+    renderAt('/terminal', {
+      fetchImpl: deckFetch(),
+      viewComponent: WiringStubView,
+      ackStorage: ackedStorage(),
+    })
+    await launchRawShell()
+    await screen.findByTestId('terminal-view')
+    const clear = await screen.findByRole('button', { name: /clear/i })
+    const icon = clear.querySelector('svg')
+    expect(icon).not.toBeNull()
+    expect(icon!.getAttribute('aria-hidden')).toBe('true')
+  })
+
   it('Restart button remounts the view for an in-place reconnect', async () => {
     stubMounts = 0
     renderAt('/terminal', {
@@ -311,6 +325,18 @@ describe('TerminalSurface: Scratch (the quick terminal)', () => {
       expect(within(gate).getByText(/a quick heads-up first/i)).toBeInTheDocument()
       expect(within(gate).getByText(/there's no sandbox/i)).toBeInTheDocument()
       expect(screen.queryByTestId('terminal-view')).not.toBeInTheDocument()
+    })
+
+    it('alertdialog has aria-describedby pointing to its body paragraph', async () => {
+      renderAt('/terminal', {
+        fetchImpl: deckFetch(),
+        viewComponent: StubView,
+        ackStorage: freshStorage(),
+      })
+      const gate = await screen.findByRole('alertdialog', { name: /real shell warning/i })
+      const descId = gate.getAttribute('aria-describedby')
+      expect(descId).toBeTruthy()
+      expect(document.getElementById(descId!)).toBeInTheDocument()
     })
 
     it('shows the launcher after the user acknowledges (then mounts on select)', async () => {

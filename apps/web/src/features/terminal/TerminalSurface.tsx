@@ -1207,7 +1207,7 @@ function Header({
           disabled={onClear == null}
           title="Clear the terminal"
         >
-          <Eraser />
+          <Eraser aria-hidden />
           Clear
         </Button>
         <Button
@@ -1217,7 +1217,7 @@ function Header({
           onClick={onRestart}
           title="Restart the session"
         >
-          <RotateCcw />
+          <RotateCcw aria-hidden />
           Restart
         </Button>
       </>
@@ -1241,16 +1241,18 @@ function Header({
  * newcomers (most people never need the Terminal), the acknowledgment kept.
  */
 function AcknowledgeGate({ onAcknowledge }: { onAcknowledge: () => void }) {
+  const descId = useId()
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-4">
       <div
         className="ad-surface max-w-md rounded-xl bg-card p-6 text-center"
         role="alertdialog"
         aria-label="Real shell warning"
+        aria-describedby={descId}
       >
         <TriangleAlert className="mx-auto size-6 text-warning" aria-hidden />
         <p className="mt-3 text-sm font-medium text-foreground">A quick heads-up first</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+        <p id={descId} className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           This is a real shell on the host. Commands you run here execute on the server with your
           own account, just like a terminal on that machine. There&apos;s no sandbox, so take the
           same care you would there. Most people never need this and can just chat.

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { CheckCircle2, ChevronDown, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -38,6 +38,7 @@ export function DetectRung({
   onSkip: () => void
 }) {
   const [terminalHintOpen, setTerminalHintOpen] = useState(false)
+  const terminalHintRegionId = useId()
 
   return (
     <RungChrome
@@ -112,6 +113,7 @@ export function DetectRung({
             <button
               type="button"
               aria-expanded={terminalHintOpen}
+              aria-controls={terminalHintRegionId}
               onClick={() => setTerminalHintOpen((o) => !o)}
               className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-xs text-muted-foreground hover:text-foreground"
             >
@@ -121,25 +123,27 @@ export function DetectRung({
                 aria-hidden
               />
             </button>
-            {terminalHintOpen && (
-              <div className="grid gap-1.5 border-t border-border px-3 pt-2.5 pb-3 text-xs leading-relaxed text-muted-foreground">
-                <p>
-                  <strong className="text-foreground">Mac:</strong> Press{' '}
-                  <kbd className="rounded border border-border px-1 font-mono">Command+Space</kbd>,
-                  type &quot;Terminal&quot;, press Enter. Or open Finder &rarr; Applications &rarr;
-                  Utilities &rarr; Terminal.
-                </p>
-                <p>
-                  <strong className="text-foreground">Linux:</strong> Press{' '}
-                  <kbd className="rounded border border-border px-1 font-mono">Ctrl+Alt+T</kbd>, or
-                  search your app launcher for &quot;Terminal&quot;.
-                </p>
-                <p>
-                  <strong className="text-foreground">Windows:</strong> Install WSL2 first (see
-                  above), then open &quot;Ubuntu&quot; from the Start menu.
-                </p>
-              </div>
-            )}
+            <div id={terminalHintRegionId}>
+              {terminalHintOpen && (
+                <div className="grid gap-1.5 border-t border-border px-3 pt-2.5 pb-3 text-xs leading-relaxed text-muted-foreground">
+                  <p>
+                    <strong className="text-foreground">Mac:</strong> Press{' '}
+                    <kbd className="rounded border border-border px-1 font-mono">Command+Space</kbd>
+                    , type &quot;Terminal&quot;, press Enter. Or open Finder &rarr; Applications
+                    &rarr; Utilities &rarr; Terminal.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Linux:</strong> Press{' '}
+                    <kbd className="rounded border border-border px-1 font-mono">Ctrl+Alt+T</kbd>,
+                    or search your app launcher for &quot;Terminal&quot;.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Windows:</strong> Install WSL2 first (see
+                    above), then open &quot;Ubuntu&quot; from the Start menu.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
