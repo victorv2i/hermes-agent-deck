@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="apps/web/public/brand-mark.png" alt="Agentdeck" width="96">
+  <img src="apps/web/public/brand-mark.png" alt="Hermes Agentdeck" width="96">
 </p>
 
-<h1 align="center">Agentdeck</h1>
+<h1 align="center">Hermes Agentdeck</h1>
 
 <p align="center"><strong>The AI builder's cockpit.</strong></p>
 
@@ -15,12 +15,12 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme/agents.png" alt="Agentdeck: the Agent Studio, where each agent gets a face, model, skills, and memory" width="920">
+  <img src="assets/readme/agents.png" alt="Hermes Agentdeck: the Agent Studio, where each agent gets a face, model, skills, and memory" width="920">
 </p>
 
-> **New to AI agents?** Agentdeck is a browser-based cockpit for running AI agents from your own computer. The one command in [Quickstart](#quickstart) installs everything and opens the setup wizard.
+> **New to AI agents?** Hermes Agentdeck is a browser-based cockpit for running AI agents from your own computer. The one command in [Quickstart](#quickstart) installs everything and opens the setup wizard.
 
-Agentdeck is a calm, local-first web UI and a third way to work with your agent, alongside the CLI and Telegram. **MIT-licensed**, yours to use, fork, and build on. No fake states, no fabricated endpoints, and no magic hiding what's real.
+Hermes Agentdeck is a calm, local-first web UI and a third way to work with your agent, alongside the CLI and Telegram. **MIT-licensed**, yours to use, fork, and build on. No fake states, no fabricated endpoints, and no magic hiding what's real.
 
 ## Cross-device terminal workspaces
 
@@ -30,9 +30,9 @@ The Terminal surface is a workspace manager. Each named workspace saves its pane
 
 The launcher screen detects which CLIs you have installed (Hermes CLI, Claude Code, Codex, or a raw shell) and opens each honestly: available CLIs are one click, missing ones show a real install link. No fake states, no phantom processes.
 
-## What is Agentdeck
+## What is Hermes Agentdeck
 
-Agentdeck is a local-first web cockpit for your AI agents and dev terminals, reachable from any device on your network. Start a chat or a terminal on your laptop and resume it on your phone: the same live run, tmux panes, and pending approvals, with no reconnect and no setup.
+Hermes Agentdeck is a local-first web cockpit for your AI agents and dev terminals, reachable from any device on your network. Start a chat or a terminal on your laptop and resume it on your phone: the same live run, tmux panes, and pending approvals, with no reconnect and no setup.
 
 It is powered by [Hermes](https://github.com/NousResearch/hermes-agent), where the gateway, agents, memory, and skills live. The built-in terminal drives any CLI you already have (Hermes, Claude Code, Codex, or a raw shell), and a unified history shows your sessions across all of them. Power users get a live Run drawer, a cross-source fleet band, Jobs/Cron, Logs, Skills, Files, and a ⌘K palette; a first-runner gets a demo path, a setup wizard, and one button to start a chat.
 

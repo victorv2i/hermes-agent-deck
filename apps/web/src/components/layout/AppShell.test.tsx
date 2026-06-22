@@ -81,18 +81,18 @@ describe('AppShell', () => {
     expect(within(banner).getByRole('button', { name: /theme/i })).toBeInTheDocument()
     // The rail owns the brand wordmark while expanded.
     const nav = screen.getByRole('navigation', { name: /sidebar/i })
-    expect(within(nav).getByText('Agentdeck')).toBeInTheDocument()
+    expect(within(nav).getByText('Hermes Agentdeck')).toBeInTheDocument()
     // No redundant header wordmark while the rail is expanded.
-    expect(within(banner).queryByText('Agentdeck')).not.toBeInTheDocument()
+    expect(within(banner).queryByText('Hermes Agentdeck')).not.toBeInTheDocument()
   })
 
   it('surfaces the wordmark in the header when the rail is collapsed', async () => {
     const user = userEvent.setup()
     renderShell()
     const banner = screen.getByRole('banner')
-    expect(within(banner).queryByText('Agentdeck')).not.toBeInTheDocument()
+    expect(within(banner).queryByText('Hermes Agentdeck')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /collapse sidebar/i }))
-    expect(within(banner).getByText('Agentdeck')).toBeInTheDocument()
+    expect(within(banner).getByText('Hermes Agentdeck')).toBeInTheDocument()
   })
 
   it('header shows a connection-status dot reflecting the connection prop', () => {
@@ -236,14 +236,14 @@ describe('AppShell', () => {
     })
 
     it('wordmark text collapses to icon-only below 480px to avoid crowding with the icon buttons', () => {
-      // At 390px with Menu + PreviewToggle + ThemeToggle the "Agentdeck" text
-      // (~147px) leaves almost no room for the header slot. The Wordmark outer
+      // At 390px with Menu + PreviewToggle + ThemeToggle the "Hermes Agentdeck" text
+      // (~250px) leaves almost no room for the header slot. The Wordmark outer
       // span must carry a responsive class that hides the text at narrow widths
       // (<=479px) so the header stays uncluttered.
       setViewport(true)
       renderShell({ preview: <div>Preview panel</div> })
       const banner = screen.getByRole('banner')
-      const wordmarkText = within(banner).queryByText('Agentdeck')
+      const wordmarkText = within(banner).queryByText('Hermes Agentdeck')
       // The wordmark text is present in the DOM (not removed) but the wrapping
       // Wordmark element must carry a class that hides the text at <=479px.
       expect(wordmarkText).not.toBeNull()
@@ -337,7 +337,7 @@ describe('AppShell', () => {
       renderShell()
       // The labeled Sidebar nav owns the wordmark on a single-rail surface.
       const nav = screen.getByRole('navigation', { name: /sidebar/i })
-      expect(within(nav).getByText('Agentdeck')).toBeInTheDocument()
+      expect(within(nav).getByText('Hermes Agentdeck')).toBeInTheDocument()
       // No slim icon-nav, no dedicated sessions pane on a single-rail surface.
       expect(screen.queryByTestId('icon-rail')).not.toBeInTheDocument()
       expect(screen.queryByTestId('sessions-pane')).not.toBeInTheDocument()
@@ -411,8 +411,10 @@ describe('AppShell', () => {
       // The labeled column does NOT collapse to the slim icon-nav.
       expect(screen.queryByTestId('icon-rail')).not.toBeInTheDocument()
       // The labeled nav owns the wordmark, so the header doesn't duplicate it.
-      expect(within(screen.getByRole('banner')).queryByText('Agentdeck')).not.toBeInTheDocument()
-      expect(within(nav).getByText('Agentdeck')).toBeInTheDocument()
+      expect(
+        within(screen.getByRole('banner')).queryByText('Hermes Agentdeck'),
+      ).not.toBeInTheDocument()
+      expect(within(nav).getByText('Hermes Agentdeck')).toBeInTheDocument()
       // The split nav drops the embedded session LIST (the pane owns it), so
       // it isn't duplicated.
       expect(within(nav).queryByRole('list', { name: /sessions/i })).not.toBeInTheDocument()
@@ -431,7 +433,9 @@ describe('AppShell', () => {
       // The icon-rail is gone from the desktop split layout entirely.
       expect(screen.queryByTestId('icon-rail')).not.toBeInTheDocument()
       // The labeled nav owns the wordmark, so the header doesn't duplicate it.
-      expect(within(screen.getByRole('banner')).queryByText('Agentdeck')).not.toBeInTheDocument()
+      expect(
+        within(screen.getByRole('banner')).queryByText('Hermes Agentdeck'),
+      ).not.toBeInTheDocument()
     })
 
     it('§2(a) below the pane gate keeps the LABELED nav too (no pane, still no icon-rail)', () => {
