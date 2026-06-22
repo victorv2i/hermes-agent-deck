@@ -150,6 +150,19 @@ describe('resolveCwd', () => {
     // …unless $HOME is explicitly allowed AND exists.
     expect(resolveCwd(dir, [], dir, true)).toBe(dir)
   })
+  it('does NOT honor a symlink inside a root that resolves OUTSIDE every root', () => {
+    // A symlink lexically inside `dir` but pointing at a dir outside every root.
+    // The lexical containment check passes, so without a realpath guard the shell
+    // would be anchored outside the allowlist. It must fall back to the root.
+    const outside = mkdtempSync(join(tmpdir(), 'pty-escape-'))
+    const link = join(dir, 'escape')
+    symlinkSync(outside, link, 'dir')
+    try {
+      expect(resolveCwd(link, [dir], '/home/fallback')).toBe(dir)
+    } finally {
+      rmSync(outside, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('ptyEnv', () => {

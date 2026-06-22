@@ -24,3 +24,6 @@ playwright-report/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# serena LSP tool scratch (not part of the project)
+.serena/

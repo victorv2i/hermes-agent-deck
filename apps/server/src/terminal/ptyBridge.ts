@@ -18,7 +18,7 @@
  * socket disconnect / teardown.
  */
 import { homedir } from 'node:os'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, realpathSync, statSync } from 'node:fs'
 import { isPathInsideRoot } from '../files/pathGuard'
 
 /** The shape of a spawned pty we depend on (subset of node-pty's IPty). */
@@ -173,11 +173,27 @@ export function resolveCwd(
       return false
     }
   }
-  // Honor the requested cwd only if it is an existing directory AND sits inside
-  // one of the allowlisted roots. With no roots, nothing can be contained, so a
-  // requested cwd is never honored.
-  if (isDir(requested) && roots.some((root) => isPathInsideRoot(root, requested))) {
-    return requested
+  const realpathSafe = (p: string): string | null => {
+    try {
+      return realpathSync(p)
+    } catch {
+      return null
+    }
+  }
+  // Honor the requested cwd only if it is an existing directory AND, once symlinks
+  // are followed, its REAL path stays inside an allowlisted root (the root is
+  // realpathed too). A purely lexical check would let a symlink that sits inside a
+  // root point outside it (e.g. at `/` or `~/.ssh`) and silently anchor the shell
+  // there. With no roots, nothing can be contained, so a requested cwd is never
+  // honored. Mirrors the REST cwd picker's realpath guard (workspaceRoutes).
+  if (isDir(requested)) {
+    const realReq = realpathSafe(requested)
+    if (realReq) {
+      for (const root of roots) {
+        const realRoot = realpathSafe(root)
+        if (realRoot && isPathInsideRoot(realRoot, realReq)) return requested
+      }
+    }
   }
   for (const root of roots) {
     if (isDir(root)) return root

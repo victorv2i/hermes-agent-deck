@@ -656,7 +656,7 @@ function AddPaneMenu({
                   role="menuitem"
                   disabled={!available}
                   onClick={() => choose(id)}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5 ${
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors duration-100 focus-visible:ad-focus md:py-1.5 ${
                     available
                       ? 'text-foreground hover:bg-muted'
                       : 'cursor-not-allowed text-muted-foreground'
@@ -717,7 +717,7 @@ function LayoutPresetMenu({ onLayout }: { onLayout: (count: number) => void }) {
                 type="button"
                 role="menuitem"
                 onClick={() => choose(count)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:ad-focus md:py-1.5"
               >
                 <span className="min-w-0 flex-1 truncate">
                   {count} {count === 1 ? 'pane' : 'panes'}
@@ -774,7 +774,7 @@ function SegmentButton({
       aria-pressed={selected}
       aria-label={label}
       title={label}
-      className={`flex h-11 min-w-11 items-center justify-center rounded-md px-2.5 transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:h-10 md:min-w-10 ${
+      className={`flex h-11 min-w-11 items-center justify-center rounded-md px-2.5 transition-colors duration-100 focus-visible:ad-focus md:h-10 md:min-w-10 ${
         selected
           ? 'bg-primary/10 text-primary'
           : 'text-foreground-tertiary hover:bg-muted hover:text-foreground'
@@ -825,7 +825,7 @@ function Tab({
       }}
       // Active tab = the sanctioned faint sky-blue LIVE/active treatment. Inactive
       // tabs are quiet and neutral. Min height is touch-sized on narrow screens.
-      className={`group/tab relative flex h-11 min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-lg pr-1 pl-2.5 text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:h-10 md:pr-1.5 ${
+      className={`group/tab relative flex h-11 min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-lg pr-1 pl-2.5 text-sm transition-colors duration-100 focus-visible:ad-focus md:h-10 md:pr-1.5 ${
         active
           ? 'bg-primary/10 text-foreground'
           : 'text-foreground-tertiary hover:bg-muted hover:text-foreground'
@@ -854,7 +854,7 @@ function Tab({
         }}
         aria-label={foreign ? `Detach ${pane.label}` : `Close ${pane.label}`}
         title={foreign ? 'Detach (the session keeps running in your tmux)' : 'Close terminal'}
-        className="flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-tertiary opacity-70 transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring group-hover/tab:opacity-100 md:size-7"
+        className="flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-tertiary opacity-70 transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:ad-focus group-hover/tab:opacity-100 md:size-7"
       >
         <X className="size-3.5" />
       </button>
@@ -1138,7 +1138,7 @@ function GridPanels({
                 }}
                 aria-label={`Restart ${pane.label}`}
                 title="Restart this terminal"
-                className="flex size-11 items-center justify-center rounded-md text-foreground-tertiary hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:size-7"
+                className="flex size-11 items-center justify-center rounded-md text-foreground-tertiary hover:bg-muted hover:text-foreground focus-visible:ad-focus md:size-7"
               >
                 <RotateCcw className="size-3.5" />
               </button>

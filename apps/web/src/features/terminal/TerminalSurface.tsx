@@ -530,7 +530,7 @@ function SwitcherPill({
       role="tab"
       aria-selected={selected}
       onClick={onClick}
-      className={`flex h-11 min-w-0 shrink-0 cursor-pointer items-center rounded-lg px-3 text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:h-8 ${
+      className={`flex h-11 min-w-0 shrink-0 cursor-pointer items-center rounded-lg px-3 text-sm transition-colors duration-100 focus-visible:ad-focus md:h-8 ${
         selected
           ? 'bg-primary/10 text-foreground'
           : 'text-foreground-tertiary hover:bg-muted hover:text-foreground'
@@ -552,7 +552,7 @@ function SwitcherPill({
         onClick={onDelete}
         aria-label={`Delete ${label}`}
         title={`Delete ${label}`}
-        className="-ml-1 flex h-11 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-foreground-tertiary transition-colors duration-100 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:h-8 md:opacity-0 md:group-hover/pill:opacity-100 md:focus-visible:opacity-100"
+        className="-ml-1 flex h-11 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-foreground-tertiary transition-colors duration-100 hover:text-destructive focus-visible:ad-focus md:h-8 md:opacity-0 md:group-hover/pill:opacity-100 md:focus-visible:opacity-100"
       >
         <Trash2 className="size-3.5" />
       </button>
@@ -641,7 +641,7 @@ function DropdownItem({
       role="menuitemradio"
       aria-checked={selected}
       onClick={onClick}
-      className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring ${
+      className={`flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors duration-100 focus-visible:ad-focus ${
         selected ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-muted'
       }`}
     >
@@ -659,7 +659,7 @@ function DropdownItem({
         onClick={onDelete}
         aria-label={`Delete ${label}`}
         title={`Delete ${label}`}
-        className="flex size-9 shrink-0 items-center justify-center rounded-md text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+        className="flex size-9 shrink-0 items-center justify-center rounded-md text-foreground-tertiary transition-colors duration-100 hover:bg-muted hover:text-destructive focus-visible:ad-focus"
       >
         <Trash2 className="size-4" />
       </button>

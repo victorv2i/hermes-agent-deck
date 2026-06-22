@@ -101,7 +101,7 @@ export function CliPicker({ value, clis, onChange }: CliPickerProps) {
                   aria-checked={selected}
                   disabled={!available}
                   onClick={() => choose(id)}
-                  className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5 ${
+                  className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors duration-100 focus-visible:ad-focus md:py-1.5 ${
                     available
                       ? 'text-foreground hover:bg-muted'
                       : 'cursor-not-allowed text-muted-foreground'
@@ -329,7 +329,7 @@ function RootList({
           role="menuitem"
           onClick={() => onOpen(root.path)}
           title={root.path}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:ad-focus md:py-1.5"
         >
           <FolderOpen className="size-4 shrink-0 text-foreground-tertiary" />
           <span className="min-w-0 flex-1 truncate">{root.name}</span>
@@ -348,7 +348,7 @@ function DirEntries({ data, onOpen }: { data: DirListResponse; onOpen: (path: st
           type="button"
           role="menuitem"
           onClick={() => onOpen(data.parent!)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground-tertiary transition-colors duration-100 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground-tertiary transition-colors duration-100 hover:bg-muted focus-visible:ad-focus md:py-1.5"
         >
           <CornerLeftUp className="size-4 shrink-0" aria-hidden />
           <span className="min-w-0 flex-1 truncate">Up one level</span>
@@ -364,7 +364,7 @@ function DirEntries({ data, onOpen }: { data: DirListResponse; onOpen: (path: st
             role="menuitem"
             onClick={() => onOpen(entry.path)}
             title={entry.path}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring md:py-1.5"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground transition-colors duration-100 hover:bg-muted focus-visible:ad-focus md:py-1.5"
           >
             <Folder className="size-4 shrink-0 text-foreground-tertiary" />
             <span className="min-w-0 flex-1 truncate">{entry.name}</span>
