@@ -65,7 +65,7 @@ If Hermes is running there is nothing to configure. If a provider still needs se
 > **Experimental.** Works on macOS (Apple Silicon and Intel) and Linux (x64 and arm64). Falls back to the manual path below if anything goes wrong. Re-run at any time to update.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/victorv2i/agentdeck/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/victorv2i/hermes-agent-deck/main/install.sh | bash
 ```
 
 This installs Hermes, builds Agentdeck, and registers all three pieces (the Hermes gateway, the Hermes dashboard, and Agentdeck itself) as persistent services (systemd user units on Linux, launchd on macOS), so everything comes back after a reboot. On Linux without a systemd user session (the default in WSL2) they run as plain background processes instead, and the installer says so; re-run it after a reboot to start them again. Then it opens your browser to the setup wizard. Nothing is configured before you see the wizard; it handles provider sign-in. If you already run Hermes your own way, the installer reuses your running gateway/dashboard instead of taking them over. If port 7878 is taken, it picks the next free port and prints your address (or set `AGENT_DECK_PORT` to choose one). Curious what it will do before it runs? Use `--dry-run`:
@@ -88,8 +88,8 @@ bash install.sh --dry-run
 npm install -g pnpm@10
 
 # Then clone and enter the repo:
-git clone https://github.com/victorv2i/agentdeck.git
-cd agentdeck
+git clone https://github.com/victorv2i/hermes-agent-deck.git
+cd hermes-agent-deck
 pnpm install
 ```
 

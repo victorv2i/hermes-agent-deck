@@ -14,11 +14,11 @@
   "author": "victorv2i",
   "repository": {
     "type": "git",
-    "url": "https://github.com/victorv2i/agentdeck.git"
+    "url": "https://github.com/victorv2i/hermes-agent-deck.git"
   },
-  "homepage": "https://github.com/victorv2i/agentdeck#readme",
+  "homepage": "https://github.com/victorv2i/hermes-agent-deck#readme",
   "bugs": {
-    "url": "https://github.com/victorv2i/agentdeck/issues"
+    "url": "https://github.com/victorv2i/hermes-agent-deck/issues"
   },
   "license": "MIT",
   "type": "module",

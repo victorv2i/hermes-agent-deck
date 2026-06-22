@@ -5,7 +5,7 @@
 #
 # Run this to install Hermes + Agentdeck, start both, and open your browser:
 #
-#   curl -fsSL https://raw.githubusercontent.com/victorv2i/agentdeck/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/victorv2i/hermes-agent-deck/main/install.sh | bash
 #
 # Or, if you already have the repo:
 #
@@ -65,7 +65,7 @@ trap '_cleanup_on_interrupt' INT TERM
 # Where to clone Agentdeck (defaults to ~/.local/share/agent-deck)
 AGENT_DECK_DIR="${AGENT_DECK_DIR:-$HOME/.local/share/agent-deck}"
 # The repo URL (set the AGENT_DECK_REPO env var to override).
-AGENT_DECK_REPO="${AGENT_DECK_REPO:-https://github.com/victorv2i/agentdeck.git}"
+AGENT_DECK_REPO="${AGENT_DECK_REPO:-https://github.com/victorv2i/hermes-agent-deck.git}"
 # Agentdeck web UI port. If this port is taken by something else, the installer
 # picks the next free port automatically (set AGENT_DECK_PORT to choose one).
 AGENT_DECK_PORT="${AGENT_DECK_PORT:-7878}"
