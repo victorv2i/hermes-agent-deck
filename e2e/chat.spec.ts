@@ -161,7 +161,9 @@ test('streams a reply, renders an expandable tool chip, resolves an approval, an
   // tokens plus "included", never a fabricated $0. The tooltip names the source.
   const receipt = page.getByTestId('run-receipt')
   await expect(receipt).toBeVisible()
-  await expect(receipt).toHaveText('12 in / 11 out / included (subscription)')
+  // Leads with the exact run cost, then appends the real run speed (duration + tok/s).
+  await expect(receipt).toContainText('12 in / 11 out / included (subscription)')
+  await expect(receipt).toContainText('tok/s')
   await expect(receipt).toHaveAttribute('title', /Measured for this run/)
 
   // Run finished → composer is back to Send (not Stop).

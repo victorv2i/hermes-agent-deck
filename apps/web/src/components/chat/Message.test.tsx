@@ -749,5 +749,42 @@ describe('Message', () => {
       renderMessage({ ...completedTurn, id: 'a3', streaming: true })
       expect(screen.queryByTestId('run-receipt')).toBeNull()
     })
+
+    it('shows duration and tok/s when both are present', () => {
+      renderMessage(
+        { ...completedTurn, id: 'a4', duration: 4.2 },
+        { receiptBillingMode: 'subscription' },
+      )
+      const receipt = screen.getByTestId('run-receipt')
+      expect(receipt).toHaveTextContent('4.2s')
+      // 1234 output_tokens / 4.2s = ~294 tok/s
+      expect(receipt).toHaveTextContent('tok/s')
+    })
+
+    it('computes tok/s correctly (round to integer)', () => {
+      // 1200 output / 4.0s = 300 tok/s
+      const turnWith1200Out: Turn = {
+        ...completedTurn,
+        id: 'a5',
+        usage: { input_tokens: 100, output_tokens: 1200, total_tokens: 1300 },
+        duration: 4.0,
+      }
+      renderMessage(turnWith1200Out)
+      expect(screen.getByTestId('run-receipt')).toHaveTextContent('300 tok/s')
+    })
+
+    it('shows tokens only when duration is absent — no duration suffix, no "tok/s"', () => {
+      renderMessage({ ...completedTurn, id: 'a6' }, { receiptBillingMode: 'subscription' })
+      const receipt = screen.getByTestId('run-receipt')
+      expect(receipt).toHaveTextContent('64.3K in / 1.2K out / included (subscription)')
+      expect(receipt).not.toHaveTextContent('tok/s')
+      // No digit followed by 's' (duration suffix) — the receipt must end at the billing segment.
+      expect(receipt.textContent).not.toMatch(/\d+\.\d+s/)
+    })
+
+    it('formats a large duration as Xm YYs', () => {
+      renderMessage({ ...completedTurn, id: 'a7', duration: 75 })
+      expect(screen.getByTestId('run-receipt')).toHaveTextContent('1m 15s')
+    })
   })
 })

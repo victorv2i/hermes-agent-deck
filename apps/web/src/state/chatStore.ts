@@ -82,6 +82,11 @@ export interface AssistantTurn {
   /** True until a terminal event finalizes this turn. */
   streaming: boolean
   usage?: TokenUsage
+  /** Wall-clock seconds from first token to run.completed. Computed from
+   * createdAt vs the finalizing event's timestamp. Absent when the turn was
+   * seeded from history (no live start time) or when the gateway supplied no
+   * timing signal. Never fabricated — omitted rather than zeroed. */
+  duration?: number
   /** Epoch ms the turn was created (live) or its persisted timestamp (history).
    * See {@link UserTurn.createdAt}. */
   createdAt?: number
@@ -363,24 +368,35 @@ function patchAssistant(
   return next
 }
 
-/** Finalize the active assistant turn (mark it no longer streaming). */
+/** Finalize the active assistant turn (mark it no longer streaming).
+ * `completedAt` (epoch ms) is used to compute the wall-clock run duration when
+ * the turn has a `createdAt` — both supplied by `applyEvent`'s `now` clock so
+ * the math is always (completedAt - createdAt). Absent → no duration written. */
 export function finalizeStreaming(
   state: ChatState,
   finalContent?: string,
   usage?: TokenUsage,
+  completedAt?: number,
 ): ChatState {
   const index = activeAssistantIndex(state.turns)
   if (index === -1) {
     return state
   }
-  const turns = patchAssistant(state.turns, index, (t) => ({
-    ...t,
-    // Prefer the explicit terminal output when present; otherwise keep what
-    // streamed in. (The gateway's run.completed `output` is the full text.)
-    content: finalContent !== undefined && finalContent !== null ? finalContent : t.content,
-    streaming: false,
-    usage: usage ?? t.usage,
-  }))
+  const turns = patchAssistant(state.turns, index, (t) => {
+    const durationSec =
+      completedAt !== undefined && t.createdAt !== undefined && completedAt > t.createdAt
+        ? (completedAt - t.createdAt) / 1000
+        : undefined
+    return {
+      ...t,
+      // Prefer the explicit terminal output when present; otherwise keep what
+      // streamed in. (The gateway's run.completed `output` is the full text.)
+      content: finalContent !== undefined && finalContent !== null ? finalContent : t.content,
+      streaming: false,
+      usage: usage ?? t.usage,
+      ...(durationSec !== undefined ? { duration: durationSec } : {}),
+    }
+  })
   return { ...state, turns }
 }
 
@@ -418,13 +434,13 @@ export function applyEvent(
   if (event.event !== 'run.started' && state.runId !== null && state.runId !== event.run_id) {
     return state
   }
-  const next = reduceEvent(state, event)
+  const next = reduceEvent(state, event, now)
   // Unchanged state means the event was dropped (already seen) — no fresh signal.
   if (next === state) return state
   return { ...next, lastEventAt: now }
 }
 
-function reduceEvent(state: ChatState, event: ChatServerEvent): ChatState {
+function reduceEvent(state: ChatState, event: ChatServerEvent, now: number): ChatState {
   const cursor = typeof event.cursor === 'number' ? event.cursor : undefined
   // `run.started` for a NEW run begins a fresh cursor sequence (the BFF numbers
   // cursors PER RUN, restarting at 1). The de-dup watermark is conversation-
@@ -585,7 +601,7 @@ function reduceEvent(state: ChatState, event: ChatServerEvent): ChatState {
       // Treat an empty output like an absent one: a tool-only turn completes with
       // `output: ''`, and `?? undefined` (null-only) would let that '' overwrite
       // and BLANK whatever already streamed in. `|| undefined` keeps the stream.
-      const finalized = finalizeStreaming(advanced, event.output || undefined, event.usage)
+      const finalized = finalizeStreaming(advanced, event.output || undefined, event.usage, now)
       return {
         ...finalized,
         runStatus: 'idle',

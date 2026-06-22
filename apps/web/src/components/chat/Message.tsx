@@ -614,7 +614,13 @@ function AssistantMessage({
             tokens from the gateway); a turn without usage — e.g. one seeded
             from history, where hermes persists no per-run numbers — simply has
             no receipt. Part of the turn footer, so no live region. */}
-        {!turn.streaming && <RunReceiptLine usage={turn.usage} billingMode={receiptBillingMode} />}
+        {!turn.streaming && (
+          <RunReceiptLine
+            usage={turn.usage}
+            billingMode={receiptBillingMode}
+            duration={turn.duration}
+          />
+        )}
 
         {!turn.streaming && hasText && (
           <MetaRow createdAt={turn.createdAt}>

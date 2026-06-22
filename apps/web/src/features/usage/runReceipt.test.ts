@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { buildRunReceipt, receiptBillingSegment, receiptLine, receiptTitle } from './runReceipt'
+import {
+  buildRunReceipt,
+  formatDuration,
+  receiptBillingSegment,
+  receiptLine,
+  receiptTitle,
+} from './runReceipt'
 
 const USAGE = { input_tokens: 64321, output_tokens: 1234, total_tokens: 65555 }
 
@@ -68,5 +74,19 @@ describe('receiptTitle', () => {
   it('labels a session_delta receipt as session growth, never an exact run cost', () => {
     const receipt = { ...buildRunReceipt(USAGE, 'unknown')!, source: 'session_delta' as const }
     expect(receiptTitle(receipt)).toContain('Session growth during this run')
+  })
+})
+
+describe('formatDuration', () => {
+  it('renders sub-minute durations as Xs with one decimal', () => {
+    expect(formatDuration(4.2)).toBe('4.2s')
+    expect(formatDuration(0.5)).toBe('0.5s')
+    expect(formatDuration(59.9)).toBe('59.9s')
+  })
+
+  it('renders 60s+ as Xm YYs with zero-padded seconds', () => {
+    expect(formatDuration(60)).toBe('1m 00s')
+    expect(formatDuration(75)).toBe('1m 15s')
+    expect(formatDuration(125)).toBe('2m 05s')
   })
 })

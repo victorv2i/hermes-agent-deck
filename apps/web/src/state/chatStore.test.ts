@@ -238,6 +238,38 @@ describe('chatStore reducer', () => {
     expect(lastAssistant(s).content).toBe('streamed only')
   })
 
+  it('run.completed computes wall-clock duration from createdAt to now', () => {
+    // beginAssistantTurn stamps createdAt = Date.now(); we control `now` in applyEvent.
+    const T0 = 1_700_000_000_000
+    const T1 = T0 + 4200 // 4.2s later
+    let s = beginAssistantTurn(initialChatState)
+    // Stamp a known createdAt by overwriting the turn directly so the test is deterministic.
+    s = {
+      ...s,
+      turns: s.turns.map((t) =>
+        t.role === 'assistant' ? { ...t, createdAt: T0 } : t,
+      ) as typeof s.turns,
+    }
+    s = applyEvent(s, ev({ event: 'run.started', run_id: RUN, cursor: 1 }), T0)
+    s = applyEvent(s, ev({ event: 'run.completed', run_id: RUN, output: 'done', cursor: 2 }), T1)
+    expect(lastAssistant(s).duration).toBeCloseTo(4.2, 1)
+  })
+
+  it('run.completed does NOT set duration when the turn has no createdAt', () => {
+    // A turn seeded from history may have no createdAt — never fabricate a duration.
+    let s = applyEvent(initialChatState, ev({ event: 'run.started', run_id: RUN, cursor: 1 }))
+    s = applyEvent(s, ev({ event: 'message.delta', run_id: RUN, delta: 'done', cursor: 2 }))
+    // Ensure the turn has no createdAt (ensureAssistantTurn creates without it).
+    s = {
+      ...s,
+      turns: s.turns.map((t) =>
+        t.role === 'assistant' ? { ...t, createdAt: undefined } : t,
+      ) as typeof s.turns,
+    }
+    s = applyEvent(s, ev({ event: 'run.completed', run_id: RUN, output: 'done', cursor: 3 }))
+    expect(lastAssistant(s).duration).toBeUndefined()
+  })
+
   // --- tool round-trip ------------------------------------------------------
   it('tool round-trip: started → completed upserts a single card (running → completed)', () => {
     const afterStart = applyEvents(

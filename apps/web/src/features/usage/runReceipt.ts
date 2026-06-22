@@ -104,3 +104,11 @@ export function receiptTitle(receipt: RunReceipt): string {
           : ''
   return [exact, source, billing].filter(Boolean).join(' ')
 }
+
+/** Format a run duration in seconds compactly: "4.2s" or "1m 03s". */
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}m ${String(s).padStart(2, '0')}s`
+}
