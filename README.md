@@ -47,8 +47,8 @@ If Hermes is running there is nothing to configure. If a provider still needs se
 - **Cross-device terminal workspaces.** Named workspaces save pane layouts server-side and reattach tmux sessions from any device. Scratch gives you an ephemeral quick shell; saved workspaces give you persistence, start from a preset template, and export to a shareable JSON. One deep link opens the same layout on your phone.
 - **Surface-aware split rail.** On Chat you get an icon-nav plus a dedicated sessions pane; everywhere else it collapses to a single rail. Toggle with ⌘B. Past sessions resume in one click and your next message continues them.
 - **Three designed theme families**, each with a light and dark variant, switchable from Settings or ⌘K.
-- **Streaming chat** with inline tools, reasoning, and approvals (deny, allow once, allow for session, always allow), plus stop and resume.
-- **Operator surfaces:** Jobs and Cron, Logs, and Skills, alongside Models, Profiles, and Usage.
+- **Streaming chat** with inline tools, reasoning, and approvals (deny, allow once, allow for session, always allow), plus stop and resume, and an honest per-run receipt showing exact tokens, billing mode, and run speed.
+- **Operator surfaces:** scheduled Jobs and Cron with full per-run history, Logs, and Skills, alongside Models, Profiles, and Usage.
 - **Agent profile controls:** profile pages expose files, skills, soul, and the active memory provider; provider switch/reset controls are scoped to the active profile and surface Hermes errors honestly.
 - **Files** built in with a file browser and code editor, accessible from any device.
 - **⌘K command palette** and deep keyboard support throughout.
