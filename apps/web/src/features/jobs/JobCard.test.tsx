@@ -1,8 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { JobCard } from './JobCard'
-import type { CronJob } from './types'
+import type { CronJob, CronRunList } from './types'
+
+// Mock the runs hook so unit tests never touch the network.
+vi.mock('./hooks', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./hooks')>()
+  return {
+    ...real,
+    useJobRuns: vi.fn(() => ({ isPending: false, isError: false, data: { runs: [], limit: 20 } })),
+  }
+})
 
 function makeJob(overrides: Partial<CronJob> = {}): CronJob {
   return {
@@ -33,14 +44,19 @@ function makeJob(overrides: Partial<CronJob> = {}): CronJob {
 }
 
 function renderCard(overrides: Partial<CronJob> = {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <JobCard
-      job={makeJob(overrides)}
-      onEdit={vi.fn()}
-      onToggle={vi.fn()}
-      onTrigger={vi.fn()}
-      onDelete={vi.fn()}
-    />,
+    <QueryClientProvider client={client}>
+      <MemoryRouter>
+        <JobCard
+          job={makeJob(overrides)}
+          onEdit={vi.fn()}
+          onToggle={vi.fn()}
+          onTrigger={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -171,5 +187,92 @@ describe('JobCard run history disclosure', () => {
     const panelId = toggle.getAttribute('aria-controls')
     expect(panelId).toBeTruthy()
     expect(document.getElementById(panelId as string)).toBeInTheDocument()
+  })
+
+  it('shows "No runs recorded yet." when the hook returns an empty list', async () => {
+    const user = userEvent.setup()
+    const { useJobRuns } = await import('./hooks')
+    vi.mocked(useJobRuns).mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { runs: [] as CronRunList['runs'], limit: 20 },
+    } as ReturnType<typeof useJobRuns>)
+
+    renderCard()
+    await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
+
+    expect(screen.getByText('No runs recorded yet.')).toBeInTheDocument()
+  })
+
+  it('renders a run row with a View link to the session transcript', async () => {
+    const user = userEvent.setup()
+    const run: CronRunList['runs'][number] = {
+      id: 'cron_job1_1748520000',
+      title: 'Morning digest',
+      preview: 'Summarized emails',
+      startedAt: '2025-05-29T08:00:00.000Z',
+      endedAt: '2025-05-29T08:02:00.000Z',
+      isActive: false,
+      messageCount: 5,
+      tokens: 1500,
+      status: 'ok',
+    }
+    const { useJobRuns } = await import('./hooks')
+    vi.mocked(useJobRuns).mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { runs: [run], limit: 20 },
+    } as ReturnType<typeof useJobRuns>)
+
+    renderCard()
+    await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
+
+    const link = screen.getByRole('link', { name: 'View' })
+    expect(link).toHaveAttribute('href', `/sessions/${run.id}`)
+  })
+
+  it('shows the loading state while runs are pending', async () => {
+    const user = userEvent.setup()
+    const { useJobRuns } = await import('./hooks')
+    vi.mocked(useJobRuns).mockReturnValue({
+      isPending: true,
+      isError: false,
+      data: undefined,
+    } as ReturnType<typeof useJobRuns>)
+
+    renderCard()
+    await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
+
+    expect(screen.getByText('Loading runs...')).toBeInTheDocument()
+  })
+
+  it('shows an error state when the runs fetch fails', async () => {
+    const user = userEvent.setup()
+    const { useJobRuns } = await import('./hooks')
+    vi.mocked(useJobRuns).mockReturnValue({
+      isPending: false,
+      isError: true,
+      data: undefined,
+    } as ReturnType<typeof useJobRuns>)
+
+    renderCard()
+    await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
+
+    expect(screen.getByText("Couldn't load run history.")).toBeInTheDocument()
+  })
+
+  it('shows lastError note above the run list when the job has a recent error', async () => {
+    const user = userEvent.setup()
+    const { useJobRuns } = await import('./hooks')
+    vi.mocked(useJobRuns).mockReturnValue({
+      isPending: false,
+      isError: false,
+      data: { runs: [] as CronRunList['runs'], limit: 20 },
+    } as ReturnType<typeof useJobRuns>)
+
+    renderCard({ lastError: 'something exploded' })
+    await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
+
+    expect(screen.getByText(/something exploded/)).toBeInTheDocument()
   })
 })

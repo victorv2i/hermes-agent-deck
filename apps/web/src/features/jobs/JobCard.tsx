@@ -6,11 +6,11 @@
  * enabled/paused state sit in the title row.
  * Per-job actions live in a hover-quiet row: pause/resume, run-now (trigger),
  * edit, and delete (inline confirm, never a modal). A "Run history" disclosure
- * surfaces the honest available history — the dashboard exposes the LAST run only
- * (last_run_at / last_status / last_error) plus the cumulative run count; there is
- * no per-run log route, so we present exactly what's real, not a faked timeline.
+ * fetches real per-run history from `GET /api/agent-deck/cron/jobs/:id/runs` and
+ * renders each run with a link to the session transcript.
  */
 import { useEffect, useId, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Clock, History, Loader2, Pause, Pencil, Play, Send, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ import {
   statusLabel,
   statusTone,
 } from './format'
+import { useJobRuns } from './hooks'
 import type { CronJob } from './types'
 
 const jobActionButtonClass = 'min-h-11 min-w-11 sm:min-h-6 sm:min-w-0'
@@ -58,6 +59,7 @@ export function JobCard({
   useEffect(() => {
     if (confirmingDelete) confirmDeleteRef.current?.focus()
   }, [confirmingDelete])
+  const runsQuery = useJobRuns(job.id, showHistory)
   const nextRun = relativeTime(job.nextRunAt)
   const lastRun = relativeTime(job.lastRunAt)
   const deliver = humanizeDeliver(job.deliver)
@@ -243,26 +245,51 @@ export function JobCard({
           id={historyId}
           className="mt-1 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs"
         >
-          <p className="mb-1 font-medium text-muted-foreground">Run history</p>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-foreground-tertiary">
-            <dt>Last run</dt>
-            <dd className="text-foreground">{lastRun ? `${lastRun}` : 'Never'}</dd>
-            <dt>Last status</dt>
-            <dd className="text-foreground">{statusLabel(job.lastStatus)}</dd>
-            {job.lastError ? (
-              <>
-                <dt>Last error</dt>
-                <dd className="break-words text-destructive">{job.lastError}</dd>
-              </>
-            ) : null}
-            <dt>Total</dt>
-            <dd className="text-foreground">{runsLabel(job)}</dd>
-            <dt>Created</dt>
-            <dd className="text-foreground">{relativeTime(job.createdAt) ?? '–'}</dd>
-          </dl>
-          <p className="mt-1.5 text-[11px] text-foreground-tertiary">
-            Only the most recent run is available here.
-          </p>
+          <p className="mb-2 font-medium text-muted-foreground">Run history</p>
+          {job.lastError ? (
+            <p className="mb-2 break-words text-destructive" role="alert">
+              Last error: {job.lastError}
+            </p>
+          ) : null}
+          {runsQuery.isPending ? (
+            <p className="flex items-center gap-1.5 text-foreground-tertiary">
+              <Loader2 className="size-3 animate-spin" aria-hidden />
+              Loading runs...
+            </p>
+          ) : runsQuery.isError ? (
+            <p className="text-destructive">Couldn't load run history.</p>
+          ) : runsQuery.data.runs.length === 0 ? (
+            <p className="text-foreground-tertiary">No runs recorded yet.</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {runsQuery.data.runs.map((run) => (
+                <li
+                  key={run.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded border border-border/50 bg-background/50 px-2 py-1"
+                >
+                  <span className="text-foreground">
+                    {relativeTime(run.startedAt) ?? 'Unknown time'}
+                  </span>
+                  {run.isActive ? (
+                    <Badge variant="success" className="text-[10px]">
+                      Active
+                    </Badge>
+                  ) : null}
+                  {run.status ? (
+                    <span className="text-foreground-tertiary">{run.status}</span>
+                  ) : null}
+                  <span className="text-foreground-tertiary">{run.messageCount} msg</span>
+                  <span className="text-foreground-tertiary">{run.tokens} tok</span>
+                  <Link
+                    to={`/sessions/${run.id}`}
+                    className="ml-auto text-primary underline-offset-2 hover:underline"
+                  >
+                    View
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ) : null}
     </li>

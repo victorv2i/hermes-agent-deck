@@ -3,7 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import { registerCronRoutes } from './cronRoutes'
 import { DashboardError } from '../hermes/dashboardClient'
 import type { CronClient } from './cronClient'
-import type { CronJob } from '@agent-deck/protocol'
+import type { CronJob, CronRunList } from '@agent-deck/protocol'
 
 let app: FastifyInstance | undefined
 afterEach(async () => {
@@ -186,6 +186,75 @@ describe('DELETE /api/agent-deck/cron/jobs/:id', () => {
     })
     const res = await app.inject({ method: 'DELETE', url: '/api/agent-deck/cron/jobs/missing' })
     expect(res.statusCode).toBe(404)
+  })
+})
+
+describe('GET /api/agent-deck/cron/jobs/:id/runs', () => {
+  const RUNS: CronRunList = {
+    runs: [
+      {
+        id: 'cron_a1b2c3d4e5f6_1748520000',
+        title: 'Morning digest',
+        preview: 'Summarized emails',
+        startedAt: '2025-05-29T08:00:00.000Z',
+        endedAt: '2025-05-29T08:02:00.000Z',
+        isActive: false,
+        messageCount: 5,
+        tokens: 1500,
+        status: 'ok',
+      },
+    ],
+    limit: 20,
+  }
+
+  it('returns the mapped run list', async () => {
+    const listRuns = vi.fn(async () => RUNS)
+    app = await buildWith({ listRuns })
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/agent-deck/cron/jobs/a1b2c3d4e5f6/runs',
+    })
+    expect(res.statusCode).toBe(200)
+    expect(res.json()).toEqual(RUNS)
+    expect(listRuns).toHaveBeenCalledWith('a1b2c3d4e5f6', undefined, undefined)
+  })
+
+  it('passes profile and limit through to the client', async () => {
+    const listRuns = vi.fn(async () => RUNS)
+    app = await buildWith({ listRuns })
+    await app.inject({
+      method: 'GET',
+      url: '/api/agent-deck/cron/jobs/a1b2c3d4e5f6/runs?profile=work&limit=5',
+    })
+    expect(listRuns).toHaveBeenCalledWith('a1b2c3d4e5f6', 'work', 5)
+  })
+
+  it('maps an upstream 404 to 404', async () => {
+    app = await buildWith({
+      listRuns: async () => {
+        throw new DashboardError('not found', 404)
+      },
+    })
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/agent-deck/cron/jobs/missing/runs',
+    })
+    expect(res.statusCode).toBe(404)
+    expect((res.json() as { error: string }).error).toBe('Job not found')
+  })
+
+  it('maps an upstream 502 without leaking internals', async () => {
+    app = await buildWith({
+      listRuns: async () => {
+        throw new DashboardError('upstream exploded', 500)
+      },
+    })
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/agent-deck/cron/jobs/a1b2c3d4e5f6/runs',
+    })
+    expect(res.statusCode).toBe(502)
+    expect((res.json() as { error: string }).error).toBe('Upstream dashboard error')
   })
 })
 

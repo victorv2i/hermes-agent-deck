@@ -6,8 +6,8 @@
  * policy, so this surface carries no client of its own.
  */
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
-import { createJob, deleteJob, fetchJobs, jobAction, updateJob } from './api'
-import type { CronJob, CronJobCreateInput, CronJobUpdateInput } from './types'
+import { createJob, deleteJob, fetchJobRuns, fetchJobs, jobAction, updateJob } from './api'
+import type { CronJob, CronJobCreateInput, CronJobUpdateInput, CronRunList } from './types'
 
 export const jobKeys = {
   all: ['jobs'] as const,
@@ -54,5 +54,14 @@ export function useDeleteJob() {
   return useMutation({
     mutationFn: (id: string) => deleteJob(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: jobKeys.list }),
+  })
+}
+
+export function useJobRuns(id: string, enabled: boolean): UseQueryResult<CronRunList> {
+  return useQuery({
+    queryKey: [...jobKeys.all, 'runs', id],
+    queryFn: ({ signal }) => fetchJobRuns(id, signal),
+    enabled,
+    staleTime: 10_000,
   })
 }

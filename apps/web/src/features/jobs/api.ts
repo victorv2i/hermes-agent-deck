@@ -5,7 +5,7 @@
  * bodies. The BFF already maps the raw scheduler job to the slim wire shape.
  */
 import { apiFetch, apiPost } from '@/lib/apiFetch'
-import type { CronJob, CronJobCreateInput, CronJobUpdateInput } from './types'
+import type { CronJob, CronJobCreateInput, CronJobUpdateInput, CronRunList } from './types'
 
 /** GET the full job list (all profiles). */
 export async function fetchJobs(signal?: AbortSignal): Promise<CronJob[]> {
@@ -35,4 +35,9 @@ export function jobAction(id: string, verb: 'pause' | 'resume' | 'trigger'): Pro
 /** DELETE a job. */
 export function deleteJob(id: string): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(`/cron/jobs/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+/** GET the per-run history for a job. */
+export function fetchJobRuns(id: string, signal?: AbortSignal): Promise<CronRunList> {
+  return apiFetch<CronRunList>(`/cron/jobs/${encodeURIComponent(id)}/runs`, { signal })
 }

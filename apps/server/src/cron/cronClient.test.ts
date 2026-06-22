@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { CronClient, mapCronJob } from './cronClient'
+import { CronClient, mapCronJob, mapCronRun } from './cronClient'
 import { DashboardError } from '../hermes/dashboardClient'
 import type { CronDashboard } from './cronClient'
 
@@ -220,6 +220,118 @@ describe('CronClient mutations', () => {
     )
     expect(err).toBeInstanceOf(DashboardError)
     expect((err as Error).message).not.toMatch(/tok_|Bearer/)
+  })
+})
+
+describe('mapCronRun', () => {
+  const RAW_RUN = {
+    id: 'cron_a1b2c3d4e5f6_1748520000',
+    title: 'Morning digest run',
+    preview: 'Summarized 3 emails',
+    started_at: 1748520000,
+    ended_at: 1748520120,
+    is_active: false,
+    message_count: 5,
+    input_tokens: 1200,
+    output_tokens: 300,
+    status: 'ok',
+  }
+
+  it('maps epoch seconds to ISO strings', () => {
+    const run = mapCronRun(RAW_RUN)
+    expect(run.startedAt).toBe(new Date(1748520000 * 1000).toISOString())
+    expect(run.endedAt).toBe(new Date(1748520120 * 1000).toISOString())
+  })
+
+  it('sums input and output tokens', () => {
+    const run = mapCronRun(RAW_RUN)
+    expect(run.tokens).toBe(1500)
+  })
+
+  it('maps is_active correctly', () => {
+    expect(mapCronRun({ ...RAW_RUN, is_active: true }).isActive).toBe(true)
+    expect(mapCronRun({ ...RAW_RUN, is_active: false }).isActive).toBe(false)
+    expect(mapCronRun({ ...RAW_RUN, is_active: undefined }).isActive).toBe(false)
+  })
+
+  it('returns null for missing timestamps', () => {
+    const run = mapCronRun({ id: 'cron_abc_123' })
+    expect(run.startedAt).toBeNull()
+    expect(run.endedAt).toBeNull()
+  })
+
+  it('returns null for a null status', () => {
+    const run = mapCronRun({ ...RAW_RUN, status: null })
+    expect(run.status).toBeNull()
+  })
+
+  it('returns null for a missing title', () => {
+    const run = mapCronRun({ ...RAW_RUN, title: '' })
+    expect(run.title).toBeNull()
+  })
+})
+
+describe('CronClient.listRuns', () => {
+  const RAW_RUN = {
+    id: 'cron_a1b2c3d4e5f6_1748520000',
+    title: 'Morning digest',
+    preview: 'Summarized emails',
+    started_at: 1748520000,
+    ended_at: 1748520120,
+    is_active: false,
+    message_count: 5,
+    input_tokens: 1200,
+    output_tokens: 300,
+    status: 'ok',
+  }
+
+  it('GETs the dashboard runs route with default limit and maps each run', async () => {
+    const { dash, getPaths } = fakeDashboard({
+      getJson: async () => ({ runs: [RAW_RUN], limit: 20 }),
+    })
+    const result = await new CronClient(dash).listRuns('a1b2c3d4e5f6')
+    expect(getPaths).toEqual(['/api/cron/jobs/a1b2c3d4e5f6/runs?limit=20'])
+    expect(result.runs).toHaveLength(1)
+    expect(result.runs[0]!.id).toBe('cron_a1b2c3d4e5f6_1748520000')
+    expect(result.limit).toBe(20)
+  })
+
+  it('passes profile and limit through in the query string', async () => {
+    const { dash, getPaths } = fakeDashboard({
+      getJson: async () => ({ runs: [], limit: 5 }),
+    })
+    await new CronClient(dash).listRuns('id1', 'work', 5)
+    expect(getPaths).toEqual(['/api/cron/jobs/id1/runs?profile=work&limit=5'])
+  })
+
+  it('tolerates a missing runs array (defaults to [])', async () => {
+    const { dash } = fakeDashboard({ getJson: async () => ({ limit: 20 }) })
+    const result = await new CronClient(dash).listRuns('id1')
+    expect(result.runs).toEqual([])
+    expect(result.limit).toBe(20)
+  })
+
+  it('tolerates a garbage upstream body', async () => {
+    const { dash } = fakeDashboard({ getJson: async () => null })
+    const result = await new CronClient(dash).listRuns('id1')
+    expect(result.runs).toEqual([])
+    expect(result.limit).toBe(20)
+  })
+
+  it('filters non-object entries in the runs array', async () => {
+    const { dash } = fakeDashboard({
+      getJson: async () => ({ runs: [null, 'bad', RAW_RUN, 42], limit: 20 }),
+    })
+    const result = await new CronClient(dash).listRuns('id1')
+    expect(result.runs).toHaveLength(1)
+  })
+
+  it('URL-encodes the job id', async () => {
+    const { dash, getPaths } = fakeDashboard({
+      getJson: async () => ({ runs: [], limit: 20 }),
+    })
+    await new CronClient(dash).listRuns('id/with spaces')
+    expect(getPaths[0]).toContain('id%2Fwith%20spaces')
   })
 })
 

@@ -1,8 +1,8 @@
 /**
  * Cron / Jobs BFF — REST over the hermes loopback dashboard's scheduler API
- * (`:9123` `/api/cron/*`, see hermes_cli/web_server.py). Mounts seven routes under
+ * (`:9123` `/api/cron/*`, see hermes_cli/web_server.py). Mounts eight routes under
  * `/api/agent-deck/cron` that proxy + slim the dashboard's job data into the
- * whitelisted {@link CronJob} wire shape (packages/protocol/src/cron.ts):
+ * whitelisted {@link CronJob} / {@link CronRunList} wire shapes (packages/protocol/src/cron.ts):
  *
  *   GET    /api/agent-deck/cron/jobs                  → list (all profiles)
  *   POST   /api/agent-deck/cron/jobs                  → create
@@ -12,6 +12,7 @@
  *   POST   /api/agent-deck/cron/jobs/:id/pause        → pause
  *   POST   /api/agent-deck/cron/jobs/:id/resume       → resume
  *   POST   /api/agent-deck/cron/jobs/:id/trigger      → run now
+ *   GET    /api/agent-deck/cron/jobs/:id/runs         → per-run history
  *
  * The {@link CronClient} owns the dashboard auth handshake + the raw→slim mapping;
  * this layer only validates input, names routes, and translates upstream errors to
@@ -22,7 +23,12 @@
  * routes by the integrator: `await app.register(registerCronRoutes, { cronClient })`.
  */
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
-import { CronJobCreateInput, CronJobUpdateInput, type CronJob } from '@agent-deck/protocol'
+import {
+  CronJobCreateInput,
+  CronJobUpdateInput,
+  type CronJob,
+  type CronRunList,
+} from '@agent-deck/protocol'
 import { DashboardError } from '../hermes/dashboardClient'
 import type { CronClient } from './cronClient'
 
@@ -124,6 +130,21 @@ export const registerCronRoutes: FastifyPluginAsync<CronRoutesOptions> = async (
       try {
         await cronClient.remove(req.params.id, req.query.profile)
         return { ok: true }
+      } catch (err) {
+        const { code, message } = statusForUpstream(err)
+        reply.code(code)
+        return { error: message }
+      }
+    },
+  )
+
+  app.get<{ Params: { id: string }; Querystring: { profile?: string; limit?: string } }>(
+    '/api/agent-deck/cron/jobs/:id/runs',
+    async (req, reply): Promise<CronRunList | { error: string }> => {
+      const limitRaw = req.query.limit
+      const limit = limitRaw !== undefined ? parseInt(limitRaw, 10) : undefined
+      try {
+        return await cronClient.listRuns(req.params.id, req.query.profile, limit)
       } catch (err) {
         const { code, message } = statusForUpstream(err)
         reply.code(code)

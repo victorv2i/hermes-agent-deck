@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { JobsRoute } from './JobsRoute'
@@ -127,6 +128,7 @@ function mockBackend(initial: CronJob[]) {
         return json(200, next)
       }
       if (verb === 'trigger') return json(200, job)
+      if (verb === 'runs') return json(200, { runs: [], limit: 20 })
     }
     return json(404, { error: 'not found' })
   })
@@ -137,9 +139,11 @@ function renderRoute() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={client}>
-      <ThemeProvider>
-        <JobsRoute />
-      </ThemeProvider>
+      <MemoryRouter>
+        <ThemeProvider>
+          <JobsRoute />
+        </ThemeProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -303,7 +307,7 @@ describe('JobsRoute', () => {
     expect(screen.getAllByTitle('Delivers to telegram:-1003747177894:18975')).not.toHaveLength(0)
   })
 
-  it('shows the run history disclosure with the last-run detail', async () => {
+  it('shows the run history disclosure with the last-error note', async () => {
     const user = userEvent.setup()
     const { fetchMock } = mockBackend([
       makeJob({ lastStatus: 'error', lastError: 'boom happened' }),
@@ -315,6 +319,6 @@ describe('JobsRoute', () => {
     await user.click(screen.getByRole('button', { name: 'Toggle run history' }))
 
     expect(screen.getByText('Run history')).toBeInTheDocument()
-    expect(screen.getByText('boom happened')).toBeInTheDocument()
+    expect(screen.getByText(/boom happened/)).toBeInTheDocument()
   })
 })

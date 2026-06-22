@@ -19,6 +19,8 @@ import type {
   CronJobCreateInput,
   CronJobStatus,
   CronJobUpdateInput,
+  CronRun,
+  CronRunList,
   CronSchedule,
   CronScheduleKind,
 } from '@agent-deck/protocol'
@@ -134,6 +136,42 @@ function buildQuery(params: Record<string, string | undefined>): string {
   return s ? `?${s}` : ''
 }
 
+/** Raw cron run row as the dashboard returns it (same shape as a session row). */
+interface RawCronRun {
+  id?: unknown
+  title?: unknown
+  preview?: unknown
+  started_at?: unknown
+  ended_at?: unknown
+  is_active?: unknown
+  message_count?: unknown
+  input_tokens?: unknown
+  output_tokens?: unknown
+  status?: unknown
+}
+
+/** Convert epoch seconds to an ISO string; returns null when the input is missing. */
+function epochToIso(v: unknown): string | null {
+  const n = numOrNull(v)
+  if (n === null) return null
+  return new Date(n * 1000).toISOString()
+}
+
+/** Map a raw session/run row to the slim {@link CronRun} shape. */
+export function mapCronRun(raw: RawCronRun): CronRun {
+  return {
+    id: str(raw.id),
+    startedAt: epochToIso(raw.started_at),
+    endedAt: epochToIso(raw.ended_at),
+    isActive: raw.is_active === true,
+    title: strOrNull(raw.title),
+    preview: str(raw.preview),
+    messageCount: num(raw.message_count),
+    tokens: num(raw.input_tokens) + num(raw.output_tokens),
+    status: strOrNull(raw.status),
+  }
+}
+
 /**
  * Read a mutation's single-job response. `authedFetch` returns the raw Response
  * (it never throws on a non-2xx), so we map the upstream status to a
@@ -225,6 +263,24 @@ export class CronClient {
       { method: 'POST', headers: { Accept: 'application/json' } },
     )
     return readJob(res, `POST /api/cron/jobs/${id}/${verb}`)
+  }
+
+  /**
+   * List per-run history for a job. Calls `GET /api/cron/jobs/:id/runs` and maps
+   * each session row to the slim {@link CronRun} shape (epoch-seconds to ISO,
+   * tokens summed). Tolerates a missing/garbage `runs` array from the dashboard
+   * (returns an empty list rather than throwing).
+   */
+  async listRuns(id: string, profile?: string, limit = 20): Promise<CronRunList> {
+    const raw = await this.dashboard.getJson<unknown>(
+      `/api/cron/jobs/${encodeURIComponent(id)}/runs${buildQuery({ profile, limit: String(limit) })}`,
+    )
+    const body = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+    const rawRuns = Array.isArray(body.runs) ? body.runs : []
+    const runs = rawRuns
+      .filter((r): r is RawCronRun => !!r && typeof r === 'object')
+      .map(mapCronRun)
+    return { runs, limit: numOrNull(body.limit) ?? limit }
   }
 
   /** Delete a job permanently. Maps a non-2xx upstream to a {@link DashboardError}. */

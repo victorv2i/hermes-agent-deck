@@ -6,6 +6,8 @@
 export type {
   CronJob,
   CronJobList,
+  CronRun,
+  CronRunList,
   CronSchedule,
   CronScheduleKind,
   CronJobStatus,

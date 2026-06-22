@@ -120,3 +120,32 @@ export const CronJobUpdateInput = z.object({
   name: z.string().optional(),
 })
 export type CronJobUpdateInput = z.infer<typeof CronJobUpdateInput>
+
+/**
+ * One cron run — a session row whose id matches `cron_{jobId}_{timestamp}`.
+ * Timestamps are epoch-seconds on the raw dashboard wire; the BFF converts them
+ * to ISO strings before they reach the client (null when the time is missing).
+ */
+export const CronRun = z.object({
+  id: z.string(),
+  startedAt: z.string().nullable(),
+  endedAt: z.string().nullable(),
+  isActive: z.boolean(),
+  title: z.string().nullable(),
+  preview: z.string(),
+  messageCount: z.number(),
+  /** Sum of input_tokens + output_tokens for this run. */
+  tokens: z.number(),
+  status: z.string().nullable(),
+})
+export type CronRun = z.infer<typeof CronRun>
+
+/**
+ * The list payload `GET /api/agent-deck/cron/jobs/:id/runs` returns.
+ * `limit` echoes the limit the BFF used (defaults to 20).
+ */
+export const CronRunList = z.object({
+  runs: z.array(CronRun),
+  limit: z.number(),
+})
+export type CronRunList = z.infer<typeof CronRunList>
