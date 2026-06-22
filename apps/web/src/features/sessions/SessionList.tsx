@@ -1855,7 +1855,7 @@ function InlineRenameRow({
           type="submit"
           disabled={busy || !value.trim()}
           aria-label="Save rename"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-foreground-tertiary hover:text-foreground focus-visible:ad-focus disabled:opacity-40"
+          className="flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded text-foreground-tertiary hover:text-foreground focus-visible:ad-focus disabled:opacity-40 sm:size-6 sm:min-h-0 sm:min-w-0"
         >
           {busy ? (
             <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
@@ -1868,7 +1868,7 @@ function InlineRenameRow({
           onClick={onCancel}
           disabled={busy}
           aria-label="Cancel rename"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-foreground-tertiary hover:text-foreground focus-visible:ad-focus disabled:opacity-40"
+          className="flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded text-foreground-tertiary hover:text-foreground focus-visible:ad-focus disabled:opacity-40 sm:size-6 sm:min-h-0 sm:min-w-0"
         >
           <X className="size-3.5" />
         </button>

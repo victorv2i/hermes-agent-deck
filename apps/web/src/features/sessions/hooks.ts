@@ -284,9 +284,12 @@ export function useRenameSession(): UseMutationResult<
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, patch }) => patchSession(id, patch),
-    onSuccess: (_res, { id }) => {
-      qc.invalidateQueries({ queryKey: sessionKeys.detail(id) })
-      qc.invalidateQueries({ queryKey: sessionKeys.list({}) })
+    onSuccess: () => {
+      // sessionKeys.all (['sessions']) is a prefix of every session key, including
+      // the paginated rail (['sessions','paginated',n]) and detail, so it actually
+      // refreshes the rail. list({}) is NOT a prefix of the rail key, so the rename
+      // stayed invisible there until the next poll.
+      qc.invalidateQueries({ queryKey: sessionKeys.all })
     },
   })
 }
@@ -303,9 +306,10 @@ export function useArchiveSession(): UseMutationResult<
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, archived }) => patchSession(id, { archived }),
-    onSuccess: (_res, { id }) => {
-      qc.invalidateQueries({ queryKey: sessionKeys.detail(id) })
-      qc.invalidateQueries({ queryKey: sessionKeys.list({}) })
+    onSuccess: () => {
+      // Invalidate all session queries (incl. the paginated rail key) so the row
+      // disappears/reappears at once; see useRenameSession for why list({}) missed it.
+      qc.invalidateQueries({ queryKey: sessionKeys.all })
     },
   })
 }

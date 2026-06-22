@@ -202,17 +202,23 @@ export class GatewayRouter {
   /** The (cached) gateway client for a profile, keyed by its resolved endpoint. */
   clientFor(profile: string): GatewayClientLike {
     const endpoint = this.endpointFor(profile)
-    const existing = this.clients.get(endpoint)
+    const apiKey = resolveApiKeyForProfile(profile, {
+      env: this.env,
+      hermesHome: this.deps.hermesHome,
+      fallbackApiKey: this.deps.fallbackApiKey,
+    })
+    // Cache by endpoint AND key. Two profiles can resolve to the same endpoint
+    // (neither has a per-profile port) yet carry different API keys; a client
+    // baked with another profile's key would authenticate as the wrong agent. A
+    // NUL separator can't appear in either part, so distinct pairs never collide.
+    const cacheKey = `${endpoint} ${apiKey ?? ''}`
+    const existing = this.clients.get(cacheKey)
     if (existing) return existing
     const client = this.createClient({
       hermesGatewayUrl: endpoint,
-      hermesApiKey: resolveApiKeyForProfile(profile, {
-        env: this.env,
-        hermesHome: this.deps.hermesHome,
-        fallbackApiKey: this.deps.fallbackApiKey,
-      }),
+      hermesApiKey: apiKey,
     })
-    this.clients.set(endpoint, client)
+    this.clients.set(cacheKey, client)
     return client
   }
 

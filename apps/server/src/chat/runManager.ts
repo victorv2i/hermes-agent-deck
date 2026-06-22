@@ -337,6 +337,11 @@ export class RunManager {
     if (!this.store.isDone(runId)) {
       this.store.append(runId, { event: 'run.cancelled', run_id: runId })
     }
+    // Mirror sweep(): drop the entry now so a same-run restart isn't swallowed by
+    // start()'s idempotency guard during the window before the aborted iterator
+    // reaches its finally. The pump's own finally delete is idempotent.
+    this.pumps.delete(runId)
+    this.maybeStopReaper()
   }
 
   private async pump(
