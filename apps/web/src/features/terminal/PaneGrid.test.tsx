@@ -185,7 +185,18 @@ describe('PaneGrid (the unified grid engine)', () => {
     render(<Harness initial={oneShell()} viewComponent={StubView} />)
     const tab = screen.getAllByRole('tab')[0]!
     fireEvent.dblClick(tab)
-    const input = screen.getByRole('textbox', { name: /rename terminal/i })
+    const input = screen.getByRole('textbox', { name: /rename pane/i })
+    fireEvent.change(input, { target: { value: 'logs' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.getByRole('tab', { name: /logs/i })).toBeInTheDocument()
+  })
+
+  it('renames a tab via the F2 keyboard shortcut (a11y, no mouse needed)', () => {
+    render(<Harness initial={oneShell()} viewComponent={StubView} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    tab.focus()
+    fireEvent.keyDown(tab, { key: 'F2' })
+    const input = screen.getByRole('textbox', { name: /rename pane/i })
     fireEvent.change(input, { target: { value: 'logs' } })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('tab', { name: /logs/i })).toBeInTheDocument()

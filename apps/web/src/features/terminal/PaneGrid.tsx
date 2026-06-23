@@ -410,7 +410,7 @@ function RestartPersistentDialog({
     >
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Restart this terminal?</DialogTitle>
+          <DialogTitle>Restart this pane?</DialogTitle>
           <DialogDescription>
             This restarts the persistent shell{label ? <> &ldquo;{label}&rdquo;</> : null}: the
             current shell ends for real (anything still running in it stops) and a fresh one starts
@@ -461,7 +461,7 @@ function ClosePersistentDialog({
     >
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Close this terminal?</DialogTitle>
+          <DialogTitle>Close this pane?</DialogTitle>
           <DialogDescription>
             {persistenceKnown ? (
               <>
@@ -821,6 +821,12 @@ function Tab({
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onActivate()
+        } else if (e.key === 'F2') {
+          // Keyboard path to rename (the mouse path is double-click). F2 is the
+          // standard rename shortcut; the inline field autofocuses so the user can
+          // type immediately, with no mouse needed.
+          e.preventDefault()
+          setEditing(true)
         }
       }}
       // Active tab = the sanctioned faint sky-blue LIVE/active treatment. Inactive
@@ -853,7 +859,7 @@ function Tab({
           onRemove()
         }}
         aria-label={foreign ? `Detach ${pane.label}` : `Close ${pane.label}`}
-        title={foreign ? 'Detach (the session keeps running in your tmux)' : 'Close terminal'}
+        title={foreign ? 'Detach (the session keeps running in your tmux)' : 'Close pane'}
         className="flex size-11 shrink-0 items-center justify-center rounded-md text-foreground-tertiary opacity-70 transition-colors duration-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:ad-focus group-hover/tab:opacity-100 md:size-7"
       >
         <X className="size-3.5" />
@@ -909,7 +915,7 @@ function RenameInput({
     <input
       autoFocus
       defaultValue={initial}
-      aria-label="Rename terminal"
+      aria-label="Rename pane"
       onClick={(e) => e.stopPropagation()}
       onBlur={(e) => onCommit(e.currentTarget.value)}
       onKeyDown={(e) => {
@@ -1137,7 +1143,7 @@ function GridPanels({
                   onRestart(pane.id)
                 }}
                 aria-label={`Restart ${pane.label}`}
-                title="Restart this terminal"
+                title="Restart this pane"
                 className="flex size-11 items-center justify-center rounded-md text-foreground-tertiary hover:bg-muted hover:text-foreground focus-visible:ad-focus md:size-7"
               >
                 <RotateCcw className="size-3.5" />

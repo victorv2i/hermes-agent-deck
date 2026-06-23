@@ -188,11 +188,11 @@ export function ScratchPaneController({
       viewMode={state.viewMode}
       clis={clis}
       viewComponent={viewComponent}
-      tablistLabel="Terminals"
-      gridLabel="Terminal grid"
-      addLabel="New terminal"
-      addMenuLabel="New terminal preset"
-      capNoun="terminals"
+      tablistLabel="Panes"
+      gridLabel="Pane grid"
+      addLabel="New pane"
+      addMenuLabel="New pane preset"
+      capNoun="panes"
       onAddPane={onAddPane}
       onRemovePane={onRemovePane}
       onRenamePane={onRenamePane}

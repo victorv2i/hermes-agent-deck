@@ -40,7 +40,7 @@ function renderScratch(initialCli: 'hermes' | 'shell' = 'shell') {
 }
 
 function openAnotherShell() {
-  fireEvent.click(screen.getByRole('button', { name: /new terminal/i }))
+  fireEvent.click(screen.getByRole('button', { name: /new pane/i }))
   fireEvent.click(screen.getByRole('menuitem', { name: /raw shell/i }))
 }
 
@@ -69,7 +69,7 @@ describe('ScratchPaneController parity', () => {
     expect(localStorage.getItem(TERMINAL_VIEW_MODE_KEY)).toBe('grid')
     unmount()
     renderScratch('shell')
-    expect(screen.getByRole('group', { name: /terminal grid/i })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: /pane grid/i })).toBeInTheDocument()
   })
 
   it('restores the open sessions on remount so a refresh resumes the same shells', () => {
@@ -181,7 +181,7 @@ describe('ScratchPaneController parity', () => {
     render(<ScratchPaneController initialCli="shell" viewComponent={ResumeRecordingStub} />)
     expect(resumeMounts).toHaveLength(1)
     expect(resumeMounts[0]!.expectResume).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: /new terminal/i }))
+    fireEvent.click(screen.getByRole('button', { name: /new pane/i }))
     fireEvent.click(screen.getByRole('menuitem', { name: /raw shell/i }))
     expect(resumeMounts).toHaveLength(2)
     expect(resumeMounts[1]!.expectResume).toBe(false)
