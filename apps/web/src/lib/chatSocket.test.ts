@@ -197,6 +197,7 @@ describe('ChatSocket inbound frames', () => {
   })
 
   it('validates and forwards each named ChatServerEvent, tracking the cursor', () => {
+    h.client.run({ input: 'x' }) // tail OUR run; frames only forward for the run we started
     h.socket.dispatch('run.started', { event: 'run.started', run_id: 'run_1', cursor: 1 })
     h.socket.dispatch('message.delta', {
       event: 'message.delta',
@@ -209,6 +210,21 @@ describe('ChatSocket inbound frames', () => {
     expect(h.client.runId).toBe('run_1')
   })
 
+  it('drops a FOREIGN run (one this client never started) so a background cron run cannot overtake the view', () => {
+    // The client is idle (the user is composing a new chat; no run() was called).
+    // A broadcast run.started + frames for someone else's run (e.g. a cron) must
+    // be ignored, not adopted and streamed into this transcript.
+    h.socket.dispatch('run.started', { event: 'run.started', run_id: 'cron_run', cursor: 1 })
+    h.socket.dispatch('message.delta', {
+      event: 'message.delta',
+      run_id: 'cron_run',
+      delta: 'echo hi',
+      cursor: 2,
+    })
+    expect(h.events).toHaveLength(0)
+    expect(h.client.runId).toBeNull()
+  })
+
   it('drops a frame that fails schema validation', () => {
     // message.delta requires a string `delta`.
     h.socket.dispatch('message.delta', { event: 'message.delta', run_id: 'run_1', cursor: 1 })
@@ -217,6 +233,7 @@ describe('ChatSocket inbound frames', () => {
   })
 
   it('a cursor-less transient frame (run.stopping) forwards without moving the cursor', () => {
+    h.client.run({ input: 'x' })
     h.socket.dispatch('run.started', { event: 'run.started', run_id: 'run_1', cursor: 3 })
     h.socket.dispatch('run.stopping', { event: 'run.stopping', run_id: 'run_1' })
     expect(h.events.map((e) => e.event)).toEqual(['run.started', 'run.stopping'])

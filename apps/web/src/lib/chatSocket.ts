@@ -240,6 +240,10 @@ export class ChatSocket {
   private activeRunId: string | null = null
   /** Whether the active run has reached a terminal frame (don't resume it). */
   private activeRunDone = false
+  /** Set when WE start a run (run()) and are awaiting its run.started, so a
+   * broadcast run.started from another source (a cron job, another device) is not
+   * mistaken for ours and cannot overtake this transcript. */
+  private expectingOwnRun = false
   private disposed = false
   /** Where the in-flight run is persisted for reload-resume (may be null). */
   private readonly storage: StorageLike | null
@@ -293,6 +297,7 @@ export class ChatSocket {
     this.cursor = 0
     this.activeRunId = null
     this.activeRunDone = false
+    this.expectingOwnRun = true
     // Drop any stale persisted run; the new run is re-persisted once its
     // run.started frame assigns an id.
     writePersistedRun(null, this.storage)
@@ -417,13 +422,22 @@ export class ChatSocket {
     if (!parsed.success) return
     const event = parsed.data
 
-    // Track which run we're tailing so a reconnect resumes the right one.
+    // Tail ONLY the run this client started (run()) or resumed: adopt a
+    // run.started just when we are expecting our own (or it re-broadcasts the run
+    // we already tail), and otherwise drop any frame for a different run. This is
+    // what stops a run from another source (a cron job, another device) from
+    // overtaking this transcript. Cross-run awareness (the live chip) rides the
+    // separate approval broadcast, not this per-run stream.
     if (event.event === 'run.started') {
+      if (!this.expectingOwnRun && event.run_id !== this.activeRunId) return
       this.activeRunId = event.run_id
       this.activeRunDone = false
-    } else if (this.activeRunId === null) {
-      // First frame after a fresh resume into an unknown run: adopt its id.
-      this.activeRunId = event.run_id
+      this.expectingOwnRun = false
+    } else if (event.run_id != null && event.run_id !== this.activeRunId) {
+      // A cursored frame for a DIFFERENT run (foreign — cron / another device);
+      // ignore it. Frames with no run_id are control/meta, not run-scoped, so
+      // they always pass through.
+      return
     }
 
     // Advance the resume anchor only for cursored frames, and only forward.

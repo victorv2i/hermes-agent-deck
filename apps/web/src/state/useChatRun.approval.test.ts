@@ -126,6 +126,9 @@ describe('useChatRun — A4 approval re-surface on server failure', () => {
   it('a normal approval.responded clears exactly once (no re-surface)', () => {
     const socket = new FakeSocket()
     const { result } = renderHook(() => useChatRun(socket, null))
+    // Tail OUR run (run_1) so its approval.responded frame reaches the store.
+    act(() => result.current.send('go'))
+    act(() => socket.dispatch('run.started', { event: 'run.started', run_id: 'run_1', cursor: 1 }))
     act(() => seedRunningApproval())
     act(() => result.current.respondApproval('once'))
 

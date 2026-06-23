@@ -125,6 +125,7 @@ describe('useChatRun — continue-session resume wiring', () => {
     // put it in the URL so a refresh can rehydrate it.
     const { socket, result } = setup()
     expect(result.current.activeSessionId).toBeNull()
+    act(() => result.current.send('hi')) // start OUR run so its run.started is tailed
     act(() => {
       socket.dispatch('run.started', {
         event: 'run.started',
