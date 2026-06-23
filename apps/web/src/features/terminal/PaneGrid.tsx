@@ -813,7 +813,9 @@ function Tab({
   return (
     <div
       role="tab"
+      id={`adk-tab-${pane.id}`}
       aria-selected={active}
+      aria-controls={`adk-tabpanel-${pane.id}`}
       tabIndex={active ? 0 : -1}
       onClick={onActivate}
       onDoubleClick={() => setEditing(true)}
@@ -1021,7 +1023,9 @@ function TabPanels({
         return (
           <div
             key={pane.id}
+            id={`adk-tabpanel-${pane.id}`}
             role="tabpanel"
+            aria-labelledby={`adk-tab-${pane.id}`}
             aria-label={pane.label}
             // Inactive panels stay MOUNTED (shell keeps running) but hidden.
             hidden={!active}

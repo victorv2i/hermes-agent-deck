@@ -202,6 +202,18 @@ describe('PaneGrid (the unified grid engine)', () => {
     expect(screen.getByRole('tab', { name: /logs/i })).toBeInTheDocument()
   })
 
+  it('associates each tab with its tabpanel via aria-controls + aria-labelledby', () => {
+    render(<Harness initial={oneShell()} viewComponent={StubView} />)
+    const tab = screen.getAllByRole('tab')[0]!
+    expect(tab.id).toBeTruthy()
+    const panelId = tab.getAttribute('aria-controls')
+    expect(panelId).toBeTruthy()
+    const panel = document.getElementById(panelId!)
+    expect(panel).not.toBeNull()
+    expect(panel).toHaveAttribute('role', 'tabpanel')
+    expect(panel).toHaveAttribute('aria-labelledby', tab.id)
+  })
+
   it('enforces the 12-pane cap with an honest disabled "+" + max note', () => {
     render(<Harness initial={oneShell()} viewComponent={StubView} />)
     for (let i = 0; i < 11; i += 1) openAnotherShell()
