@@ -36,6 +36,16 @@ describe('Message', () => {
     expect(screen.getByText('hello there')).toBeInTheDocument()
   })
 
+  it('breaks a long unbreakable URL in the user bubble so it cannot overflow', () => {
+    const url =
+      'https://www.amazon.com/ASICS-Unisex-Japan-Sportstyle-Shoes/dp/B089GL7S38/ref=sr_1_1?crid=36BWL4VDV1DGCandalongunbreakabletokenwithnospaces1234567890abcdef'
+    const { container } = renderMessage({ id: 'u1', role: 'user', content: url })
+    const bubble = container.querySelector('.whitespace-pre-wrap')
+    expect(bubble).not.toBeNull()
+    // overflow-wrap: break-word lets a long URL wrap inside the max-width bubble.
+    expect(bubble?.className).toContain('break-words')
+  })
+
   it('<mark>-highlights find matches in a user turn (case-insensitive)', () => {
     const { container } = renderMessage(
       { id: 'u1', role: 'user', content: 'The Alpha config and the alpha override.' },

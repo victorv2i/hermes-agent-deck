@@ -319,7 +319,7 @@ function UserMessage({
           image — no empty text bubble. Any other turn (prose, or a degenerate
           empty turn with no image) keeps its bubble exactly as before. */}
       {(turn.content.length > 0 || attachments.length === 0) && (
-        <div className="ad-surface max-w-[85%] rounded-xl rounded-tr-md bg-surface-2 px-3.5 py-2 text-[13px] leading-relaxed whitespace-pre-wrap text-foreground">
+        <div className="ad-surface max-w-[85%] rounded-xl rounded-tr-md bg-surface-2 px-3.5 py-2 text-[13px] leading-relaxed break-words whitespace-pre-wrap text-foreground">
           <HighlightText text={turn.content} query={highlightQuery} active={highlightActive} />
         </div>
       )}
