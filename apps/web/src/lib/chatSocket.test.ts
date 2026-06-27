@@ -238,7 +238,7 @@ describe('ChatSocket inbound frames', () => {
     expect(h.events.map((e) => e.event)).toEqual(['run.started', 'message.delta'])
 
     // The user opens a NEW chat: stop tailing run_1 (it keeps running server-side,
-    // resumable from history — detach must NOT abort it).
+    // resumable from history, and detach must NOT abort it).
     h.client.detach()
     expect(h.client.runId).toBeNull()
     expect(h.socket.lastEmit('abort')).toBeUndefined()

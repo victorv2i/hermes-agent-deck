@@ -58,7 +58,7 @@ function setup() {
   return { socket, result }
 }
 
-describe('useChatRun — new-chat isolation from an in-flight run', () => {
+describe('useChatRun: new-chat isolation from an in-flight run', () => {
   beforeEach(() => {
     useChatStore.setState({ ...initialChatState })
   })
@@ -91,7 +91,7 @@ describe('useChatRun — new-chat isolation from an in-flight run', () => {
     act(() => result.current.newChat())
     expect(useChatStore.getState().turns).toEqual([])
 
-    // run_A keeps streaming (the agent did not stop) — none of this may leak in.
+    // run_A keeps streaming (the agent did not stop); none of this may leak in.
     act(() =>
       socket.dispatch('tool.started', {
         event: 'tool.started',
@@ -142,7 +142,7 @@ describe('useChatRun — new-chat isolation from an in-flight run', () => {
     act(() => result.current.continueSession('sess-B', priorTurns))
     expect(useChatStore.getState().turns).toEqual(priorTurns)
 
-    // run_A is still working — its frames must not append to B's transcript.
+    // run_A is still working, so its frames must not append to B's transcript.
     act(() =>
       socket.dispatch('message.delta', {
         event: 'message.delta',
