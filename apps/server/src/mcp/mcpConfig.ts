@@ -17,7 +17,7 @@
  *    the write minimal (parse → set one key → stringify) so the change is small
  *    and auditable, mirroring the settings read-modify-write.
  */
-import { readFile, writeFile, rename, realpath } from 'node:fs/promises'
+import { readFile, writeFile, rename, realpath, unlink } from 'node:fs/promises'
 import { join, dirname, basename } from 'node:path'
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import { isPathInsideRoot } from '../files/pathGuard'
@@ -134,7 +134,15 @@ export async function writeMcpServers(
   atomicWriteSeq += 1
   const tmp = `${path}.${process.pid}.${atomicWriteSeq}.tmp`
   await writeFile(tmp, stringifyYaml(config), 'utf8')
-  await rename(tmp, path)
+  try {
+    await rename(tmp, path)
+  } catch (err) {
+    // A failed move would abandon the tmp file, which holds the FULL config
+    // (incl. API_SERVER_KEY + provider key refs). Remove it before rethrowing so
+    // no credential-bearing leftover sits in hermesHome for another process to read.
+    await unlink(tmp).catch(() => {})
+    throw err
+  }
   return servers
 }
 

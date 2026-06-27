@@ -1,9 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { mkdtemp, rm, writeFile, readFile, mkdir, symlink } from 'node:fs/promises'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { mkdtemp, rm, writeFile, readFile, mkdir, symlink, rename, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parse as parseYaml } from 'yaml'
 import { readConfig, readMcpServers, writeMcpServers, configPathFor } from './mcpConfig'
+
+// Real fs throughout, except `rename`, which is a passthrough spy so a single
+// test can simulate a failed atomic move (you can't cause EXDEV on demand).
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return { ...actual, rename: vi.fn(actual.rename) }
+})
 
 let home: string
 
@@ -65,6 +72,19 @@ describe('mcpConfig — guarded slice write', () => {
     const entries = await readdir(home)
     expect(entries).toContain('config.yaml')
     expect(entries.some((e) => e.includes('.tmp'))).toBe(false)
+  })
+
+  it('cleans up the temp file when the atomic rename fails (no secrets-bearing tmp left behind)', async () => {
+    await writeFile(configPathFor(home), SEED, 'utf8')
+    // Simulate a failed atomic move (cross-device, permissions, disk error).
+    vi.mocked(rename).mockRejectedValueOnce(new Error('EXDEV: simulated cross-device move'))
+    await expect(writeMcpServers(home, { x: { url: 'https://x/mcp' } })).rejects.toThrow()
+    // The temp holds the FULL config (model, API_SERVER_KEY, provider key refs); a
+    // failed rename must not abandon it on disk for another process to read.
+    const entries = await readdir(home)
+    expect(entries.some((e) => e.includes('.tmp'))).toBe(false)
+    // The original config is preserved verbatim (the rename never happened).
+    expect(await readFile(configPathFor(home), 'utf8')).toBe(SEED)
   })
 
   it('replaces ONLY mcp_servers, round-tripping every other key verbatim', async () => {
