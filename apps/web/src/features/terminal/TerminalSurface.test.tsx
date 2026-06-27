@@ -604,7 +604,7 @@ describe('TerminalSurface: deleting a saved workspace', () => {
     // Open the delete confirm for Alpha, then confirm it.
     fireEvent.click(within(switcher).getByRole('button', { name: /delete alpha/i }))
     const dialog = await screen.findByRole('dialog')
-    fireEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^delete workspace$/i }))
 
     // The DELETE hit the right endpoint...
     await waitFor(() =>
@@ -647,7 +647,7 @@ describe('TerminalSurface: deleting a saved workspace', () => {
     // Alpha is the active workspace; delete it.
     fireEvent.click(within(switcher).getByRole('button', { name: /delete alpha/i }))
     const dialog = await screen.findByRole('dialog')
-    fireEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }))
+    fireEvent.click(within(dialog).getByRole('button', { name: /^delete workspace$/i }))
 
     await waitFor(() =>
       expect(

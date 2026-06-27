@@ -11,7 +11,6 @@ import {
   Send,
   AudioLines,
   ScrollText,
-  ShieldCheck,
   SquarePen,
   Sun,
   Trash2,
@@ -115,9 +114,6 @@ export interface CommandPaletteViewProps {
   onRestartGateway?: () => void
   /** Re-check Hermes update availability (re-reads the dock). Omitted → not offered. */
   onCheckHermesUpdates?: () => void
-  /** Navigate to the System maintenance surface (also a rail row + auto Go-to
-   * row; this explicit action keeps "maintenance" searches landing there). Omitted → not offered. */
-  onOpenSystem?: () => void
   /** Navigate to the raw Logs surface (demoted from the rail). Omitted → not offered. */
   onOpenLogs?: () => void
   /** Open Connections → Messaging tab (connect Telegram/Discord/Slack/…). Omitted → not offered. */
@@ -149,7 +145,6 @@ export function CommandPaletteView({
   onClearChat,
   onRestartGateway,
   onCheckHermesUpdates,
-  onOpenSystem,
   onOpenLogs,
   onOpenMessaging,
   onOpenMcp,
@@ -180,7 +175,6 @@ export function CommandPaletteView({
     voice: t('commandPalette.action.voice'),
     restartGateway: t('commandPalette.action.restartGateway'),
     checkHermesUpdates: t('commandPalette.action.checkHermesUpdates'),
-    openSystem: t('commandPalette.action.openSystem'),
     openLogs: t('commandPalette.action.openLogs'),
   }
   const sessionLabels = {
@@ -323,7 +317,7 @@ export function CommandPaletteView({
           })}
         </CommandGroup>
 
-        {(onRestartGateway || onCheckHermesUpdates || onOpenSystem || onOpenLogs) && (
+        {(onRestartGateway || onCheckHermesUpdates || onOpenLogs) && (
           <CommandGroup heading={t('commandPalette.group.maintenanceAndLogs')}>
             {onRestartGateway && (
               <CommandItem
@@ -356,23 +350,6 @@ export function CommandPaletteView({
               >
                 <Package />
                 <CommandRowLabel>{actionLabels.checkHermesUpdates}</CommandRowLabel>
-              </CommandItem>
-            )}
-            {onOpenSystem && (
-              <CommandItem
-                value={actionLabels.openSystem}
-                keywords={[
-                  actionLabels.openSystem,
-                  'system',
-                  'maintenance',
-                  'gateway',
-                  'update',
-                  'dock',
-                ]}
-                onSelect={act(onOpenSystem)}
-              >
-                <ShieldCheck />
-                <CommandRowLabel>{actionLabels.openSystem}</CommandRowLabel>
               </CommandItem>
             )}
             {onOpenLogs && (
@@ -585,7 +562,6 @@ export function CommandPalette({
       onClearChat={onClearChat}
       onRestartGateway={handleRestartGateway}
       onCheckHermesUpdates={handleCheckHermesUpdates}
-      onOpenSystem={() => navigate('/system')}
       onOpenLogs={() => navigate('/logs')}
       onOpenMessaging={() => navigate('/?view=connections&tab=messaging')}
       onOpenMcp={() => navigate('/?view=connections&tab=mcp')}

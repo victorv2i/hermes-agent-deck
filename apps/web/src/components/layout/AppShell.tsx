@@ -85,6 +85,7 @@ const SURFACES_WITH_OWN_HEADER = [
   // redirects there. The Studio index '/' is intentionally ABSENT from this list
   // (it keeps the chrome "Agent Studio" title while the embedded Connections view
   // renders its own tab strip below), so no `/connections` entry is needed here.
+  '/runtimes',
   '/usage',
   '/logs',
   '/system',

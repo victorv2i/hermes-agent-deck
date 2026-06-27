@@ -190,16 +190,14 @@ describe('CommandPaletteView', () => {
     expect(props.onOpenChange).toHaveBeenCalledWith(false)
   })
 
-  it('offers the Maintenance & logs actions when wired (Restart, Check updates, Open System, Open Logs)', async () => {
+  it('offers the Maintenance & logs actions when wired (Restart, Check updates, Open Logs)', async () => {
     const user = userEvent.setup()
     const onRestartGateway = vi.fn()
     const onCheckHermesUpdates = vi.fn()
-    const onOpenSystem = vi.fn()
     const onOpenLogs = vi.fn()
     const props = renderPalette({
       onRestartGateway,
       onCheckHermesUpdates,
-      onOpenSystem,
       onOpenLogs,
     })
 
@@ -207,16 +205,12 @@ describe('CommandPaletteView', () => {
     expect(onRestartGateway).toHaveBeenCalledTimes(1)
     expect(props.onOpenChange).toHaveBeenCalledWith(false)
 
-    renderPalette({ onRestartGateway, onCheckHermesUpdates, onOpenSystem, onOpenLogs })
+    renderPalette({ onRestartGateway, onCheckHermesUpdates, onOpenLogs })
     await user.click(screen.getAllByRole('option', { name: /check for hermes updates/i })[0]!)
     expect(onCheckHermesUpdates).toHaveBeenCalledTimes(1)
 
-    renderPalette({ onRestartGateway, onCheckHermesUpdates, onOpenSystem, onOpenLogs })
-    await user.click(screen.getAllByRole('option', { name: /open system/i })[0]!)
-    expect(onOpenSystem).toHaveBeenCalledTimes(1)
-
     // Logs was demoted out of the rail — the palette is now a primary way in.
-    renderPalette({ onRestartGateway, onCheckHermesUpdates, onOpenSystem, onOpenLogs })
+    renderPalette({ onRestartGateway, onCheckHermesUpdates, onOpenLogs })
     await user.click(screen.getAllByRole('option', { name: /open logs/i })[0]!)
     expect(onOpenLogs).toHaveBeenCalledTimes(1)
   })
@@ -227,7 +221,6 @@ describe('CommandPaletteView', () => {
     expect(
       screen.queryByRole('option', { name: /check for hermes updates/i }),
     ).not.toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: /open system/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('option', { name: /open logs/i })).not.toBeInTheDocument()
   })
 

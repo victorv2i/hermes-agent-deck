@@ -8,7 +8,7 @@
  *
  * React error boundaries must be class components (the only place
  * `componentDidCatch` / `getDerivedStateFromError` exist). The fallback UI is a
- * plain function component themed to the warm-void palette.
+ * plain function component themed to the default palette.
  */
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { TriangleAlert } from 'lucide-react'

@@ -70,7 +70,7 @@ const FALLBACK_CLIS: readonly DetectedCli[] = [
     id: 'codex',
     label: 'Codex',
     available: false,
-    installUrl: 'https://developers.openai.com/codex/cli',
+    installUrl: 'https://github.com/openai/codex',
   },
   { id: 'shell', label: 'Raw shell', available: true },
 ]

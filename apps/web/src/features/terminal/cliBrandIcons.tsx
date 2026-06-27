@@ -14,7 +14,6 @@ import type { CliId } from './useTerminalClis'
  * Accurate marks come from `@lobehub/icons` (MIT, accurate AI brand marks). Where
  * a brand genuinely has no accurate mark anywhere (none anywhere = zero sources),
  * we render a tasteful neutral MONOGRAM rather than a hand-drawn approximation.
- * See {@link ./cliBrandMeta} `MONOGRAM_FALLBACK_IDS`.
  *
  * Hermes: the Nous-girl brand image at /brands/hermes.webp — the official
  * NousResearch mascot mark for the Hermes agent. Shown as an <img> rather than an

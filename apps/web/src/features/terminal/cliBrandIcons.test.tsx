@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import { CliBrandMark } from './cliBrandIcons'
-import { MONOGRAM_FALLBACK_IDS } from './cliBrandMeta'
 
 describe('CliBrandMark', () => {
   it('renders a brand SVG for each known CLI id (identity, not a lucide fallback)', () => {
@@ -45,11 +44,6 @@ describe('CliBrandMark', () => {
     const markup = container.innerHTML
     expect(markup).not.toMatch(/var\(--primary\)/)
     expect(markup).not.toMatch(/text-primary|fill-primary|bg-primary/)
-  })
-
-  it('hermes and codex are NOT in MONOGRAM_FALLBACK_IDS (they have real marks now)', () => {
-    expect(MONOGRAM_FALLBACK_IDS).not.toContain('hermes')
-    expect(MONOGRAM_FALLBACK_IDS).not.toContain('codex')
   })
 
   it('the shell mark is a neutral line glyph (no pinned brand fill)', () => {

@@ -1164,7 +1164,7 @@ function DeleteWorkspaceDialog({
             Cancel
           </Button>
           <Button variant="destructive" onClick={onConfirm} disabled={busy}>
-            Delete
+            Delete workspace
           </Button>
         </div>
       </DialogContent>
