@@ -46,7 +46,13 @@ export interface KanbanTimer {
 }
 
 const realTimer: KanbanTimer = {
-  setInterval: (handler, ms) => setInterval(handler, ms),
+  setInterval: (handler, ms) => {
+    const handle = setInterval(handler, ms)
+    // Don't let an idle board's poll timer keep the Node process alive (matches the
+    // RunStore sweep/evict + terminal park timers, which all unref).
+    handle.unref?.()
+    return handle
+  },
   clearInterval: (handle) => clearInterval(handle as ReturnType<typeof setInterval>),
 }
 
@@ -192,6 +198,13 @@ export function registerKanbanHandlers(io: Server, options: KanbanNamespaceOptio
       }
       subscribed.add(board)
       await socket.join(boardRoom(board))
+      if (socket.disconnected) {
+        // The socket dropped DURING the await: its disconnect handler has already
+        // run and released nothing (we had not acquired yet), so acquiring now would
+        // leak a poller and its interval forever. Bail instead.
+        subscribed.delete(board)
+        return
+      }
       acquire(board)
       // Immediate first snapshot for THIS socket (don't wait a full poll interval).
       try {
