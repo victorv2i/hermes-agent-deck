@@ -184,11 +184,14 @@ function CopyButton({ text }: { text: string }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const onClick = async () => {
     try {
-      await navigator.clipboard?.writeText(text)
-      toast.success('Copied to clipboard')
+      if (!navigator.clipboard) throw new Error('clipboard unavailable')
+      await navigator.clipboard.writeText(text)
     } catch {
-      // clipboard may be unavailable; still flash feedback
+      // Honest UI: never flash "Copied!" for a write that did not happen.
+      toast.error("Couldn't copy to clipboard")
+      return
     }
+    toast.success('Copied to clipboard')
     setCopied(true)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => setCopied(false), 1600)

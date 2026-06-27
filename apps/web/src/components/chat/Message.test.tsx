@@ -374,6 +374,26 @@ describe('Message', () => {
     expect(copy.className).toContain('min-h-11')
   })
 
+  it('does not claim "Copied!" when the clipboard write fails (honest feedback)', async () => {
+    const user = userEvent.setup()
+    vi.mocked(toast.success).mockClear()
+    vi.mocked(toast.error).mockClear()
+    const writeText = vi.fn().mockRejectedValue(new Error('clipboard denied'))
+    const original = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    try {
+      renderMessage(assistantTurn)
+      await user.click(screen.getByRole('button', { name: 'Copy message' }))
+      expect(writeText).toHaveBeenCalled()
+      // A failed write must NOT flash success, and must say so.
+      expect(screen.queryByText('Copied!')).not.toBeInTheDocument()
+      expect(toast.success).not.toHaveBeenCalled()
+      expect(toast.error).toHaveBeenCalled()
+    } finally {
+      if (original) Object.defineProperty(navigator, 'clipboard', original)
+    }
+  })
+
   // --- Fork from here (Lane D) ---------------------------------------------
   describe('Fork from here', () => {
     it('offers "Fork from here" on a SETTLED assistant turn and calls onFork', async () => {
