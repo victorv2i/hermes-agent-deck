@@ -207,6 +207,43 @@ describe('ChatView', () => {
     expect(onRespondApproval).toHaveBeenCalledTimes(1)
   })
 
+  it('re-enables a re-surfaced approval after the gateway rejects the response (no dead-lock)', async () => {
+    const user = userEvent.setup()
+    const onRespondApproval = vi.fn()
+    const approval = {
+      run_id: 'run_1',
+      approval_id: 'a1',
+      command: 'rm -rf build',
+      description: 'Clean the build',
+      choices: ['once', 'deny'],
+    }
+    const { rerenderView } = renderView({
+      turns: [assistantTurn],
+      runStatus: 'running',
+      pendingApproval: approval,
+      onRespondApproval,
+    })
+    await user.click(screen.getByRole('button', { name: 'Allow once' }))
+    expect(onRespondApproval).toHaveBeenCalledTimes(1)
+
+    // The parent optimistically clears the approval the instant it is answered...
+    rerenderView({ turns: [assistantTurn], runStatus: 'running', pendingApproval: null, onRespondApproval })
+    // ...then the gateway REJECTS the response (a command.error) and the SAME
+    // approval is re-surfaced so the operator can retry the decision.
+    rerenderView({
+      turns: [assistantTurn],
+      runStatus: 'running',
+      pendingApproval: approval,
+      onRespondApproval,
+    })
+
+    // The buttons must be actionable again, not stuck disabled from the first click.
+    const allowAgain = screen.getByRole('button', { name: 'Allow once' })
+    expect(allowAgain).toBeEnabled()
+    await user.click(allowAgain)
+    expect(onRespondApproval).toHaveBeenCalledTimes(2)
+  })
+
   it('shows Stop while running and aborts on Escape', async () => {
     const user = userEvent.setup()
     const { onStop } = renderView({ turns: [assistantTurn], runStatus: 'running' })

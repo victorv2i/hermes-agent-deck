@@ -227,14 +227,21 @@ export function ChatView({
   // prompt's row into view through the same windowing-aware seek find uses.
   const outline = useConversationOutline(turns, scrollElRef)
 
-  // Lock the approval buttons after the first click so a double-tap can't
-  // submit twice while the response round-trips. We key the busy flag to the
-  // pending approval and reset it *during render* (React's adjust-state-on-prop
-  // -change pattern) whenever a different approval arrives — no effect needed.
+  // Lock the approval buttons after the first click so a double-tap can't submit
+  // twice while the response round-trips. We key the busy flag to the pending
+  // approval and clear it during render (React's adjust-state-on-prop-change
+  // pattern, no effect needed) the moment the lock no longer matches the approval
+  // on screen. That covers two cases: a DIFFERENT approval arriving, and the SAME
+  // approval being re-surfaced after the gateway rejected the response (A4) -
+  // without this, the re-surfaced card would dead-lock with its buttons stuck
+  // disabled and no way out but a reload.
   const approvalKey = pendingApproval
     ? (pendingApproval.approval_id ?? pendingApproval.command)
     : null
   const [busyForApproval, setBusyForApproval] = useState<string | null>(null)
+  if (busyForApproval !== null && busyForApproval !== approvalKey) {
+    setBusyForApproval(null)
+  }
   const approvalBusy = busyForApproval !== null && busyForApproval === approvalKey
 
   const handleRespondApproval = useCallback(
