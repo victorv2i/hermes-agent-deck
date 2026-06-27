@@ -269,7 +269,7 @@ function HubResultRow({
           ) : failed ? (
             <>
               <TriangleAlert aria-hidden />
-              Failed
+              Retry
             </>
           ) : (
             <>

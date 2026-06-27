@@ -93,12 +93,8 @@ export function AddMcpServerForm({ onAdd, submitting }: AddMcpServerFormProps) {
         : {}),
     }
     onAdd(request)
-    // Clear the secret + form so the plaintext never lingers.
-    setName('')
-    setUrl('')
-    setCommand('')
-    setArgs('')
-    setEnvVar('')
+    // Clear the secret immediately so the plaintext never lingers.
+    // The rest of the form is reset by the parent remounting it on success.
     setKeyValue('')
     setRevealKey(false)
   }

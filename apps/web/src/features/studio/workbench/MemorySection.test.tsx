@@ -145,4 +145,31 @@ describe('MemorySection', () => {
     // memory provider), so it is honestly disabled with a note here.
     expect(screen.getByText(/switch to this agent/i)).toBeInTheDocument()
   })
+
+  it('disables an unconfigured provider button and does not call onSwitchProvider when clicked', async () => {
+    const onSwitchProvider = vi.fn()
+    const statusWithUnconfigured = {
+      active: 'holographic_plus',
+      providers: [
+        { name: 'holographic_plus', description: 'Hybrid memory', configured: true },
+        { name: 'unconfigured-store', description: 'Not set up', configured: false },
+      ],
+      builtin_files: { memory: 0, user: 0 },
+    }
+    render(
+      <MemorySection
+        memory={MEMORY_CONFIG}
+        isLoading={false}
+        error={null}
+        onChangeConfig={vi.fn()}
+        providerStatus={statusWithUnconfigured}
+        isActiveAgent
+        onSwitchProvider={onSwitchProvider}
+      />,
+    )
+    const btn = screen.getByRole('button', { name: /unconfigured-store/i })
+    expect(btn).toBeDisabled()
+    await userEvent.click(btn)
+    expect(onSwitchProvider).not.toHaveBeenCalled()
+  })
 })

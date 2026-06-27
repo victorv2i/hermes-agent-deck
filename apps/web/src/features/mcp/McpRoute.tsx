@@ -56,13 +56,16 @@ export function McpRoute() {
   // through the app's themed ConfirmDialog (focus-trap + ARIA + reduced-motion),
   // never a raw browser `window.confirm`.
   const [pendingRemove, setPendingRemove] = useState<string | null>(null)
+  const [addFormKey, setAddFormKey] = useState(0)
 
   const onAdd = (request: AddMcpServerRequest) => {
     add.mutate(request, {
-      onSuccess: () =>
+      onSuccess: () => {
+        setAddFormKey((k) => k + 1)
         toast.success('Server added', {
           description: 'Restart your agent to load its tools.',
-        }),
+        })
+      },
       onError: (err) =>
         toast.error('Couldn’t add the server', {
           description: err instanceof Error ? err.message : 'Please try again.',
@@ -192,6 +195,7 @@ export function McpRoute() {
         state={query.data}
         onAdd={onAdd}
         adding={add.isPending}
+        addFormKey={addFormKey}
         onToggle={onToggle}
         onRemove={onRemove}
         onTest={onTest}

@@ -23,6 +23,8 @@ export interface McpPageProps {
   state: McpState
   onAdd: (request: AddMcpServerRequest) => void
   adding: boolean
+  /** Incremented on each successful add; used as the form's key to reset it. */
+  addFormKey: number
   onToggle: (name: string, enabled: boolean) => void
   onRemove: (name: string) => void
   onTest: (name: string) => void
@@ -42,6 +44,7 @@ export function McpPage({
   state,
   onAdd,
   adding,
+  addFormKey,
   onToggle,
   onRemove,
   onTest,
@@ -101,7 +104,7 @@ export function McpPage({
       </section>
 
       <div className="mt-4">
-        <AddMcpServerForm onAdd={onAdd} submitting={adding} />
+        <AddMcpServerForm key={addFormKey} onAdd={onAdd} submitting={adding} />
       </div>
 
       {state.catalog.length > 0 ? (

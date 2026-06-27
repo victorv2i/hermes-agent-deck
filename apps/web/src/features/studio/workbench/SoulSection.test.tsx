@@ -60,4 +60,20 @@ describe('SoulSection', () => {
     render(<SoulSection soul={undefined} isLoading={false} error="nope" onSave={vi.fn()} />)
     expect(screen.getByText('nope')).toBeInTheDocument()
   })
+
+  it('does not flash Saved or close the editor when onSave rejects', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('save failed'))
+    render(<SoulSection soul={SOUL} isLoading={false} error={null} onSave={onSave} />)
+    await userEvent.click(screen.getByRole('button', { name: /edit/i }))
+    const editor = await screen.findByLabelText('soul editor')
+    await userEvent.clear(editor)
+    await userEvent.type(editor, '# Changed')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    // onSave was called
+    await waitFor(() => expect(onSave).toHaveBeenCalled())
+    // Editor stays open (the save button is still visible)
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeInTheDocument()
+    // The "Saved" flash must NOT appear
+    expect(screen.queryByText(/saved/i)).not.toBeInTheDocument()
+  })
 })

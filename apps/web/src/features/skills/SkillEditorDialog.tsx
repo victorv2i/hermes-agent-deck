@@ -71,6 +71,7 @@ export function SkillEditorDialog({
       open={open}
       onOpenChange={(next) => {
         if (!next && write.isPending) return // never close mid-save
+        if (!next) write.reset()
         onOpenChange(next)
       }}
     >

@@ -331,7 +331,7 @@ function ProviderOption({
       <button
         type="button"
         onClick={onSelect}
-        disabled={controlsDisabled || isActive || isSwitching}
+        disabled={controlsDisabled || isActive || isSwitching || !configured}
         aria-pressed={isActive}
         className={cn(
           'ad-surface flex w-full min-h-[44px] items-start gap-3 rounded-lg border px-3 py-2 text-left transition-colors',

@@ -96,12 +96,21 @@ function NoteRow({ note }: { note: AudioNote }) {
   const [error, setError] = useState<string | null>(null)
   // Track the created object URL so we revoke it on unmount (no leak).
   const urlRef = useRef<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     return () => {
       if (urlRef.current) URL.revokeObjectURL(urlRef.current)
     }
   }, [])
+
+  // Trigger playback once when objectUrl first becomes available, avoiding the
+  // autoPlay attribute which restarts on every re-render.
+  useEffect(() => {
+    if (objectUrl) {
+      audioRef.current?.play().catch(() => {})
+    }
+  }, [objectUrl])
 
   async function load() {
     if (objectUrl || loading) return
@@ -161,7 +170,15 @@ function NoteRow({ note }: { note: AudioNote }) {
       {objectUrl ? (
         // Agent voice output (cached TTS) — there is no caption track to attach;
         // the player carries an accessible name via aria-label.
-        <audio controls autoPlay src={objectUrl} className="h-9 w-full" aria-label={note.name} />
+        // autoPlay is intentionally absent: we call .play() once via effect when
+        // objectUrl first becomes non-null so re-renders never restart playback.
+        <audio
+          ref={audioRef}
+          controls
+          src={objectUrl}
+          className="h-9 w-full"
+          aria-label={note.name}
+        />
       ) : null}
     </li>
   )

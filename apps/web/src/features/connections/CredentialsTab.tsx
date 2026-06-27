@@ -300,7 +300,7 @@ export function CredentialsTab() {
     <div className="mx-auto flex w-full max-w-4xl flex-col px-6 pb-12 md:pb-16">
       <PageHeader
         icon={KeyRound}
-        title="Credential Pool"
+        title="Credentials"
         subtitle="Rotating API keys the agent round-robins through per provider. Keys are stored by Hermes and shown here as masked previews only; the plaintext is never displayed."
         actions={
           <div className="flex items-center gap-2">

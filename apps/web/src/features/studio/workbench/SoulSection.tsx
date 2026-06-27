@@ -68,10 +68,14 @@ export function SoulSection({
   }
 
   const handleSave = async () => {
-    await onSave(draft)
-    setEditing(false)
-    setJustSaved(true)
-    window.setTimeout(() => setJustSaved(false), 1800)
+    try {
+      await onSave(draft)
+      setEditing(false)
+      setJustSaved(true)
+      window.setTimeout(() => setJustSaved(false), 1800)
+    } catch {
+      // onSave failed: keep the editor open so the user does not lose their work.
+    }
   }
 
   return (

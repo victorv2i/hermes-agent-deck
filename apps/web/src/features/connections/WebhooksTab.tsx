@@ -40,6 +40,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import { toast } from '@/lib/toast'
 import {
   fetchWebhooks,
   createWebhook,
@@ -419,6 +420,10 @@ export function WebhooksTab() {
       try {
         await setWebhookEnabled(name, enabled)
         qc.invalidateQueries({ queryKey: ['webhooks'] })
+      } catch (err) {
+        toast.error("Couldn't toggle the webhook", {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
       } finally {
         setTogglingName(null)
       }
