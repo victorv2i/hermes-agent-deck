@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import type { Turn } from '@/state/chatStore'
+import type { Turn, PendingApproval } from '@/state/chatStore'
 import { markOnboarded, resetOnboarded } from '@/lib/useOnboarded'
 import { StartAgentButton } from '@/features/system/StartAgentButton'
 import { START_AGENT_COPY } from '@/features/system/startAgentCopy'
@@ -210,7 +210,7 @@ describe('ChatView', () => {
   it('re-enables a re-surfaced approval after the gateway rejects the response (no dead-lock)', async () => {
     const user = userEvent.setup()
     const onRespondApproval = vi.fn()
-    const approval = {
+    const approval: PendingApproval = {
       run_id: 'run_1',
       approval_id: 'a1',
       command: 'rm -rf build',
@@ -227,7 +227,12 @@ describe('ChatView', () => {
     expect(onRespondApproval).toHaveBeenCalledTimes(1)
 
     // The parent optimistically clears the approval the instant it is answered...
-    rerenderView({ turns: [assistantTurn], runStatus: 'running', pendingApproval: null, onRespondApproval })
+    rerenderView({
+      turns: [assistantTurn],
+      runStatus: 'running',
+      pendingApproval: null,
+      onRespondApproval,
+    })
     // ...then the gateway REJECTS the response (a command.error) and the SAME
     // approval is re-surfaced so the operator can retry the decision.
     rerenderView({
