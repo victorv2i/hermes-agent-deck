@@ -237,4 +237,52 @@ describe('useMessageQueue', () => {
     expect(send).not.toHaveBeenCalled()
     expect(result.current.queue.map((m) => m.text)).toEqual(['one'])
   })
+
+  // --- conversation isolation ------------------------------------------------
+  // The queue is composer-local but the composer is a single app-lifetime
+  // instance. A message queued while one conversation is in flight must NEVER
+  // flush into a DIFFERENT conversation the user has since opened (New chat /
+  // switch session) - the same cross-conversation leak class as the streamed-
+  // frame isolation. We key the queue to the active conversation id and abandon
+  // held messages when the user LEAVES an established conversation. Leaving = the
+  // id changes away from a non-null value; the null -> id assignment a brand-new
+  // chat receives on run.started is NOT a leave, so a message queued in a fresh
+  // chat still flushes into that same chat.
+  it('abandons queued messages when leaving an established conversation (New chat / switch)', () => {
+    const send = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ running, conversationId }: { running: boolean; conversationId: string | null }) =>
+        useMessageQueue({ running, send, conversationId }),
+      { initialProps: { running: true, conversationId: 'sess-A' as string | null } },
+    )
+    act(() => {
+      result.current.enqueue('belongs to A')
+    })
+    // The user opens a New chat while the run is still in flight: the conversation
+    // id drops to null (unsent new chat) and the run completes. The queued message
+    // must be abandoned, never fired into the empty new chat.
+    rerender({ running: false, conversationId: null })
+    expect(send).not.toHaveBeenCalled()
+    expect(result.current.queue).toEqual([])
+  })
+
+  it('keeps the queue when a brand-new chat is first assigned its session id (null -> id)', () => {
+    const send = vi.fn()
+    const { result, rerender } = renderHook(
+      ({ running, conversationId }: { running: boolean; conversationId: string | null }) =>
+        useMessageQueue({ running, send, conversationId }),
+      { initialProps: { running: true, conversationId: null as string | null } },
+    )
+    act(() => {
+      result.current.enqueue('keep me')
+    })
+    // run.started assigns the fresh chat its session id while the run is still
+    // live: this is NOT leaving a conversation, so the queued message survives...
+    rerender({ running: true, conversationId: 'sess-new' })
+    expect(result.current.queue.map((m) => m.text)).toEqual(['keep me'])
+    expect(send).not.toHaveBeenCalled()
+    // ...and flushes into that same conversation when the run completes.
+    rerender({ running: false, conversationId: 'sess-new' })
+    expect(send).toHaveBeenCalledWith('keep me')
+  })
 })

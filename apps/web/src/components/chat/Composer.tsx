@@ -185,7 +185,14 @@ export function Composer({
   // queue auto-flushes the head - one at a time - via onSend when the run
   // completes. A thin layer over the run pump: it only observes `running` and
   // fires the existing onSend (text-only; queuing image turns is out of scope).
-  const queue = useMessageQueue({ running, send: onSend, canFlush: canFlushQueue })
+  const queue = useMessageQueue({
+    running,
+    send: onSend,
+    canFlush: canFlushQueue,
+    // Key the queue to the conversation so a message queued in one chat can never
+    // flush into another after a New chat / session switch (see useMessageQueue).
+    conversationId: sessionKey,
+  })
   // Programmatic open of the ModelPicker (for `/model`): we click its trigger.
   const modelPickerWrapRef = useRef<HTMLDivElement>(null)
   // The slash menu's highlighted row index, and a one-shot dismissal so Esc

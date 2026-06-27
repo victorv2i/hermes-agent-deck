@@ -95,6 +95,7 @@ export function useMessageQueue({
   running,
   send,
   canFlush = true,
+  conversationId,
 }: {
   running: boolean
   send: (text: string) => void
@@ -102,6 +103,13 @@ export function useMessageQueue({
    * gates the auto-flush so a queued message never fires into a dead/just-failed
    * channel. Defaults to true (always-flush). */
   canFlush?: boolean
+  /** The active conversation id (the composer's sessionKey). When it changes away
+   * from a non-null value (New chat / switching sessions) the queue is abandoned,
+   * so a message queued in one conversation can never flush into another. The
+   * null -> id assignment a fresh chat gets on its first run.started is not a
+   * leave (the prior id was null), so a message queued in a new chat still flushes
+   * into that same chat. */
+  conversationId?: string | null
 }): UseMessageQueue {
   const [queue, setQueue] = useState<QueuedMessage[]>([])
 
@@ -119,6 +127,10 @@ export function useMessageQueue({
   // drain the whole queue at once.
   const armedRef = useRef(true)
 
+  // The conversation the queued messages belong to. When it changes away from an
+  // established (non-null) id, the queue is abandoned in the flush effect.
+  const convRef = useRef(conversationId)
+
   const enqueueMessage = useCallback((text: string) => {
     setQueue((q) => enqueue(q, text))
   }, [])
@@ -128,6 +140,22 @@ export function useMessageQueue({
   }, [])
 
   useEffect(() => {
+    // The conversation changed. If we LEFT an established (non-null) conversation
+    // (New chat, or switching to another session) abandon any messages queued in
+    // it: the single app-lifetime composer would otherwise flush them into the
+    // conversation now on screen. The null -> id assignment a fresh chat receives
+    // on its first run.started is NOT a leave (the prior id was null), so a message
+    // queued in a new chat still flushes into that same chat.
+    if (convRef.current !== conversationId) {
+      const leftEstablished = convRef.current != null
+      convRef.current = conversationId
+      if (leftEstablished) {
+        armedRef.current = true
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setQueue((q) => (q.length === 0 ? q : []))
+        return
+      }
+    }
     if (running) {
       // A run is in flight: arm for the completion that follows and hold the queue.
       armedRef.current = true
@@ -152,9 +180,10 @@ export function useMessageQueue({
     setQueue(rest)
     sendRef.current(next.text)
     // Re-run on the running edge, the canFlush edge (a reconnect/clean-run drains a
-    // held head), and as the queue changes while idle (so a message queued during a
-    // brief idle moment still flushes on the same idle window).
-  }, [running, queue, canFlush])
+    // held head), as the queue changes while idle (so a message queued during a
+    // brief idle moment still flushes on the same idle window), and on a
+    // conversation change (so a leave abandons the queue).
+  }, [running, queue, canFlush, conversationId])
 
   return { queue, enqueue: enqueueMessage, cancel: cancelMessage }
 }
