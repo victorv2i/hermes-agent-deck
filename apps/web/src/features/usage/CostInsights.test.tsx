@@ -66,7 +66,7 @@ describe('CostInsights', () => {
     )
     const nudge = screen.getByTestId('efficiency-nudge')
     expect(nudge).toHaveTextContent(/opus/)
-    expect(nudge).toHaveTextContent(/Sonnet/)
+    expect(nudge).toHaveTextContent(/a smaller model/)
   })
 
   it('hides the nudge on a balanced spread', () => {

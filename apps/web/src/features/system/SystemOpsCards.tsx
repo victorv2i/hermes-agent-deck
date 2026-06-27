@@ -405,7 +405,7 @@ export function ProviderValidateCard({
               {isValidating ? (
                 <>
                   <Loader2 className="animate-spin" aria-hidden />
-                  Verifying...
+                  Verifying…
                 </>
               ) : (
                 'Verify key'

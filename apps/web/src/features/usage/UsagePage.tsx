@@ -132,7 +132,7 @@ export function UsagePage({
         <ErrorState
           icon={BarChart3}
           title="Couldn’t load usage"
-          description="The hermes dashboard may be offline. Usage analytics live there."
+          description="Couldn't load your usage data. Make sure your agent is running."
           onRetry={onRetry}
         />
       ) : isLoading ? (
@@ -231,7 +231,7 @@ export function UsagePage({
                 info="Distinct agent sessions with activity in this period, across every source."
               />
               <StatCard
-                label="Cache"
+                label="Cache & reasoning"
                 value={formatTokens(
                   (totals?.cacheReadTokens ?? 0) + (totals?.reasoningTokens ?? 0),
                 )}

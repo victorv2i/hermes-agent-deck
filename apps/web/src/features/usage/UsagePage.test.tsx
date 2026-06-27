@@ -242,9 +242,7 @@ describe('UsagePage', () => {
     expect(screen.getByRole('button', { name: /about tokens/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /about est\. cost/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /about sessions/i })).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /about cache: cache \+ reasoning/i }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /about cache & reasoning/i })).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /about hit rate: cache hit rate/i }),
     ).toBeInTheDocument()
@@ -366,7 +364,7 @@ describe('UsagePage', () => {
     )
     // The user sees the calm, hardcoded sentence...
     expect(
-      screen.getByText('The hermes dashboard may be offline. Usage analytics live there.'),
+      screen.getByText("Couldn't load your usage data. Make sure your agent is running."),
     ).toBeInTheDocument()
     // ...and never the raw internal error text.
     expect(screen.queryByText(/session-token request failed/i)).not.toBeInTheDocument()

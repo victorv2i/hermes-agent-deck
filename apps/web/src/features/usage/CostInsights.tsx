@@ -46,20 +46,6 @@ export interface CostInsightsProps {
 
 /** Below this total spend we stay quiet – no efficiency nudge on pocket change. */
 const NUDGE_MIN_SPEND = 1
-/** A cheaper alternative to suggest when the named model dominates the bill. */
-const CHEAPER_HINT: Record<string, string> = {
-  opus: 'Sonnet',
-  'gpt-5.5': 'a smaller model',
-  'gpt-5.4': 'a smaller model',
-}
-
-function cheaperAlternative(model: string): string {
-  const key = model.toLowerCase()
-  for (const [needle, hint] of Object.entries(CHEAPER_HINT)) {
-    if (key.includes(needle)) return hint
-  }
-  return 'a smaller model'
-}
 
 export function CostInsights({
   daily,
@@ -268,7 +254,6 @@ function CostShare({ rows }: { rows: ReturnType<typeof costByModel> }) {
 /** The gentle efficiency note. Calm INFO styling – informative, not alarming. */
 function EfficiencyNudge({ model, share }: { model: string; share: number }) {
   const pct = Math.round(share * 100)
-  const alt = cheaperAlternative(model)
   return (
     <div
       role="note"
@@ -280,8 +265,8 @@ function EfficiencyNudge({ model, share }: { model: string; share: number }) {
         <span className="font-medium text-foreground">
           {pct}% of your spend is {model}
         </span>
-        . If a lot of that is routine work, routing those runs to {alt} can cut the bill with little
-        loss in quality.
+        . If a lot of that is routine work, routing those runs to a smaller model can cut the bill
+        with little loss in quality.
       </p>
       <TrendingUp
         className="mt-0.5 ml-auto hidden size-4 shrink-0 text-foreground-tertiary sm:block"

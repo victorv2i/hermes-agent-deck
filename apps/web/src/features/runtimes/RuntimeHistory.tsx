@@ -74,7 +74,7 @@ export function RuntimeHistory() {
           className="px-1 text-sm text-foreground-tertiary"
           data-testid="runtime-history-filter-empty"
         >
-          No {filter === 'all' ? '' : RUNTIME_LABEL[filter] + ' '}sessions for this filter yet.
+          {filter === 'all' ? 'No sessions yet.' : `No ${RUNTIME_LABEL[filter]} sessions yet.`}
         </p>
       ) : (
         <ul

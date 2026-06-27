@@ -176,7 +176,23 @@ describe('RuntimeHistory', () => {
     const tablist = screen.getByRole('tablist', { name: /filter by runtime/i })
     await user.click(within(tablist).getByRole('tab', { name: /^codex/i }))
     // The per-filter empty, NOT the fresh-slate invite (sessions exist elsewhere).
-    expect(screen.getByTestId('runtime-history-filter-empty')).toBeInTheDocument()
+    const filterEmpty = screen.getByTestId('runtime-history-filter-empty')
+    expect(filterEmpty).toBeInTheDocument()
+    expect(filterEmpty).toHaveTextContent('No Codex sessions yet.')
     expect(screen.queryByTestId('runtime-history-empty')).not.toBeInTheDocument()
+  })
+
+  it('shows "No sessions yet." (no filter qualifier) when filter is all and there are no shown sessions', async () => {
+    // This case cannot occur naturally (shown is empty only when filtered), but we
+    // guard the 'all' branch explicitly: no qualifier should appear.
+    stub({
+      sessions: [],
+      sources: [],
+    })
+    renderIt(<RuntimeHistory />)
+    // With zero sessions the overall-empty testid fires (not filter-empty).
+    await waitFor(() => expect(screen.getByTestId('runtime-history-empty')).toBeInTheDocument())
+    // The per-filter empty must NOT contain the old "for this filter" copy.
+    expect(screen.queryByText(/for this filter/)).not.toBeInTheDocument()
   })
 })

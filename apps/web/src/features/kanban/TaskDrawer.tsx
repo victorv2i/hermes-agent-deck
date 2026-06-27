@@ -105,8 +105,7 @@ export function TaskDrawer({
           </header>
 
           <DialogPrimitive.Description className="sr-only">
-            Read-only task detail, including its description, latest worker summary, run history,
-            comments, and events.
+            Task detail with run controls, comments, and history.
           </DialogPrimitive.Description>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
