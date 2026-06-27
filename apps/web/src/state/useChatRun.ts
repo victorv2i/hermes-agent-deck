@@ -280,12 +280,20 @@ export function useChatRun(socket?: SocketLike, storage?: StorageLike | null): U
         issueRun(plan.input, model, plan.attachments)
       },
       newChat: () => {
-        // A fresh chat abandons any resumed session.
+        // A fresh chat abandons any resumed session AND stops the single
+        // app-lifetime socket from tailing a still-in-flight run, so the run you
+        // just left cannot stream its tool calls / tokens into the new empty
+        // transcript. The run keeps running server-side, resumable from history.
+        clientRef.current?.detach()
         activeSessionIdRef.current = null
         setActiveSessionId(null)
         reset()
       },
       continueSession: (sessionId, turns, identity) => {
+        // Switching to another session abandons the current one: stop tailing any
+        // still-in-flight run so its frames cannot leak into the resumed
+        // transcript (same isolation as newChat; the run keeps running server-side).
+        clientRef.current?.detach()
         activeSessionIdRef.current = sessionId
         setActiveSessionId(sessionId)
         // Carry the session id onto the seeded branch so the fork send policy can

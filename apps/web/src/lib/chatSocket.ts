@@ -331,6 +331,26 @@ export class ChatSocket {
     return true
   }
 
+  /**
+   * Stop tailing the current run WITHOUT aborting it or touching the transport.
+   * Clears the run-tail state (so `handleFrame` now drops every frame from that
+   * run as foreign) and drops the reload-resume persistence (so a refresh won't
+   * resurrect it). The run keeps streaming server-side and stays resumable from
+   * history; the live socket simply stops forwarding it.
+   *
+   * Called when the conversation is abandoned (New chat) or switched (resuming a
+   * different session): the single app-lifetime socket would otherwise keep
+   * tailing the run you just left and stream its frames into the fresh, empty
+   * transcript. Idempotent and safe to call when no run is active.
+   */
+  detach(): void {
+    this.cursor = 0
+    this.activeRunId = null
+    this.activeRunDone = false
+    this.expectingOwnRun = false
+    writePersistedRun(null, this.storage)
+  }
+
   /** Tear down all listeners and disconnect. */
   dispose(): void {
     this.disposed = true

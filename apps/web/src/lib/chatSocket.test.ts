@@ -225,6 +225,34 @@ describe('ChatSocket inbound frames', () => {
     expect(h.client.runId).toBeNull()
   })
 
+  it('detach() stops tailing the started run so its later frames are dropped (new-chat isolation)', () => {
+    // Tail OUR run and take a couple of frames (a live session).
+    h.client.run({ input: 'x' })
+    h.socket.dispatch('run.started', { event: 'run.started', run_id: 'run_1', cursor: 1 })
+    h.socket.dispatch('message.delta', {
+      event: 'message.delta',
+      run_id: 'run_1',
+      delta: 'hi',
+      cursor: 2,
+    })
+    expect(h.events.map((e) => e.event)).toEqual(['run.started', 'message.delta'])
+
+    // The user opens a NEW chat: stop tailing run_1 (it keeps running server-side,
+    // resumable from history — detach must NOT abort it).
+    h.client.detach()
+    expect(h.client.runId).toBeNull()
+    expect(h.socket.lastEmit('abort')).toBeUndefined()
+
+    // run_1 is still working; its later frames must NOT forward into the new view.
+    h.socket.dispatch('tool.started', {
+      event: 'tool.started',
+      run_id: 'run_1',
+      tool: 'bash',
+      cursor: 3,
+    })
+    expect(h.events.map((e) => e.event)).toEqual(['run.started', 'message.delta'])
+  })
+
   it('drops a frame that fails schema validation', () => {
     // message.delta requires a string `delta`.
     h.socket.dispatch('message.delta', { event: 'message.delta', run_id: 'run_1', cursor: 1 })
